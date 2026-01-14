@@ -1,0 +1,66 @@
+# ===========================================
+# Spring Mall Docker Compose
+# 混合模式: Backend + Frontend 容器化，连接本机 MySQL
+# ===========================================
+
+version: '3.8'
+
+services:
+  # ===========================================
+  # Spring Boot Backend
+  # ===========================================
+  backend:
+    build:
+      context: ./mall-backend
+      dockerfile: Dockerfile
+    container_name: mall-backend
+    restart: unless-stopped
+    environment:
+      # Spring Profile
+      SPRING_PROFILES_ACTIVE: docker
+      # Database - 连接宿主机 MySQL
+      SPRING_DATASOURCE_URL: jdbc:mysql://host.docker.internal:3306/mall?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: ${DB_USERNAME:-root}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-123456}
+      # JWT
+      JWT_SECRET: ${JWT_SECRET:-dGhpc2lzYXJhbmRvbWtleWZvcmhtYWMyNTZhbGdvcml0aG0xMjM0NTY3ODkw}
+      JWT_EXPIRATION: ${JWT_EXPIRATION:-86400000}
+      # JVM
+      JAVA_OPTS: "-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
+    ports:
+      - "8080:8080"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"  # Linux 兼容性
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/api/v1/categories"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - mall-network
+
+  # ===========================================
+  # Vue Frontend (Nginx)
+  # ===========================================
+  frontend:
+    build:
+      context: ./mall-frontend
+      dockerfile: Dockerfile
+    container_name: mall-frontend
+    restart: unless-stopped
+    ports:
+      - "26115:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - mall-network
+
+# ===========================================
+# Networks
+# ===========================================
+networks:
+  mall-network:
+    name: mall-network
+    driver: bridge
