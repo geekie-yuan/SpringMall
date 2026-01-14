@@ -28,7 +28,7 @@ services:
       # JVM
       JAVA_OPTS: "-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
     ports:
-      - "8080:8080"
+      - "25116:8080"
     extra_hosts:
       - "host.docker.internal:host-gateway"  # Linux 兼容性
     healthcheck:
