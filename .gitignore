@@ -17,5 +17,5 @@ logs/
 *.tmp
 *.temp
 
-# Backend (独立仓库)
-mall-backend/
+# Backend 的 git 目录
+mall-backend/.git/

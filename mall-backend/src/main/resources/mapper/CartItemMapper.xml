@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="site.geekie.shop.shoppingmall.mapper.CartItemMapper">
+
+    <!-- 结果映射 -->
+    <resultMap id="BaseResultMap" type="site.geekie.shop.shoppingmall.entity.CartItem">
+        <id column="id" property="id"/>
+        <result column="user_id" property="userId"/>
+        <result column="product_id" property="productId"/>
+        <result column="quantity" property="quantity"/>
+        <result column="checked" property="checked"/>
+        <result column="created_at" property="createdAt"/>
+        <result column="updated_at" property="updatedAt"/>
+    </resultMap>
+
+    <!-- 基础字段列表 -->
+    <sql id="Base_Column_List">
+        id, user_id, product_id, quantity, checked, created_at, updated_at
+    </sql>
+
+    <!-- 根据ID查询购物车项 -->
+    <select id="findById" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM cart_item
+        WHERE id = #{id}
+    </select>
+
+    <!-- 根据用户ID查询所有购物车项 -->
+    <select id="findByUserId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM cart_item
+        WHERE user_id = #{userId}
+        ORDER BY created_at DESC
+    </select>
+
+    <!-- 根据用户ID和商品ID查询购物车项 -->
+    <select id="findByUserIdAndProductId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM cart_item
+        WHERE user_id = #{userId} AND product_id = #{productId}
+    </select>
+
+    <!-- 根据用户ID查询已选中的购物车项 -->
+    <select id="findCheckedByUserId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM cart_item
+        WHERE user_id = #{userId} AND checked = 1
+        ORDER BY created_at DESC
+    </select>
+
+    <!-- 插入购物车项 -->
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO cart_item (user_id, product_id, quantity, checked)
+        VALUES (#{userId}, #{productId}, #{quantity}, #{checked})
+    </insert>
+
+    <!-- 更新数量 -->
+    <update id="updateQuantity">
+        UPDATE cart_item
+        SET quantity = #{quantity},
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{id}
+    </update>
+
+    <!-- 更新选中状态 -->
+    <update id="updateChecked">
+        UPDATE cart_item
+        SET checked = #{checked},
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{id}
+    </update>
+
+    <!-- 批量更新选中状态 -->
+    <update id="updateAllChecked">
+        UPDATE cart_item
+        SET checked = #{checked},
+            updated_at = CURRENT_TIMESTAMP
+        WHERE user_id = #{userId}
+    </update>
+
+    <!-- 根据ID删除 -->
+    <delete id="deleteById">
+        DELETE FROM cart_item WHERE id = #{id}
+    </delete>
+
+    <!-- 根据用户ID删除所有 -->
+    <delete id="deleteByUserId">
+        DELETE FROM cart_item WHERE user_id = #{userId}
+    </delete>
+
+    <!-- 批量删除 -->
+    <delete id="deleteByIds">
+        DELETE FROM cart_item
+        WHERE id IN
+        <foreach item="id" collection="ids" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <!-- 统计用户购物车商品种类数 -->
+    <select id="countByUserId" resultType="int">
+        SELECT COUNT(*) FROM cart_item WHERE user_id = #{userId}
+    </select>
+
+</mapper>

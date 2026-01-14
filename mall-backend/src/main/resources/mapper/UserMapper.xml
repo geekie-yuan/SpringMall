@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!--
+  用户Mapper映射文件
+  命名空间：site.geekie.shop.shoppingmall.mapper.UserMapper
+  数据库表：user
+  说明：提供用户表的CRUD操作SQL映射
+-->
+<mapper namespace="site.geekie.shop.shoppingmall.mapper.UserMapper">
+
+    <!-- 用户实体结果映射
+         将数据库字段映射到User实体的属性
+         数据库字段使用下划线命名（created_at）
+         Java属性使用驼峰命名（createdAt） -->
+    <resultMap id="BaseResultMap" type="site.geekie.shop.shoppingmall.entity.User">
+        <id column="id" property="id"/>
+        <result column="username" property="username"/>
+        <result column="password" property="password"/>
+        <result column="email" property="email"/>
+        <result column="phone" property="phone"/>
+        <result column="avatar" property="avatar"/>
+        <result column="role" property="role"/>
+        <result column="status" property="status"/>
+        <result column="created_at" property="createdAt"/>
+        <result column="updated_at" property="updatedAt"/>
+    </resultMap>
+
+    <!-- 基础列列表
+         定义查询时需要的所有字段
+         可在各个查询语句中通过include标签复用 -->
+    <sql id="Base_Column_List">
+        id, username, password, email, phone, avatar, role, status, created_at, updated_at
+    </sql>
+
+    <!-- 根据用户ID查询用户
+         参数：id - 用户ID
+         返回：用户实体，不存在则返回null -->
+    <select id="findById" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM user
+        WHERE id = #{id}
+    </select>
+
+    <!-- 根据用户名查询用户
+         参数：username - 用户名
+         返回：用户实体，不存在则返回null
+         说明：用于登录验证和唯一性检查 -->
+    <select id="findByUsername" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM user
+        WHERE username = #{username}
+    </select>
+
+    <!-- 根据邮箱查询用户
+         参数：email - 邮箱地址
+         返回：用户实体，不存在则返回null
+         说明：用于注册时的唯一性检查 -->
+    <select id="findByEmail" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM user
+        WHERE email = #{email}
+    </select>
+
+    <!-- 根据手机号查询用户
+         参数：phone - 手机号
+         返回：用户实体，不存在则返回null
+         说明：用于注册时的唯一性检查 -->
+    <select id="findByPhone" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM user
+        WHERE phone = #{phone}
+    </select>
+
+    <!-- 插入新用户记录
+         参数：user - 用户实体对象
+         返回：影响的行数
+         说明：使用useGeneratedKeys=true自动回填主键ID到user对象 -->
+    <insert id="insert" parameterType="site.geekie.shop.shoppingmall.entity.User" useGeneratedKeys="true"
+            keyProperty="id">
+        INSERT INTO user (username, password, email, phone, avatar, role, status)
+        VALUES (#{username}, #{password}, #{email}, #{phone}, #{avatar}, #{role}, #{status})
+    </insert>
+
+    <!-- 根据用户ID动态更新用户信息
+         参数：user - 用户实体对象（必须包含ID）
+         返回：影响的行数
+         说明：使用动态SQL，仅更新非null字段，避免覆盖现有数据 -->
+    <update id="updateById" parameterType="site.geekie.shop.shoppingmall.entity.User">
+        UPDATE user
+        <set>
+            <if test="username != null">username = #{username},</if>
+            <if test="email != null">email = #{email},</if>
+            <if test="phone != null">phone = #{phone},</if>
+            <if test="avatar != null">avatar = #{avatar},</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <!-- 更新用户密码
+         参数：id - 用户ID, password - 新密码（已加密）
+         返回：影响的行数 -->
+    <update id="updatePassword">
+        UPDATE user
+        SET password = #{password}
+        WHERE id = #{id}
+    </update>
+
+    <!-- 更新用户状态
+         参数：id - 用户ID, status - 用户状态（1-正常，0-禁用）
+         返回：影响的行数
+         说明：用于启用或禁用用户账户 -->
+    <update id="updateStatus">
+        UPDATE user
+        SET status = #{status}
+        WHERE id = #{id}
+    </update>
+
+    <!-- 查询所有用户（管理员）
+         返回：用户列表
+         说明：按创建时间倒序排列 -->
+    <select id="findAll" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM user
+        ORDER BY created_at DESC
+    </select>
+
+    <!-- 更新用户角色（管理员）
+         参数：id - 用户ID, role - 用户角色（USER/ADMIN）
+         返回：影响的行数 -->
+    <update id="updateRole">
+        UPDATE user
+        SET role = #{role}
+        WHERE id = #{id}
+    </update>
+
+</mapper>

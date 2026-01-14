@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!--
+  收货地址Mapper映射文件
+  命名空间：site.geekie.shop.shoppingmall.mapper.AddressMapper
+  数据库表：address
+  说明：提供收货地址表的CRUD操作SQL映射
+-->
+<mapper namespace="site.geekie.shop.shoppingmall.mapper.AddressMapper">
+
+    <!-- 地址实体结果映射 -->
+    <resultMap id="BaseResultMap" type="site.geekie.shop.shoppingmall.entity.Address">
+        <id column="id" property="id"/>
+        <result column="user_id" property="userId"/>
+        <result column="receiver_name" property="receiverName"/>
+        <result column="phone" property="phone"/>
+        <result column="province" property="province"/>
+        <result column="city" property="city"/>
+        <result column="district" property="district"/>
+        <result column="detail_address" property="detailAddress"/>
+        <result column="is_default" property="isDefault"/>
+        <result column="created_at" property="createdAt"/>
+        <result column="updated_at" property="updatedAt"/>
+    </resultMap>
+
+    <!-- 基础列列表 -->
+    <sql id="Base_Column_List">
+        id, user_id, receiver_name, phone, province, city, district,
+        detail_address, is_default, created_at, updated_at
+    </sql>
+
+    <!-- 根据地址ID查询地址 -->
+    <select id="findById" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM address
+        WHERE id = #{id}
+    </select>
+
+    <!-- 根据用户ID查询地址列表 -->
+    <select id="findByUserId" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM address
+        WHERE user_id = #{userId}
+        ORDER BY is_default DESC, created_at DESC
+    </select>
+
+    <!-- 获取用户的默认地址 -->
+    <select id="findDefaultByUserId" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM address
+        WHERE user_id = #{userId} AND is_default = 1
+        LIMIT 1
+    </select>
+
+    <!-- 插入新地址记录 -->
+    <insert id="insert" parameterType="site.geekie.shop.shoppingmall.entity.Address"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO address (user_id, receiver_name, phone, province, city, district,
+                             detail_address, is_default)
+        VALUES (#{userId}, #{receiverName}, #{phone}, #{province}, #{city}, #{district},
+                #{detailAddress}, #{isDefault})
+    </insert>
+
+    <!-- 更新地址信息 -->
+    <update id="updateById" parameterType="site.geekie.shop.shoppingmall.entity.Address">
+        UPDATE address
+        <set>
+            <if test="receiverName != null">receiver_name = #{receiverName},</if>
+            <if test="phone != null">phone = #{phone},</if>
+            <if test="province != null">province = #{province},</if>
+            <if test="city != null">city = #{city},</if>
+            <if test="district != null">district = #{district},</if>
+            <if test="detailAddress != null">detail_address = #{detailAddress},</if>
+            <if test="isDefault != null">is_default = #{isDefault},</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <!-- 取消用户的所有默认地址 -->
+    <update id="cancelDefaultByUserId">
+        UPDATE address
+        SET is_default = 0
+        WHERE user_id = #{userId}
+    </update>
+
+    <!-- 设置为默认地址 -->
+    <update id="setDefault">
+        UPDATE address
+        SET is_default = 1
+        WHERE id = #{id}
+    </update>
+
+    <!-- 删除地址 -->
+    <delete id="deleteById">
+        DELETE FROM address
+        WHERE id = #{id}
+    </delete>
+
+    <!-- 统计用户的地址数量 -->
+    <select id="countByUserId" resultType="int">
+        SELECT COUNT(*)
+        FROM address
+        WHERE user_id = #{userId}
+    </select>
+
+</mapper>
