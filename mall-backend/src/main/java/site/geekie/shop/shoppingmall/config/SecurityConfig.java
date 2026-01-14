@@ -184,8 +184,8 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // 允许的源（前端地址）
-        configuration.setAllowedOrigins(Arrays.asList("http://localhost:3000"));
+        // 允许的源（所有源）
+        configuration.setAllowedOriginPatterns(Arrays.asList("*"));
 
         // 允许的 HTTP 方法
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
