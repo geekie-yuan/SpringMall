@@ -241,14 +241,17 @@ Authorization: Bearer <token>
   "data": [
     {
       "id": 1,
+      "userId": 3,
       "productId": 1,
       "productName": "iPhone 15 Pro",
+      "productSubtitle": "A17 Pro芯片，钛金属设计",
       "productImage": "/images/iphone15pro.jpg",
-      "price": 7999.00,
+      "productPrice": 7999.00,
+      "productStock": 100,
       "quantity": 2,
-      "totalPrice": 15998.00,
-      "checked": true,
-      "stock": 100
+      "checked": 1,
+      "subtotal": 15998.00,
+      "createdAt": "2026-01-08T10:00:00"
     }
   ]
 }
@@ -266,22 +269,38 @@ Authorization: Bearer <token>
   "quantity": 2
 }
 ```
+**响应**: 返回单个 `CartItemResponse`（字段结构同上）。若商品已在购物车中，自动合并数量。
 
-### 修改数量
+### 更新数量
 ```http
-PUT /api/v1/cart/{id}
+PUT /api/v1/cart/{id}/quantity?quantity=3
 Authorization: Bearer <token>
 ```
-**请求体**:
-```json
-{
-  "quantity": 3
-}
+**响应**: 返回更新后的 `CartItemResponse`。更新前校验库存是否充足。
+
+### 更新选中状态
+```http
+PUT /api/v1/cart/{id}/checked?checked=0
+Authorization: Bearer <token>
 ```
+- `checked`: `0`-未选中，`1`-已选中
+
+### 全选/取消全选
+```http
+PUT /api/v1/cart/checked?checked=1
+Authorization: Bearer <token>
+```
+- `checked`: `0`-取消全选，`1`-全选
 
 ### 删除商品
 ```http
 DELETE /api/v1/cart/{id}
+Authorization: Bearer <token>
+```
+
+### 批量删除
+```http
+DELETE /api/v1/cart/batch?ids=1,2,3
 Authorization: Bearer <token>
 ```
 
@@ -291,16 +310,32 @@ DELETE /api/v1/cart
 Authorization: Bearer <token>
 ```
 
-### 选中/取消选中
+### 获取已选中商品总价
 ```http
-PUT /api/v1/cart/check/{id}?checked=true
+GET /api/v1/cart/total
 Authorization: Bearer <token>
 ```
+**响应**:
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": 15998.00
+}
+```
 
-### 全选/取消全选
+### 获取购物车商品种类数
 ```http
-PUT /api/v1/cart/check-all?checked=true
+GET /api/v1/cart/count
 Authorization: Bearer <token>
+```
+**响应**:
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": 2
+}
 ```
 
 ---
