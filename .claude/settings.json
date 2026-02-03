@@ -1,0 +1,36 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/block-dangerous.sh"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/post-edit-check.sh"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "回顾整个对话。(1) 用户的原始请求是否已被完全响应？(2) 是否存在被部分修改、处于损坏或未完成状态的文件？若任一问题答案为否，返回 JSON: {\"ok\": false, \"reason\": \"描述具体什么还未完成\"}。若两者均已完成，返回: {\"ok\": true}。"
+          }
+        ]
+      }
+    ]
+  }
+}
