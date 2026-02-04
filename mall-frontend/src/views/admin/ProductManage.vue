@@ -109,6 +109,19 @@
           </template>
         </el-table-column>
       </el-table>
+
+      <!-- 分页 -->
+      <div v-if="total > pageSize" class="pagination">
+        <el-pagination
+          v-model:current-page="currentPage"
+          v-model:page-size="pageSize"
+          :total="total"
+          :page-sizes="[10, 20, 50, 100]"
+          layout="total, sizes, prev, pager, next, jumper"
+          @size-change="fetchProducts"
+          @current-change="fetchProducts"
+        />
+      </div>
     </el-card>
 
     <!-- 添加/编辑商品对话框 -->
@@ -218,13 +231,13 @@
 import { ref, onMounted } from 'vue'
 import { Plus, Search } from '@element-plus/icons-vue'
 import {
+  getAllProducts,
   createProduct,
   updateProduct,
   deleteProduct,
   updateProductStatus,
   updateProductStock
 } from '@/api/admin/product'
-import { getAllProducts, getProductsByCategory, searchProducts } from '@/api/product'
 import { getAllCategories } from '@/api/category'
 import { formatPrice } from '@/utils/format'
 import { debounce } from '@/utils/helpers'
@@ -243,6 +256,10 @@ const formRef = ref(null)
 const searchKeyword = ref('')
 const selectedCategory = ref(null)
 const selectedStatus = ref(null)
+
+const currentPage = ref(1)
+const pageSize = ref(10)
+const total = ref(0)
 
 const currentProduct = ref(null)
 const newStock = ref(0)
@@ -273,7 +290,13 @@ const rules = {
 const fetchProducts = async () => {
   loading.value = true
   try {
-    products.value = await getAllProducts()
+    const params = { page: currentPage.value, size: pageSize.value }
+    if (searchKeyword.value) params.keyword = searchKeyword.value
+    if (selectedCategory.value) params.categoryId = selectedCategory.value
+    if (selectedStatus.value) params.status = selectedStatus.value
+    const data = await getAllProducts(params)
+    products.value = data.list
+    total.value = data.total
   } catch (error) {
     console.error('获取商品列表失败:', error)
   } finally {
@@ -291,27 +314,9 @@ const fetchCategories = async () => {
 }
 
 // 搜索
-const handleSearch = async () => {
-  loading.value = true
-  try {
-    if (searchKeyword.value) {
-      products.value = await searchProducts(searchKeyword.value)
-    } else if (selectedCategory.value) {
-      products.value = await getProductsByCategory(selectedCategory.value)
-    } else {
-      await fetchProducts()
-      return
-    }
-
-    // 如果有状态筛选，再过滤
-    if (selectedStatus.value) {
-      products.value = products.value.filter(p => p.status === selectedStatus.value)
-    }
-  } catch (error) {
-    console.error('搜索失败:', error)
-  } finally {
-    loading.value = false
-  }
+const handleSearch = () => {
+  currentPage.value = 1
+  fetchProducts()
 }
 
 // 防抖搜索
@@ -471,6 +476,12 @@ onMounted(() => {
   }
 
   .table-card {
+    .pagination {
+      margin-top: $spacing-lg;
+      display: flex;
+      justify-content: flex-end;
+    }
+
     .product-image {
       width: 60px;
       height: 60px;

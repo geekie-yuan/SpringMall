@@ -117,26 +117,34 @@ Authorization: Bearer <token>
 
 ### 商品列表
 ```http
-GET /api/v1/products
+GET /api/v1/products?page=1&size=10
 ```
-**响应**:
+**查询参数**: `page`（页码，默认1）、`size`（每页数量，默认10，最大100）
+
+**响应**: PageResult
 ```json
 {
   "code": 200,
   "message": "success",
-  "data": [
-    {
-      "id": 1,
-      "categoryId": 1,
-      "categoryName": "手机数码",
-      "name": "iPhone 15 Pro",
-      "subtitle": "A17 Pro芯片，钛金属设计",
-      "mainImage": "/images/iphone15pro.jpg",
-      "price": 7999.00,
-      "stock": 100,
-      "status": 1
-    }
-  ]
+  "data": {
+    "list": [
+      {
+        "id": 1,
+        "categoryId": 1,
+        "categoryName": "手机数码",
+        "name": "iPhone 15 Pro",
+        "subtitle": "A17 Pro芯片，钛金属设计",
+        "mainImage": "/images/iphone15pro.jpg",
+        "price": 7999.00,
+        "stock": 100,
+        "status": 1
+      }
+    ],
+    "total": 50,
+    "page": 1,
+    "size": 10,
+    "pages": 5
+  }
 }
 ```
 
@@ -154,8 +162,11 @@ GET /api/v1/products/{id}
 
 ### 搜索商品
 ```http
-GET /api/v1/products/search?keyword=iPhone
+GET /api/v1/products/search?keyword=iPhone&page=1&size=10
 ```
+**查询参数**: `keyword`（必填）、`page`（页码，默认1）、`size`（每页数量，默认10，最大100）
+
+**响应**: PageResult（结构同商品列表）
 
 ### 按分类查询
 ```http
@@ -532,9 +543,16 @@ Authorization: Bearer <token>
 
 ### 商品列表（管理员）
 ```http
-GET /api/v1/admin/products
+GET /api/v1/admin/products?page=1&size=10&keyword=iPhone&categoryId=1&status=ON_SALE
 Authorization: Bearer <admin-token>
 ```
+**查询参数**:
+- `page`（页码，默认1）、`size`（每页数量，默认10，最大100）
+- `keyword`（商品名称/副标题模糊搜索，可选）
+- `categoryId`（分类ID过滤，可选）
+- `status`（状态过滤，可选，值为 `ON_SALE` 或 `OFF_SALE`）
+
+**响应**: PageResult（结构同公开商品列表）
 
 ### 商品详情（管理员）
 ```http
@@ -623,15 +641,21 @@ Authorization: Bearer <admin-token>
 
 ### 所有订单列表
 ```http
-GET /api/v1/admin/orders
+GET /api/v1/admin/orders?page=1&size=10
 Authorization: Bearer <admin-token>
 ```
+**查询参数**: `page`（页码，默认1）、`size`（每页数量，默认10，最大100）
+
+**响应**: PageResult。列表项**不包含 `items`**（订单明细），仅详情接口返回。
 
 ### 按状态查询订单
 ```http
-GET /api/v1/admin/orders/status/{status}
+GET /api/v1/admin/orders/status/{status}?page=1&size=10
 Authorization: Bearer <admin-token>
 ```
+**查询参数**: `page`（页码，默认1）、`size`（每页数量，默认10，最大100）
+
+**响应**: PageResult。列表项**不包含 `items`**，同上。
 
 ### 订单详情（管理员）
 ```http
@@ -673,25 +697,37 @@ Authorization: Bearer <admin-token>
 
 ### 用户列表
 ```http
-GET /api/v1/admin/users
+GET /api/v1/admin/users?page=1&size=10&keyword=test&role=USER&status=1
 Authorization: Bearer <admin-token>
 ```
-**响应**:
+**查询参数**:
+- `page`（页码，默认1）、`size`（每页数量，默认10，最大100）
+- `keyword`（用户名/邮箱模糊搜索，可选）
+- `role`（角色过滤，可选，值为 `USER` 或 `ADMIN`）
+- `status`（状态过滤，可选，`1`-启用，`0`-禁用）
+
+**响应**: PageResult
 ```json
 {
   "code": 200,
   "message": "success",
-  "data": [
-    {
-      "id": 1,
-      "username": "testuser",
-      "email": "test@example.com",
-      "phone": "13800138000",
-      "role": "USER",
-      "status": 1,
-      "createdAt": "2026-01-08T10:00:00"
-    }
-  ]
+  "data": {
+    "list": [
+      {
+        "id": 1,
+        "username": "testuser",
+        "email": "test@example.com",
+        "phone": "13800138000",
+        "role": "USER",
+        "status": 1,
+        "createdAt": "2026-01-08T10:00:00"
+      }
+    ],
+    "total": 3,
+    "page": 1,
+    "size": 10,
+    "pages": 1
+  }
 }
 ```
 

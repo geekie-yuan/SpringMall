@@ -16,6 +16,19 @@ export const getAllOrders = (params) => {
 }
 
 /**
+ * 按状态获取订单（支持分页）
+ * @param {string} status - 订单状态
+ * @param {Object} params - 查询参数 { page, size }
+ */
+export const getOrdersByStatus = (status, params) => {
+  return request({
+    url: `/admin/orders/status/${status}`,
+    method: 'GET',
+    params
+  })
+}
+
+/**
  * 获取订单详情
  * @param {string} orderNo - 订单号
  */

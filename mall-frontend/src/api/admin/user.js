@@ -5,7 +5,7 @@ import request from '../request'
 
 /**
  * 获取所有用户
- * @param {Object} params - 查询参数 { page, size, keyword }
+ * @param {Object} params - 查询参数 { page, size, keyword, role, status }
  */
 export const getAllUsers = (params) => {
   return request({

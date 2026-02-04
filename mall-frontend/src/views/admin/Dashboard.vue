@@ -113,11 +113,6 @@
             {{ row.userId }}
           </template>
         </el-table-column>
-        <el-table-column label="商品数量" width="100" align="center">
-          <template #default="{ row }">
-            {{ row.items.length }}
-          </template>
-        </el-table-column>
         <el-table-column label="总金额" width="120" align="right">
           <template #default="{ row }">
             <span class="price-text">¥{{ formatPrice(row.totalAmount) }}</span>
@@ -187,40 +182,29 @@ const stats = ref({
   onSaleProducts: 0
 })
 
-// 获取统计数据
+// 获取统计数据（仅需 total，传 size:1 避免拉全量）
 const fetchStats = async () => {
   try {
-    // 获取订单统计
-    const orders = await getAllOrders()
-    stats.value.totalOrders = orders.content?.length || orders.length || 0
+    const orders = await getAllOrders({ page: 1, size: 1 })
+    stats.value.totalOrders = orders.total
+    // TODO: 总销售额需后端聚合接口 GET /admin/stats/sales，当前无法从分页数据客端计算
 
-    // 计算总销售额
-    const allOrders = orders.content || orders || []
-    stats.value.totalSales = allOrders
-      .filter(order => order.status !== 'CANCELLED')
-      .reduce((sum, order) => sum + order.totalAmount, 0)
+    const products = await getAllProducts({ page: 1, size: 1 })
+    stats.value.totalProducts = products.total
 
-    // 获取商品统计
-    const products = await getAllProducts()
-    stats.value.totalProducts = products.length || 0
-    stats.value.onSaleProducts = products.filter(p => p.status === 'ON_SALE').length || 0
-
-    // 获取用户统计
-    const users = await getAllUsers()
-    stats.value.totalUsers = users.content?.length || users.length || 0
+    const users = await getAllUsers({ page: 1, size: 1 })
+    stats.value.totalUsers = users.total
   } catch (error) {
     console.error('获取统计数据失败:', error)
   }
 }
 
-// 获取最近订单
+// 获取最近订单（直接从后端截取 5 条）
 const fetchRecentOrders = async () => {
   loading.value = true
   try {
-    const data = await getAllOrders()
-    const orders = data.content || data || []
-    // 取最近5个订单
-    recentOrders.value = orders.slice(0, 5)
+    const data = await getAllOrders({ page: 1, size: 5 })
+    recentOrders.value = data.list
   } catch (error) {
     console.error('获取最近订单失败:', error)
   } finally {

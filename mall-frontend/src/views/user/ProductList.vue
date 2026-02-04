@@ -108,7 +108,7 @@ const fetchProducts = async () => {
   try {
     let data
     const params = {
-      page: currentPage.value - 1,
+      page: currentPage.value,
       size: pageSize.value
     }
 
@@ -120,8 +120,8 @@ const fetchProducts = async () => {
       data = await getAllProducts(params)
     }
 
-    products.value = data.content || data || []
-    total.value = data.totalElements || products.value.length
+    products.value = data.list || data || []
+    total.value = data.total || products.value.length
   } catch (error) {
     console.error('获取商品失败:', error)
   } finally {

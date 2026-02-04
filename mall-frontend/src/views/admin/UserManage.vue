@@ -119,7 +119,6 @@ import Loading from '@/components/common/Loading.vue'
 
 const loading = ref(false)
 const users = ref([])
-const allUsers = ref([])
 
 const searchKeyword = ref('')
 const selectedRole = ref(null)
@@ -133,9 +132,13 @@ const total = ref(0)
 const fetchUsers = async () => {
   loading.value = true
   try {
-    const data = await getAllUsers()
-    allUsers.value = data.content || data || []
-    filterUsers()
+    const params = { page: currentPage.value, size: pageSize.value }
+    if (searchKeyword.value) params.keyword = searchKeyword.value
+    if (selectedRole.value) params.role = selectedRole.value
+    if (selectedStatus.value != null) params.status = selectedStatus.value
+    const data = await getAllUsers(params)
+    users.value = data.list
+    total.value = data.total
   } catch (error) {
     console.error('获取用户列表失败:', error)
   } finally {
@@ -143,54 +146,22 @@ const fetchUsers = async () => {
   }
 }
 
-// 筛选用户
-const filterUsers = () => {
-  let filtered = [...allUsers.value]
-
-  // 关键词搜索
-  if (searchKeyword.value) {
-    const keyword = searchKeyword.value.toLowerCase()
-    filtered = filtered.filter(
-      u =>
-        u.username.toLowerCase().includes(keyword) ||
-        u.email.toLowerCase().includes(keyword)
-    )
-  }
-
-  // 角色筛选
-  if (selectedRole.value) {
-    filtered = filtered.filter(u => u.role === selectedRole.value)
-  }
-
-  // 状态筛选
-  if (selectedStatus.value) {
-    filtered = filtered.filter(u => u.status === selectedStatus.value)
-  }
-
-  total.value = filtered.length
-
-  // 分页
-  const start = (currentPage.value - 1) * pageSize.value
-  const end = start + pageSize.value
-  users.value = filtered.slice(start, end)
-}
-
 // 搜索
 const handleSearch = () => {
   currentPage.value = 1
-  filterUsers()
+  fetchUsers()
 }
 
 // 角色筛选
 const handleRoleFilter = () => {
   currentPage.value = 1
-  filterUsers()
+  fetchUsers()
 }
 
 // 状态筛选
 const handleStatusChange = () => {
   currentPage.value = 1
-  filterUsers()
+  fetchUsers()
 }
 
 // 切换状态

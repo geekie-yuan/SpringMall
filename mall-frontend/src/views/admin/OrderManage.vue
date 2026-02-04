@@ -49,11 +49,6 @@
             {{ row.receiverName || '-' }}
           </template>
         </el-table-column>
-        <el-table-column label="商品数量" width="100" align="center">
-          <template #default="{ row }">
-            {{ row.items?.length || 0 }}
-          </template>
-        </el-table-column>
         <el-table-column label="总金额" width="120" align="right">
           <template #default="{ row }">
             <span class="price-text">¥{{ formatPrice(row.totalAmount) }}</span>
@@ -124,7 +119,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { Search } from '@element-plus/icons-vue'
-import { getAllOrders, shipOrder, cancelOrder, getOrderDetail } from '@/api/admin/order'
+import { getAllOrders, getOrdersByStatus, shipOrder, cancelOrder, getOrderDetail } from '@/api/admin/order'
 import { formatPrice, formatDate } from '@/utils/format'
 import { ORDER_STATUS_TEXT, ORDER_STATUS_TAG_TYPE } from '@/utils/constants'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -146,20 +141,12 @@ const statusTagType = ORDER_STATUS_TAG_TYPE
 const fetchOrders = async () => {
   loading.value = true
   try {
-    const data = await getAllOrders()
-    let orderList = data.content || data || []
-
-    // 状态筛选
-    if (selectedStatus.value) {
-      orderList = orderList.filter(o => o.status === selectedStatus.value)
-    }
-
-    total.value = orderList.length
-
-    // 分页
-    const start = (currentPage.value - 1) * pageSize.value
-    const end = start + pageSize.value
-    orders.value = orderList.slice(start, end)
+    const params = { page: currentPage.value, size: pageSize.value }
+    const data = selectedStatus.value
+      ? await getOrdersByStatus(selectedStatus.value, params)
+      : await getAllOrders(params)
+    orders.value = data.list
+    total.value = data.total
   } catch (error) {
     console.error('获取订单列表失败:', error)
   } finally {

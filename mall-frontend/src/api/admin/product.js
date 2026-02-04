@@ -4,6 +4,18 @@
 import request from '../request'
 
 /**
+ * 获取所有商品（支持分页）
+ * @param {Object} params - 查询参数 { page, size, keyword, categoryId, status }
+ */
+export const getAllProducts = (params) => {
+  return request({
+    url: '/admin/products',
+    method: 'GET',
+    params
+  })
+}
+
+/**
  * 创建商品
  * @param {Object} data - 商品信息
  */
