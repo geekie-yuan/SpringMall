@@ -4,8 +4,11 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
 import lombok.RequiredArgsConstructor;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import site.geekie.shop.shoppingmall.common.PageResult;
 import site.geekie.shop.shoppingmall.common.Result;
 import site.geekie.shop.shoppingmall.dto.request.ProductRequest;
 import site.geekie.shop.shoppingmall.dto.response.ProductResponse;
@@ -24,6 +27,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/products")
 @RequiredArgsConstructor
+@Validated
 public class ProductController {
 
     private final ProductService productService;
@@ -36,9 +40,10 @@ public class ProductController {
      */
     @Operation(summary = "获取所有商品")
     @GetMapping
-    public Result<List<ProductResponse>> getAllProducts() {
-        List<ProductResponse> products = productService.getAllProducts();
-        return Result.success(products);
+    public Result<PageResult<ProductResponse>> getAllProducts(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") @Max(100) int size) {
+        return Result.success(productService.getAllProducts(page, size, null, null, null));
     }
 
     /**
@@ -64,9 +69,11 @@ public class ProductController {
      */
     @Operation(summary = "搜索商品")
     @GetMapping("/search")
-    public Result<List<ProductResponse>> searchProducts(@RequestParam String keyword) {
-        List<ProductResponse> products = productService.searchProducts(keyword);
-        return Result.success(products);
+    public Result<PageResult<ProductResponse>> searchProducts(
+            @RequestParam String keyword,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") @Max(100) int size) {
+        return Result.success(productService.searchProducts(keyword, page, size));
     }
 
     /**

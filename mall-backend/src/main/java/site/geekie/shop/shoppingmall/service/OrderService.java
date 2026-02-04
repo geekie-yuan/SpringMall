@@ -1,5 +1,6 @@
 package site.geekie.shop.shoppingmall.service;
 
+import site.geekie.shop.shoppingmall.common.PageResult;
 import site.geekie.shop.shoppingmall.dto.request.OrderRequest;
 import site.geekie.shop.shoppingmall.dto.response.OrderResponse;
 
@@ -72,15 +73,17 @@ public interface OrderService {
      *
      * @return 所有订单列表
      */
-    List<OrderResponse> getAllOrders();
+    PageResult<OrderResponse> getAllOrders(int page, int size);
 
     /**
      * 根据状态获取所有订单（管理员）
      *
      * @param status 订单状态
-     * @return 订单列表
+     * @param page 页码
+     * @param size 每页大小
+     * @return 分页订单列表
      */
-    List<OrderResponse> getAllOrdersByStatus(String status);
+    PageResult<OrderResponse> getAllOrdersByStatus(String status, int page, int size);
 
     /**
      * 获取订单详情（管理员）

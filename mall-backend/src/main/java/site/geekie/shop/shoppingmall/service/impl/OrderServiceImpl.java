@@ -1,9 +1,12 @@
 package site.geekie.shop.shoppingmall.service.impl;
 
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import site.geekie.shop.shoppingmall.common.PageResult;
 import site.geekie.shop.shoppingmall.common.OrderStatus;
 import site.geekie.shop.shoppingmall.common.ResultCode;
 import site.geekie.shop.shoppingmall.dto.request.OrderRequest;
@@ -46,7 +49,7 @@ public class OrderServiceImpl implements OrderService {
     /**
      * 构建订单响应对象
      */
-    private OrderResponse buildOrderResponse(Order order) {
+    private OrderResponse buildOrderResponse(Order order, boolean includeItems) {
         OrderResponse response = new OrderResponse();
         response.setId(order.getId());
         response.setOrderNo(order.getOrderNo());
@@ -74,20 +77,21 @@ public class OrderServiceImpl implements OrderService {
         response.setCreatedAt(order.getCreatedAt());
         response.setUpdatedAt(order.getUpdatedAt());
 
-        // 查询订单明细
-        List<OrderItem> items = orderItemMapper.findByOrderId(order.getId());
-        List<OrderItemResponse> itemResponses = items.stream()
-                .map(item -> new OrderItemResponse(
-                        item.getId(),
-                        item.getProductId(),
-                        item.getProductName(),
-                        item.getProductImage(),
-                        item.getUnitPrice(),
-                        item.getQuantity(),
-                        item.getTotalPrice()
-                ))
-                .collect(Collectors.toList());
-        response.setItems(itemResponses);
+        if (includeItems) {
+            List<OrderItem> items = orderItemMapper.findByOrderId(order.getId());
+            List<OrderItemResponse> itemResponses = items.stream()
+                    .map(item -> new OrderItemResponse(
+                            item.getId(),
+                            item.getProductId(),
+                            item.getProductName(),
+                            item.getProductImage(),
+                            item.getUnitPrice(),
+                            item.getQuantity(),
+                            item.getTotalPrice()
+                    ))
+                    .collect(Collectors.toList());
+            response.setItems(itemResponses);
+        }
 
         return response;
     }
@@ -184,7 +188,7 @@ public class OrderServiceImpl implements OrderService {
         cartItemMapper.deleteByIds(cartItemIds);
 
         // 9. 返回订单信息
-        return buildOrderResponse(order);
+        return buildOrderResponse(order, true);
     }
 
     @Override
@@ -193,7 +197,7 @@ public class OrderServiceImpl implements OrderService {
         List<Order> orders = orderMapper.findByUserId(userId);
 
         return orders.stream()
-                .map(this::buildOrderResponse)
+                .map(o -> buildOrderResponse(o, true))
                 .collect(Collectors.toList());
     }
 
@@ -210,7 +214,7 @@ public class OrderServiceImpl implements OrderService {
         List<Order> orders = orderMapper.findByUserIdAndStatus(userId, status);
 
         return orders.stream()
-                .map(this::buildOrderResponse)
+                .map(o -> buildOrderResponse(o, true))
                 .collect(Collectors.toList());
     }
 
@@ -227,7 +231,7 @@ public class OrderServiceImpl implements OrderService {
             throw new BusinessException(ResultCode.FORBIDDEN);
         }
 
-        return buildOrderResponse(order);
+        return buildOrderResponse(order, true);
     }
 
     @Override
@@ -287,15 +291,18 @@ public class OrderServiceImpl implements OrderService {
     // ===== 管理员方法实现 =====
 
     @Override
-    public List<OrderResponse> getAllOrders() {
+    public PageResult<OrderResponse> getAllOrders(int page, int size) {
+        PageHelper.startPage(page, size);
         List<Order> orders = orderMapper.findAll();
-        return orders.stream()
-                .map(this::buildOrderResponse)
+        PageInfo<Order> pageInfo = new PageInfo<>(orders);
+        List<OrderResponse> list = orders.stream()
+                .map(o -> buildOrderResponse(o, false))
                 .collect(Collectors.toList());
+        return new PageResult<>(list, pageInfo.getTotal(), page, size);
     }
 
     @Override
-    public List<OrderResponse> getAllOrdersByStatus(String status) {
+    public PageResult<OrderResponse> getAllOrdersByStatus(String status, int page, int size) {
         // 验证状态是否合法
         try {
             OrderStatus.fromCode(status);
@@ -303,10 +310,13 @@ public class OrderServiceImpl implements OrderService {
             throw new BusinessException(ResultCode.INVALID_ORDER_STATUS);
         }
 
+        PageHelper.startPage(page, size);
         List<Order> orders = orderMapper.findAllByStatus(status);
-        return orders.stream()
-                .map(this::buildOrderResponse)
+        PageInfo<Order> pageInfo = new PageInfo<>(orders);
+        List<OrderResponse> list = orders.stream()
+                .map(o -> buildOrderResponse(o, false))
                 .collect(Collectors.toList());
+        return new PageResult<>(list, pageInfo.getTotal(), page, size);
     }
 
     @Override
@@ -317,7 +327,7 @@ public class OrderServiceImpl implements OrderService {
         }
 
         // 管理员查看订单详情不需要验证所有权
-        return buildOrderResponse(order);
+        return buildOrderResponse(order, true);
     }
 
     @Override

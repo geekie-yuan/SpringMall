@@ -30,6 +30,19 @@ public interface ProductMapper {
     List<Product> findAll();
 
     /**
+     * 带过滤条件查询所有商品
+     * keyword/categoryId/status 均为 null 时等价于 findAll
+     *
+     * @param keyword 搜索关键词（匹配商品名称或副标题）
+     * @param categoryId 分类ID
+     * @param status 状态（0-下架，1-上架）
+     * @return 商品列表
+     */
+    List<Product> findAllWithFilter(@Param("keyword") String keyword,
+                                     @Param("categoryId") Long categoryId,
+                                     @Param("status") Integer status);
+
+    /**
      * 根据分类ID查询商品列表
      * 按创建时间倒序排列
      *

@@ -1,10 +1,13 @@
 package site.geekie.shop.shoppingmall.service.impl;
 
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import site.geekie.shop.shoppingmall.common.PageResult;
 import site.geekie.shop.shoppingmall.common.ResultCode;
 import site.geekie.shop.shoppingmall.dto.request.UpdatePasswordRequest;
 import site.geekie.shop.shoppingmall.dto.response.UserResponse;
@@ -150,11 +153,14 @@ public class UserServiceImpl implements UserService {
      * @return 用户列表
      */
     @Override
-    public java.util.List<UserResponse> getAllUsers() {
-        java.util.List<User> users = userMapper.findAll();
-        return users.stream()
+    public PageResult<UserResponse> getAllUsers(int page, int size, String keyword, String role, Integer status) {
+        PageHelper.startPage(page, size);
+        java.util.List<User> users = userMapper.findAllWithFilter(keyword, role, status);
+        PageInfo<User> pageInfo = new PageInfo<>(users);
+        java.util.List<UserResponse> list = users.stream()
                 .map(this::convertToUserResponse)
                 .collect(java.util.stream.Collectors.toList());
+        return new PageResult<>(list, pageInfo.getTotal(), page, size);
     }
 
     /**

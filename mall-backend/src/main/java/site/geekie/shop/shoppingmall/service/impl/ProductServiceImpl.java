@@ -1,8 +1,11 @@
 package site.geekie.shop.shoppingmall.service.impl;
 
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import site.geekie.shop.shoppingmall.common.PageResult;
 import site.geekie.shop.shoppingmall.common.ResultCode;
 import site.geekie.shop.shoppingmall.dto.request.ProductRequest;
 import site.geekie.shop.shoppingmall.dto.response.ProductResponse;
@@ -13,7 +16,9 @@ import site.geekie.shop.shoppingmall.mapper.CategoryMapper;
 import site.geekie.shop.shoppingmall.mapper.ProductMapper;
 import site.geekie.shop.shoppingmall.service.ProductService;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -28,11 +33,12 @@ public class ProductServiceImpl implements ProductService {
     private final CategoryMapper categoryMapper;
 
     @Override
-    public List<ProductResponse> getAllProducts() {
-        List<Product> products = productMapper.findAll();
-        return products.stream()
-                .map(this::convertToResponse)
-                .collect(Collectors.toList());
+    public PageResult<ProductResponse> getAllProducts(int page, int size, String keyword, Long categoryId, Integer status) {
+        PageHelper.startPage(page, size);
+        List<Product> products = productMapper.findAllWithFilter(keyword, categoryId, status);
+        PageInfo<Product> pageInfo = new PageInfo<>(products);
+        List<ProductResponse> list = convertListToResponses(products);
+        return new PageResult<>(list, pageInfo.getTotal(), page, size);
     }
 
     @Override
@@ -52,11 +58,12 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    public List<ProductResponse> searchProducts(String keyword) {
+    public PageResult<ProductResponse> searchProducts(String keyword, int page, int size) {
+        PageHelper.startPage(page, size);
         List<Product> products = productMapper.searchByKeyword(keyword);
-        return products.stream()
-                .map(this::convertToResponse)
-                .collect(Collectors.toList());
+        PageInfo<Product> pageInfo = new PageInfo<>(products);
+        List<ProductResponse> list = convertListToResponses(products);
+        return new PageResult<>(list, pageInfo.getTotal(), page, size);
     }
 
     @Override
@@ -167,6 +174,44 @@ public class ProductServiceImpl implements ProductService {
 
         // 2. 增加库存
         productMapper.increaseStock(id, quantity);
+    }
+
+    /**
+     * 批量将实体转换为响应DTO，对分类使用 IN 查询避免 N+1
+     */
+    private List<ProductResponse> convertListToResponses(List<Product> products) {
+        List<Long> categoryIds = products.stream()
+                .map(Product::getCategoryId)
+                .filter(id -> id != null)
+                .distinct()
+                .collect(Collectors.toList());
+        Map<Long, Category> categoryMap = categoryIds.isEmpty()
+                ? Collections.emptyMap()
+                : categoryMapper.findByIds(categoryIds).stream()
+                        .collect(Collectors.toMap(Category::getId, c -> c));
+
+        return products.stream()
+                .map(product -> {
+                    ProductResponse response = new ProductResponse(
+                            product.getId(),
+                            product.getCategoryId(),
+                            product.getName(),
+                            product.getSubtitle(),
+                            product.getMainImage(),
+                            product.getImages(),
+                            product.getDetail(),
+                            product.getPrice(),
+                            product.getStock(),
+                            product.getStatus(),
+                            product.getCreatedAt()
+                    );
+                    Category category = categoryMap.get(product.getCategoryId());
+                    if (category != null) {
+                        response.setCategoryName(category.getName());
+                    }
+                    return response;
+                })
+                .collect(Collectors.toList());
     }
 
     /**

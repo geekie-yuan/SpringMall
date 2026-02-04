@@ -100,6 +100,19 @@ public interface UserMapper {
     java.util.List<User> findAll();
 
     /**
+     * 带过滤条件查询所有用户（管理员）
+     * keyword/role/status 均为 null 时等价于 findAll
+     *
+     * @param keyword 搜索关键词（匹配用户名或邮箱）
+     * @param role 用户角色（USER/ADMIN）
+     * @param status 用户状态（1-正常，0-禁用）
+     * @return 用户列表
+     */
+    java.util.List<User> findAllWithFilter(@Param("keyword") String keyword,
+                                            @Param("role") String role,
+                                            @Param("status") Integer status);
+
+    /**
      * 更新用户角色（管理员）
      *
      * @param id 用户ID

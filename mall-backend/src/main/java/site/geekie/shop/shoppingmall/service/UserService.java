@@ -1,5 +1,6 @@
 package site.geekie.shop.shoppingmall.service;
 
+import site.geekie.shop.shoppingmall.common.PageResult;
 import site.geekie.shop.shoppingmall.dto.request.UpdatePasswordRequest;
 import site.geekie.shop.shoppingmall.dto.response.UserResponse;
 import site.geekie.shop.shoppingmall.entity.User;
@@ -63,7 +64,7 @@ public interface UserService {
      *
      * @return 用户列表
      */
-    java.util.List<UserResponse> getAllUsers();
+    PageResult<UserResponse> getAllUsers(int page, int size, String keyword, String role, Integer status);
 
     /**
      * 更新用户状态（管理员）

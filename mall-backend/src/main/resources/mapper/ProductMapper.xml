@@ -38,6 +38,25 @@
         ORDER BY created_at DESC
     </select>
 
+    <!-- 带过滤条件查询所有商品 -->
+    <select id="findAllWithFilter" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM product
+        <where>
+            <if test="keyword != null and keyword != ''">
+                AND (name LIKE CONCAT('%', #{keyword}, '%')
+                    OR subtitle LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+            <if test="categoryId != null">
+                AND category_id = #{categoryId}
+            </if>
+            <if test="status != null">
+                AND status = #{status}
+            </if>
+        </where>
+        ORDER BY created_at DESC
+    </select>
+
     <!-- 根据分类ID查询商品 -->
     <select id="findByCategoryId" resultMap="BaseResultMap">
         SELECT <include refid="Base_Column_List"/>

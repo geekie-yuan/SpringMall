@@ -131,6 +131,26 @@
         ORDER BY created_at DESC
     </select>
 
+    <!-- 带过滤条件查询所有用户（管理员） -->
+    <select id="findAllWithFilter" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM user
+        <where>
+            <if test="keyword != null and keyword != ''">
+                AND (username LIKE CONCAT('%', #{keyword}, '%')
+                    OR email LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+            <if test="role != null and role != ''">
+                AND role = #{role}
+            </if>
+            <if test="status != null">
+                AND status = #{status}
+            </if>
+        </where>
+        ORDER BY created_at DESC
+    </select>
+
     <!-- 更新用户角色（管理员）
          参数：id - 用户ID, role - 用户角色（USER/ADMIN）
          返回：影响的行数 -->

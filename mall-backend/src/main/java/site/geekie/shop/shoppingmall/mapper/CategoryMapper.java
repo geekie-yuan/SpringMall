@@ -82,6 +82,14 @@ public interface CategoryMapper {
     int deleteById(@Param("id") Long id);
 
     /**
+     * 根据ID列表批量查询分类
+     *
+     * @param ids 分类ID列表
+     * @return 分类列表
+     */
+    List<Category> findByIds(@Param("ids") List<Long> ids);
+
+    /**
      * 统计指定父分类下的子分类数量
      *
      * @param parentId 父分类ID

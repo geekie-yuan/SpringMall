@@ -1,5 +1,6 @@
 package site.geekie.shop.shoppingmall.service;
 
+import site.geekie.shop.shoppingmall.common.PageResult;
 import site.geekie.shop.shoppingmall.dto.request.ProductRequest;
 import site.geekie.shop.shoppingmall.dto.response.ProductResponse;
 
@@ -17,7 +18,7 @@ public interface ProductService {
      *
      * @return 所有商品列表
      */
-    List<ProductResponse> getAllProducts();
+    PageResult<ProductResponse> getAllProducts(int page, int size, String keyword, Long categoryId, Integer status);
 
     /**
      * 根据分类ID获取商品列表
@@ -42,7 +43,7 @@ public interface ProductService {
      * @param keyword 搜索关键词
      * @return 商品列表
      */
-    List<ProductResponse> searchProducts(String keyword);
+    PageResult<ProductResponse> searchProducts(String keyword, int page, int size);
 
     /**
      * 根据ID获取商品详情
