@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="site.geekie.shop.shoppingmall.mapper.AuditLogMapper">
+
+    <!-- 基础结果映射 -->
+    <resultMap id="BaseResultMap" type="site.geekie.shop.shoppingmall.entity.AuditLogDO">
+        <id property="id" column="id"/>
+        <result property="userId" column="user_id"/>
+        <result property="username" column="username"/>
+        <result property="operation" column="operation"/>
+        <result property="type" column="type"/>
+        <result property="method" column="method"/>
+        <result property="params" column="params"/>
+        <result property="result" column="result"/>
+        <result property="errorMsg" column="error_msg"/>
+        <result property="duration" column="duration"/>
+        <result property="ip" column="ip"/>
+        <result property="userAgent" column="user_agent"/>
+        <result property="createdAt" column="created_at"/>
+    </resultMap>
+
+    <!-- 基础列清单 -->
+    <sql id="Base_Column_List">
+        id, user_id, username, operation, type, method, params,
+        result, error_msg, duration, ip, user_agent, created_at
+    </sql>
+
+    <!-- 插入审计日志 -->
+    <insert id="insert" parameterType="site.geekie.shop.shoppingmall.entity.AuditLogDO"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO mall_audit_log (
+            user_id, username, operation, type, method, params,
+            result, error_msg, duration, ip, user_agent
+        ) VALUES (
+            #{userId}, #{username}, #{operation}, #{type}, #{method}, #{params},
+            #{result}, #{errorMsg}, #{duration}, #{ip}, #{userAgent}
+        )
+    </insert>
+
+    <!-- 根据ID查询 -->
+    <select id="findById" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM mall_audit_log
+        WHERE id = #{id}
+    </select>
+
+    <!-- 根据用户ID查询 -->
+    <select id="findByUserId" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM mall_audit_log
+        WHERE user_id = #{userId}
+        ORDER BY created_at DESC
+    </select>
+
+    <!-- 根据操作类型查询 -->
+    <select id="findByType" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM mall_audit_log
+        WHERE type = #{type}
+        ORDER BY created_at DESC
+    </select>
+
+    <!-- 根据日期范围查询 -->
+    <select id="findByDateRange" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM mall_audit_log
+        WHERE created_at BETWEEN #{startDate} AND #{endDate}
+        ORDER BY created_at DESC
+    </select>
+
+    <!-- 查询总数 -->
+    <select id="countAll" resultType="long">
+        SELECT COUNT(*) FROM mall_audit_log
+    </select>
+
+</mapper>
