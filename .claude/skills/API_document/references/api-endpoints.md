@@ -35,8 +35,8 @@ POST /api/v1/auth/login
 **请求体**:
 ```json
 {
-  "password": "string",
-  "username": "string"
+  "username": "string",
+  "password": "string"
 }
 ```
 **响应**:

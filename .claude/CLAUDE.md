@@ -122,6 +122,13 @@ docker compose logs -f frontend     # 追踪前端日志
 - **Swagger**：Controller 类标 `@Tag`。每个方法标 `@Operation`。需要认证的方法标 `@SecurityRequirement(name = "Bearer Authentication")`。
 - **校验**：`@RequestBody` 参数标 `@Valid`。约束注解写在 DTO 字段上。
 - **事务**：执行多次写操作的 Service 方法标 `@Transactional`。
+- **分层领域模型规约**（阿里标准）：
+  - **DO（Data Object）**：`entity/` 包，类名以 `DO` 结尾（如 `UserDO`）。与数据库表结构一一对应，通过 Mapper 层向上传输数据源对象。
+  - **DTO（Data Transfer Object）**：`dto/request/` 和 `vo/` 包。Service 或 Controller 向外传输的对象。请求入参以 `Request` 结尾，响应出参以 `VO` 结尾。
+  - **BO（Business Object）**：`dto/bo/` 包（按需创建）。由 Service 层输出的封装业务逻辑的对象。
+  - **VO（View Object）**：`vo/` 包，类名以 `VO` 结尾（如 `UserVO`）。显示层对象，Controller 返回给前端的数据对象。
+  - **Query**：`dto/query/` 包（按需创建）。数据查询对象，各层接收上层的查询请求。**超过 2 个参数的查询必须封装为 Query 对象，禁止使用 Map 传输查询参数**。
+  - **分层转换原则**：DO 仅在 Service 层及以下使用。Controller **不要**直接返回 DO，必须转换为 VO。
 
 ### Vue（前端）
 - **组件**：使用 `<script setup>`（Composition API）。从 `'vue'` 中导入 `ref`、`onMounted` 等。
