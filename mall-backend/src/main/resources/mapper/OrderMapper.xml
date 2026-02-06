@@ -4,7 +4,7 @@
 <mapper namespace="site.geekie.shop.shoppingmall.mapper.OrderMapper">
 
     <!-- 结果映射 -->
-    <resultMap id="BaseResultMap" type="site.geekie.shop.shoppingmall.entity.Order">
+    <resultMap id="BaseResultMap" type="site.geekie.shop.shoppingmall.entity.OrderDO">
         <id column="id" property="id"/>
         <result column="order_no" property="orderNo"/>
         <result column="user_id" property="userId"/>
@@ -34,14 +34,14 @@
     <!-- 根据订单号查询订单 -->
     <select id="findByOrderNo" resultMap="BaseResultMap">
         SELECT <include refid="Base_Column_List"/>
-        FROM `order`
+        FROM mall_order
         WHERE order_no = #{orderNo}
     </select>
 
     <!-- 根据用户ID查询所有订单 -->
     <select id="findByUserId" resultMap="BaseResultMap">
         SELECT <include refid="Base_Column_List"/>
-        FROM `order`
+        FROM mall_order
         WHERE user_id = #{userId}
         ORDER BY created_at DESC
     </select>
@@ -49,7 +49,7 @@
     <!-- 根据用户ID和状态查询订单 -->
     <select id="findByUserIdAndStatus" resultMap="BaseResultMap">
         SELECT <include refid="Base_Column_List"/>
-        FROM `order`
+        FROM mall_order
         WHERE user_id = #{userId} AND status = #{status}
         ORDER BY created_at DESC
     </select>
@@ -57,21 +57,21 @@
     <!-- 查询所有订单 -->
     <select id="findAll" resultMap="BaseResultMap">
         SELECT <include refid="Base_Column_List"/>
-        FROM `order`
+        FROM mall_order
         ORDER BY created_at DESC
     </select>
 
     <!-- 根据状态查询所有订单 -->
     <select id="findAllByStatus" resultMap="BaseResultMap">
         SELECT <include refid="Base_Column_List"/>
-        FROM `order`
+        FROM mall_order
         WHERE status = #{status}
         ORDER BY created_at DESC
     </select>
 
     <!-- 插入订单 -->
     <insert id="insert" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO `order` (
+        INSERT INTO mall_order (
             order_no, user_id, total_amount, pay_amount, freight, status,
             receiver_name, receiver_phone, receiver_address, remark
         ) VALUES (
@@ -82,7 +82,7 @@
 
     <!-- 更新订单状态 -->
     <update id="updateStatus">
-        UPDATE `order`
+        UPDATE mall_order
         SET status = #{status},
             updated_at = CURRENT_TIMESTAMP
         WHERE order_no = #{orderNo}
@@ -90,7 +90,7 @@
 
     <!-- 更新支付时间 -->
     <update id="updatePaymentTime">
-        UPDATE `order`
+        UPDATE mall_order
         SET payment_time = CURRENT_TIMESTAMP,
             updated_at = CURRENT_TIMESTAMP
         WHERE order_no = #{orderNo}
@@ -98,7 +98,7 @@
 
     <!-- 更新发货时间 -->
     <update id="updateShipTime">
-        UPDATE `order`
+        UPDATE mall_order
         SET ship_time = CURRENT_TIMESTAMP,
             updated_at = CURRENT_TIMESTAMP
         WHERE order_no = #{orderNo}
@@ -106,7 +106,7 @@
 
     <!-- 更新完成时间 -->
     <update id="updateCompleteTime">
-        UPDATE `order`
+        UPDATE mall_order
         SET complete_time = CURRENT_TIMESTAMP,
             updated_at = CURRENT_TIMESTAMP
         WHERE order_no = #{orderNo}
@@ -114,12 +114,12 @@
 
     <!-- 统计用户订单数 -->
     <select id="countByUserId" resultType="int">
-        SELECT COUNT(*) FROM `order` WHERE user_id = #{userId}
+        SELECT COUNT(*) FROM mall_order WHERE user_id = #{userId}
     </select>
 
     <!-- 统计所有订单数 -->
     <select id="countAll" resultType="int">
-        SELECT COUNT(*) FROM `order`
+        SELECT COUNT(*) FROM mall_order
     </select>
 
 </mapper>

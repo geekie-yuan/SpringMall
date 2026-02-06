@@ -2,7 +2,7 @@ package site.geekie.shop.shoppingmall.mapper;
 
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
-import site.geekie.shop.shoppingmall.entity.Order;
+import site.geekie.shop.shoppingmall.entity.OrderDO;
 
 import java.util.List;
 
@@ -19,7 +19,7 @@ public interface OrderMapper {
      * @param orderNo 订单号
      * @return 订单信息，不存在返回null
      */
-    Order findByOrderNo(@Param("orderNo") String orderNo);
+    OrderDO findByOrderNo(@Param("orderNo") String orderNo);
 
     /**
      * 根据用户ID查询所有订单
@@ -28,7 +28,7 @@ public interface OrderMapper {
      * @param userId 用户ID
      * @return 订单列表
      */
-    List<Order> findByUserId(@Param("userId") Long userId);
+    List<OrderDO> findByUserId(@Param("userId") Long userId);
 
     /**
      * 根据用户ID和订单状态查询订单
@@ -37,7 +37,7 @@ public interface OrderMapper {
      * @param status 订单状态
      * @return 订单列表
      */
-    List<Order> findByUserIdAndStatus(@Param("userId") Long userId, @Param("status") String status);
+    List<OrderDO> findByUserIdAndStatus(@Param("userId") Long userId, @Param("status") String status);
 
     /**
      * 查询所有订单（管理员用）
@@ -45,7 +45,7 @@ public interface OrderMapper {
      *
      * @return 订单列表
      */
-    List<Order> findAll();
+    List<OrderDO> findAll();
 
     /**
      * 根据订单状态查询所有订单（管理员用）
@@ -54,7 +54,7 @@ public interface OrderMapper {
      * @param status 订单状态
      * @return 订单列表
      */
-    List<Order> findAllByStatus(@Param("status") String status);
+    List<OrderDO> findAllByStatus(@Param("status") String status);
 
     /**
      * 插入订单
@@ -62,7 +62,7 @@ public interface OrderMapper {
      * @param order 订单信息
      * @return 影响行数
      */
-    int insert(Order order);
+    int insert(OrderDO order);
 
     /**
      * 更新订单状态

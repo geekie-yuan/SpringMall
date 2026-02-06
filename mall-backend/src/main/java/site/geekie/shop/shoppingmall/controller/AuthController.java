@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.*;
 import site.geekie.shop.shoppingmall.common.Result;
 import site.geekie.shop.shoppingmall.dto.request.LoginRequest;
 import site.geekie.shop.shoppingmall.dto.request.RegisterRequest;
-import site.geekie.shop.shoppingmall.dto.response.LoginResponse;
+import site.geekie.shop.shoppingmall.vo.LoginVO;
 import site.geekie.shop.shoppingmall.service.AuthService;
 
 /**
@@ -71,8 +71,8 @@ public class AuthController {
      */
     @Operation(summary = "用户登录")
     @PostMapping("/login")
-    public Result<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
-        LoginResponse response = authService.login(request);
+    public Result<LoginVO> login(@Valid @RequestBody LoginRequest request) {
+        LoginVO response = authService.login(request);
         return Result.success(response);
     }
 
@@ -91,7 +91,7 @@ public class AuthController {
     @Operation(summary = "用户登出")
     @PostMapping("/logout")
     public Result<Void> logout() {
-        // JWT是无状态的，登出由客户端处理（删除token）
+        // 删除token
         return Result.success("登出成功", null);
     }
 }

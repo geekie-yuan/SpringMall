@@ -1,12 +1,14 @@
 package site.geekie.shop.shoppingmall.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import site.geekie.shop.shoppingmall.common.Result;
 import site.geekie.shop.shoppingmall.dto.request.CartItemRequest;
-import site.geekie.shop.shoppingmall.dto.response.CartItemResponse;
+import site.geekie.shop.shoppingmall.vo.CartItemVO;
 import site.geekie.shop.shoppingmall.service.CartService;
 
 import java.math.BigDecimal;
@@ -19,6 +21,7 @@ import java.util.List;
  * 基础路径：/api/v1/cart
  * 所有接口都需要USER角色权限
  */
+@Tag(name="Cart", description="购物车接口")
 @RestController
 @RequestMapping("/api/v1/cart")
 @RequiredArgsConstructor
@@ -33,9 +36,10 @@ public class CartController {
      *
      * @return 购物车项列表
      */
+    @Operation(summary = "获取购物车列表")
     @GetMapping
-    public Result<List<CartItemResponse>> getCartItems() {
-        List<CartItemResponse> cartItems = cartService.getCartItems();
+    public Result<List<CartItemVO>> getCartItems() {
+        List<CartItemVO> cartItems = cartService.getCartItems();
         return Result.success(cartItems);
     }
 
@@ -46,9 +50,10 @@ public class CartController {
      * @param request 购物车请求（商品ID和数量）
      * @return 购物车项信息
      */
+    @Operation(summary = "添加商品到购物车")
     @PostMapping
-    public Result<CartItemResponse> addToCart(@Valid @RequestBody CartItemRequest request) {
-        CartItemResponse cartItem = cartService.addToCart(request);
+    public Result<CartItemVO> addToCart(@Valid @RequestBody CartItemRequest request) {
+        CartItemVO cartItem = cartService.addToCart(request);
         return Result.success(cartItem);
     }
 
@@ -60,11 +65,12 @@ public class CartController {
      * @param quantity 新数量
      * @return 更新后的购物车项
      */
+    @Operation(summary = "更新购物车项数量")
     @PutMapping("/{id}/quantity")
-    public Result<CartItemResponse> updateQuantity(
+    public Result<CartItemVO> updateQuantity(
             @PathVariable Long id,
             @RequestParam Integer quantity) {
-        CartItemResponse cartItem = cartService.updateQuantity(id, quantity);
+        CartItemVO cartItem = cartService.updateQuantity(id, quantity);
         return Result.success(cartItem);
     }
 
@@ -76,6 +82,7 @@ public class CartController {
      * @param checked 选中状态（0-未选中，1-已选中）
      * @return 操作结果
      */
+    @Operation(summary = "更新购物车项选中状态")
     @PutMapping("/{id}/checked")
     public Result<Void> updateChecked(
             @PathVariable Long id,
@@ -91,6 +98,7 @@ public class CartController {
      * @param checked 选中状态（0-未选中，1-已选中）
      * @return 操作结果
      */
+    @Operation(summary = "批量更新购物车选中状态（全选/取消全选）")
     @PutMapping("/checked")
     public Result<Void> updateAllChecked(@RequestParam Integer checked) {
         cartService.updateAllChecked(checked);
@@ -104,6 +112,7 @@ public class CartController {
      * @param id 购物车项ID
      * @return 操作结果
      */
+    @Operation(summary = "删除购物车项")
     @DeleteMapping("/{id}")
     public Result<Void> deleteCartItem(@PathVariable Long id) {
         cartService.deleteCartItem(id);
@@ -117,6 +126,7 @@ public class CartController {
      * @param ids 购物车项ID列表
      * @return 操作结果
      */
+    @Operation(summary = "批量删除购物车项")
     @DeleteMapping("/batch")
     public Result<Void> deleteCartItems(@RequestParam List<Long> ids) {
         cartService.deleteCartItems(ids);
@@ -129,6 +139,7 @@ public class CartController {
      *
      * @return 操作结果
      */
+    @Operation(summary = "清空购物车")
     @DeleteMapping
     public Result<Void> clearCart() {
         cartService.clearCart();
@@ -141,6 +152,7 @@ public class CartController {
      *
      * @return 总价
      */
+    @Operation(summary = "获取已选中商品的总价")
     @GetMapping("/total")
     public Result<BigDecimal> getCartTotal() {
         BigDecimal total = cartService.getCartTotal();
@@ -153,6 +165,7 @@ public class CartController {
      *
      * @return 商品种类数
      */
+    @Operation(summary = "获取购物车商品种类数")
     @GetMapping("/count")
     public Result<Integer> getCartCount() {
         int count = cartService.getCartCount();

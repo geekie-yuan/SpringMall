@@ -33,7 +33,7 @@ public class JwtTokenProvider {
     @Value("${jwt.secret}")
     private String secret;
 
-    // Token过期时间（毫秒，从配置文件读取）
+    // Token过期时间
     @Value("${jwt.expiration}")
     private Long expiration;
 

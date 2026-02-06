@@ -2,7 +2,7 @@ package site.geekie.shop.shoppingmall.service;
 
 import site.geekie.shop.shoppingmall.common.PageResult;
 import site.geekie.shop.shoppingmall.dto.request.OrderRequest;
-import site.geekie.shop.shoppingmall.dto.response.OrderResponse;
+import site.geekie.shop.shoppingmall.vo.OrderVO;
 
 import java.util.List;
 
@@ -24,14 +24,14 @@ public interface OrderService {
      * @param request 订单请求（包含收货地址ID和备注）
      * @return 订单响应
      */
-    OrderResponse createOrder(OrderRequest request);
+    OrderVO createOrder(OrderRequest request);
 
     /**
      * 获取当前用户的所有订单
      *
      * @return 订单列表
      */
-    List<OrderResponse> getMyOrders();
+    List<OrderVO> getMyOrders();
 
     /**
      * 根据状态获取当前用户的订单
@@ -39,7 +39,7 @@ public interface OrderService {
      * @param status 订单状态
      * @return 订单列表
      */
-    List<OrderResponse> getMyOrdersByStatus(String status);
+    List<OrderVO> getMyOrdersByStatus(String status);
 
     /**
      * 获取订单详情
@@ -47,7 +47,7 @@ public interface OrderService {
      * @param orderNo 订单号
      * @return 订单详情
      */
-    OrderResponse getOrderDetail(String orderNo);
+    OrderVO getOrderDetail(String orderNo);
 
     /**
      * 取消订单
@@ -73,7 +73,7 @@ public interface OrderService {
      *
      * @return 所有订单列表
      */
-    PageResult<OrderResponse> getAllOrders(int page, int size);
+    PageResult<OrderVO> getAllOrders(int page, int size);
 
     /**
      * 根据状态获取所有订单（管理员）
@@ -83,7 +83,7 @@ public interface OrderService {
      * @param size 每页大小
      * @return 分页订单列表
      */
-    PageResult<OrderResponse> getAllOrdersByStatus(String status, int page, int size);
+    PageResult<OrderVO> getAllOrdersByStatus(String status, int page, int size);
 
     /**
      * 获取订单详情（管理员）
@@ -92,7 +92,7 @@ public interface OrderService {
      * @param orderNo 订单号
      * @return 订单详情
      */
-    OrderResponse getOrderDetailAdmin(String orderNo);
+    OrderVO getOrderDetailAdmin(String orderNo);
 
     /**
      * 发货（管理员）

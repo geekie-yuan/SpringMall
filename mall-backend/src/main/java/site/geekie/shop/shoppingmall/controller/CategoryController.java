@@ -8,7 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import site.geekie.shop.shoppingmall.common.Result;
 import site.geekie.shop.shoppingmall.dto.request.CategoryRequest;
-import site.geekie.shop.shoppingmall.dto.response.CategoryResponse;
+import site.geekie.shop.shoppingmall.vo.CategoryVO;
 import site.geekie.shop.shoppingmall.service.CategoryService;
 
 import java.util.List;
@@ -36,8 +36,8 @@ public class CategoryController {
      */
     @Operation(summary = "获取所有分类")
     @GetMapping
-    public Result<List<CategoryResponse>> getAllCategories() {
-        List<CategoryResponse> categories = categoryService.getAllCategories();
+    public Result<List<CategoryVO>> getAllCategories() {
+        List<CategoryVO> categories = categoryService.getAllCategories();
         return Result.success(categories);
     }
 
@@ -50,8 +50,8 @@ public class CategoryController {
      */
     @Operation(summary = "获取分类树")
     @GetMapping("/tree")
-    public Result<List<CategoryResponse>> getCategoryTree() {
-        List<CategoryResponse> tree = categoryService.getCategoryTree();
+    public Result<List<CategoryVO>> getCategoryTree() {
+        List<CategoryVO> tree = categoryService.getCategoryTree();
         return Result.success(tree);
     }
 
@@ -64,8 +64,8 @@ public class CategoryController {
      */
     @Operation(summary = "获取子分类列表")
     @GetMapping("/parent/{parentId}")
-    public Result<List<CategoryResponse>> getCategoriesByParentId(@PathVariable Long parentId) {
-        List<CategoryResponse> categories = categoryService.getCategoriesByParentId(parentId);
+    public Result<List<CategoryVO>> getCategoriesByParentId(@PathVariable Long parentId) {
+        List<CategoryVO> categories = categoryService.getCategoriesByParentId(parentId);
         return Result.success(categories);
     }
 
@@ -78,8 +78,8 @@ public class CategoryController {
      */
     @Operation(summary = "获取分类详情")
     @GetMapping("/{id}")
-    public Result<CategoryResponse> getCategoryById(@PathVariable Long id) {
-        CategoryResponse category = categoryService.getCategoryById(id);
+    public Result<CategoryVO> getCategoryById(@PathVariable Long id) {
+        CategoryVO category = categoryService.getCategoryById(id);
         return Result.success(category);
     }
 
@@ -93,8 +93,8 @@ public class CategoryController {
     @Operation(summary = "新增分类")
     @SecurityRequirement(name = "Bearer Authentication")
     @PostMapping
-    public Result<CategoryResponse> addCategory(@Valid @RequestBody CategoryRequest request) {
-        CategoryResponse category = categoryService.addCategory(request);
+    public Result<CategoryVO> addCategory(@Valid @RequestBody CategoryRequest request) {
+        CategoryVO category = categoryService.addCategory(request);
         return Result.success("分类添加成功", category);
     }
 
@@ -109,9 +109,9 @@ public class CategoryController {
     @Operation(summary = "修改分类")
     @SecurityRequirement(name = "Bearer Authentication")
     @PutMapping("/{id}")
-    public Result<CategoryResponse> updateCategory(@PathVariable Long id,
+    public Result<CategoryVO> updateCategory(@PathVariable Long id,
                                                     @Valid @RequestBody CategoryRequest request) {
-        CategoryResponse category = categoryService.updateCategory(id, request);
+        CategoryVO category = categoryService.updateCategory(id, request);
         return Result.success("分类修改成功", category);
     }
 

@@ -9,7 +9,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import site.geekie.shop.shoppingmall.common.PageResult;
 import site.geekie.shop.shoppingmall.common.Result;
-import site.geekie.shop.shoppingmall.dto.response.UserResponse;
+import site.geekie.shop.shoppingmall.vo.UserVO;
 import site.geekie.shop.shoppingmall.service.UserService;
 
 /**
@@ -37,7 +37,7 @@ public class AdminUserController {
      */
     @Operation(summary = "获取所有用户（管理员）")
     @GetMapping
-    public Result<PageResult<UserResponse>> getAllUsers(
+    public Result<PageResult<UserVO>> getAllUsers(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") @Max(100) int size,
             @RequestParam(required = false) String keyword,
@@ -55,8 +55,8 @@ public class AdminUserController {
      */
     @Operation(summary = "获取用户详情（管理员）")
     @GetMapping("/{id}")
-    public Result<UserResponse> getUserById(@PathVariable Long id) {
-        UserResponse user = userService.getUserById(id);
+    public Result<UserVO> getUserById(@PathVariable Long id) {
+        UserVO user = userService.getUserById(id);
         return Result.success(user);
     }
 

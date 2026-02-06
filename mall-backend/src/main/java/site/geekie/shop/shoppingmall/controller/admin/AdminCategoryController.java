@@ -1,12 +1,14 @@
 package site.geekie.shop.shoppingmall.controller.admin;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import site.geekie.shop.shoppingmall.common.Result;
 import site.geekie.shop.shoppingmall.dto.request.CategoryRequest;
-import site.geekie.shop.shoppingmall.dto.response.CategoryResponse;
+import site.geekie.shop.shoppingmall.vo.CategoryVO;
 import site.geekie.shop.shoppingmall.service.CategoryService;
 
 import java.util.List;
@@ -18,6 +20,7 @@ import java.util.List;
  * 基础路径：/api/v1/admin/categories
  * 所有接口都需要ADMIN角色权限
  */
+@Tag(name = "AdminCategory", description = "管理员分类管理接口")
 @RestController
 @RequestMapping("/api/v1/admin/categories")
 @RequiredArgsConstructor
@@ -32,9 +35,10 @@ public class AdminCategoryController {
      *
      * @return 分类列表
      */
+    @Operation(summary = "获取所有分类（管理员）")
     @GetMapping
-    public Result<List<CategoryResponse>> getAllCategories() {
-        List<CategoryResponse> categories = categoryService.getAllCategories();
+    public Result<List<CategoryVO>> getAllCategories() {
+        List<CategoryVO> categories = categoryService.getAllCategories();
         return Result.success(categories);
     }
 
@@ -45,9 +49,10 @@ public class AdminCategoryController {
      * @param id 分类ID
      * @return 分类详情
      */
+    @Operation(summary = "获取分类详情（管理员）")
     @GetMapping("/{id}")
-    public Result<CategoryResponse> getCategoryById(@PathVariable Long id) {
-        CategoryResponse category = categoryService.getCategoryById(id);
+    public Result<CategoryVO> getCategoryById(@PathVariable Long id) {
+        CategoryVO category = categoryService.getCategoryById(id);
         return Result.success(category);
     }
 
@@ -58,9 +63,10 @@ public class AdminCategoryController {
      * @param request 分类请求
      * @return 新增的分类信息
      */
+    @Operation(summary = "新增分类")
     @PostMapping
-    public Result<CategoryResponse> createCategory(@Valid @RequestBody CategoryRequest request) {
-        CategoryResponse category = categoryService.addCategory(request);
+    public Result<CategoryVO> createCategory(@Valid @RequestBody CategoryRequest request) {
+        CategoryVO category = categoryService.addCategory(request);
         return Result.success(category);
     }
 
@@ -72,11 +78,12 @@ public class AdminCategoryController {
      * @param request 分类请求
      * @return 修改后的分类信息
      */
+    @Operation(summary = "修改分类")
     @PutMapping("/{id}")
-    public Result<CategoryResponse> updateCategory(
+    public Result<CategoryVO> updateCategory(
             @PathVariable Long id,
             @Valid @RequestBody CategoryRequest request) {
-        CategoryResponse category = categoryService.updateCategory(id, request);
+        CategoryVO category = categoryService.updateCategory(id, request);
         return Result.success(category);
     }
 
@@ -87,6 +94,7 @@ public class AdminCategoryController {
      * @param id 分类ID
      * @return 操作结果
      */
+    @Operation(summary = "删除分类")
     @DeleteMapping("/{id}")
     public Result<Void> deleteCategory(@PathVariable Long id) {
         categoryService.deleteCategory(id);

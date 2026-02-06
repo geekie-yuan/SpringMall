@@ -4,7 +4,7 @@
 <mapper namespace="site.geekie.shop.shoppingmall.mapper.CategoryMapper">
 
     <!-- 结果映射 -->
-    <resultMap id="BaseResultMap" type="site.geekie.shop.shoppingmall.entity.Category">
+    <resultMap id="BaseResultMap" type="site.geekie.shop.shoppingmall.entity.CategoryDO">
         <id column="id" property="id"/>
         <result column="name" property="name"/>
         <result column="parent_id" property="parentId"/>
@@ -24,21 +24,21 @@
     <!-- 根据ID查询分类 -->
     <select id="findById" resultMap="BaseResultMap">
         SELECT <include refid="Base_Column_List"/>
-        FROM category
+        FROM mall_category
         WHERE id = #{id}
     </select>
 
     <!-- 查询所有分类 -->
     <select id="findAll" resultMap="BaseResultMap">
         SELECT <include refid="Base_Column_List"/>
-        FROM category
+        FROM mall_category
         ORDER BY sort_order ASC, created_at ASC
     </select>
 
     <!-- 根据父分类ID查询子分类 -->
     <select id="findByParentId" resultMap="BaseResultMap">
         SELECT <include refid="Base_Column_List"/>
-        FROM category
+        FROM mall_category
         WHERE parent_id = #{parentId}
         ORDER BY sort_order ASC
     </select>
@@ -46,7 +46,7 @@
     <!-- 根据层级查询分类 -->
     <select id="findByLevel" resultMap="BaseResultMap">
         SELECT <include refid="Base_Column_List"/>
-        FROM category
+        FROM mall_category
         WHERE level = #{level}
         ORDER BY sort_order ASC
     </select>
@@ -54,20 +54,20 @@
     <!-- 根据状态查询分类 -->
     <select id="findByStatus" resultMap="BaseResultMap">
         SELECT <include refid="Base_Column_List"/>
-        FROM category
+        FROM mall_category
         WHERE status = #{status}
         ORDER BY sort_order ASC
     </select>
 
     <!-- 插入分类 -->
     <insert id="insert" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO category (name, parent_id, level, sort_order, icon, status)
+        INSERT INTO mall_category (name, parent_id, level, sort_order, icon, status)
         VALUES (#{name}, #{parentId}, #{level}, #{sortOrder}, #{icon}, #{status})
     </insert>
 
     <!-- 更新分类 -->
     <update id="updateById">
-        UPDATE category
+        UPDATE mall_category
         <set>
             <if test="name != null">name = #{name},</if>
             <if test="parentId != null">parent_id = #{parentId},</if>
@@ -82,13 +82,13 @@
 
     <!-- 删除分类 -->
     <delete id="deleteById">
-        DELETE FROM category WHERE id = #{id}
+        DELETE FROM mall_category WHERE id = #{id}
     </delete>
 
     <!-- 根据ID列表批量查询分类 -->
     <select id="findByIds" resultMap="BaseResultMap">
         SELECT <include refid="Base_Column_List"/>
-        FROM category
+        FROM mall_category
         WHERE id IN
         <foreach collection="ids" item="id" separator="," open="(" close=")">
             #{id}
@@ -97,13 +97,13 @@
 
     <!-- 统计子分类数量 -->
     <select id="countByParentId" resultType="int">
-        SELECT COUNT(*) FROM category WHERE parent_id = #{parentId}
+        SELECT COUNT(*) FROM mall_category WHERE parent_id = #{parentId}
     </select>
 
     <!-- 根据名称和父ID查询分类 -->
     <select id="findByNameAndParentId" resultMap="BaseResultMap">
         SELECT <include refid="Base_Column_List"/>
-        FROM category
+        FROM mall_category
         WHERE name = #{name} AND parent_id = #{parentId}
     </select>
 

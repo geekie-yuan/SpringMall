@@ -5,7 +5,7 @@ import lombok.Data;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
-import site.geekie.shop.shoppingmall.entity.User;
+import site.geekie.shop.shoppingmall.entity.UserDO;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -25,7 +25,7 @@ import java.util.Collections;
 public class SecurityUser implements UserDetails {
 
     // 用户实体对象，包含用户的所有业务信息
-    private User user;
+    private UserDO user;
 
     /**
      * 获取用户的权限列表

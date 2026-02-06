@@ -21,7 +21,7 @@ import java.util.Map;
  *   - 用于负载均衡器和容器编排工具的健康检查
  *
  */
-@Tag(name = "Health Check", description = "Health check API")
+@Tag(name = "Health Check", description = "health检查接口")
 @RestController
 @RequestMapping("/api/v1")
 public class HealthController {

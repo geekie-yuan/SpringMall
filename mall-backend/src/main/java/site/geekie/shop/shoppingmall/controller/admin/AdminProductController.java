@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import site.geekie.shop.shoppingmall.common.PageResult;
 import site.geekie.shop.shoppingmall.common.Result;
 import site.geekie.shop.shoppingmall.dto.request.ProductRequest;
-import site.geekie.shop.shoppingmall.dto.response.ProductResponse;
+import site.geekie.shop.shoppingmall.vo.ProductVO;
 import site.geekie.shop.shoppingmall.service.ProductService;
 
 /**
@@ -40,7 +40,7 @@ public class AdminProductController {
      */
     @Operation(summary = "获取所有商品（管理员）")
     @GetMapping
-    public Result<PageResult<ProductResponse>> getAllProducts(
+    public Result<PageResult<ProductVO>> getAllProducts(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") @Max(100) int size,
             @RequestParam(required = false) String keyword,
@@ -61,8 +61,8 @@ public class AdminProductController {
      */
     @Operation(summary = "获取商品详情（管理员）")
     @GetMapping("/{id}")
-    public Result<ProductResponse> getProductById(@PathVariable Long id) {
-        ProductResponse product = productService.getProductById(id);
+    public Result<ProductVO> getProductById(@PathVariable Long id) {
+        ProductVO product = productService.getProductById(id);
         return Result.success(product);
     }
 
@@ -75,8 +75,8 @@ public class AdminProductController {
      */
     @Operation(summary = "新增商品")
     @PostMapping
-    public Result<ProductResponse> createProduct(@Valid @RequestBody ProductRequest request) {
-        ProductResponse product = productService.createProduct(request);
+    public Result<ProductVO> createProduct(@Valid @RequestBody ProductRequest request) {
+        ProductVO product = productService.createProduct(request);
         return Result.success(product);
     }
 
@@ -90,10 +90,10 @@ public class AdminProductController {
      */
     @Operation(summary = "修改商品")
     @PutMapping("/{id}")
-    public Result<ProductResponse> updateProduct(
+    public Result<ProductVO> updateProduct(
             @PathVariable Long id,
             @Valid @RequestBody ProductRequest request) {
-        ProductResponse product = productService.updateProduct(id, request);
+        ProductVO product = productService.updateProduct(id, request);
         return Result.success(product);
     }
 

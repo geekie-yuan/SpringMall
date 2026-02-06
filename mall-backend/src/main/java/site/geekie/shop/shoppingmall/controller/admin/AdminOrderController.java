@@ -9,7 +9,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import site.geekie.shop.shoppingmall.common.PageResult;
 import site.geekie.shop.shoppingmall.common.Result;
-import site.geekie.shop.shoppingmall.dto.response.OrderResponse;
+import site.geekie.shop.shoppingmall.vo.OrderVO;
 import site.geekie.shop.shoppingmall.service.OrderService;
 
 /**
@@ -37,7 +37,7 @@ public class AdminOrderController {
      */
     @Operation(summary = "获取所有订单（管理员）")
     @GetMapping
-    public Result<PageResult<OrderResponse>> getAllOrders(
+    public Result<PageResult<OrderVO>> getAllOrders(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") @Max(100) int size) {
         return Result.success(orderService.getAllOrders(page, size));
@@ -54,7 +54,7 @@ public class AdminOrderController {
      */
     @Operation(summary = "根据状态获取订单（管理员）")
     @GetMapping("/status/{status}")
-    public Result<PageResult<OrderResponse>> getOrdersByStatus(
+    public Result<PageResult<OrderVO>> getOrdersByStatus(
             @PathVariable String status,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") @Max(100) int size) {
@@ -70,8 +70,8 @@ public class AdminOrderController {
      */
     @Operation(summary = "获取订单详情（管理员）")
     @GetMapping("/{orderNo}")
-    public Result<OrderResponse> getOrderDetail(@PathVariable String orderNo) {
-        OrderResponse order = orderService.getOrderDetailAdmin(orderNo);
+    public Result<OrderVO> getOrderDetail(@PathVariable String orderNo) {
+        OrderVO order = orderService.getOrderDetailAdmin(orderNo);
         return Result.success(order);
     }
 

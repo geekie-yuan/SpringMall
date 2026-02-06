@@ -5,9 +5,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import site.geekie.shop.shoppingmall.dto.request.CartItemRequest;
-import site.geekie.shop.shoppingmall.dto.response.CartItemResponse;
-import site.geekie.shop.shoppingmall.entity.CartItem;
-import site.geekie.shop.shoppingmall.entity.Product;
+import site.geekie.shop.shoppingmall.entity.CartItemDO;
+import site.geekie.shop.shoppingmall.entity.ProductDO;
+import site.geekie.shop.shoppingmall.vo.CartItemVO;
 import site.geekie.shop.shoppingmall.exception.BusinessException;
 import site.geekie.shop.shoppingmall.mapper.CartItemMapper;
 import site.geekie.shop.shoppingmall.mapper.ProductMapper;
@@ -41,8 +41,8 @@ public class CartServiceImpl implements CartService {
     /**
      * 填充商品详情到购物车响应对象
      */
-    private CartItemResponse buildCartItemResponse(CartItem cartItem) {
-        CartItemResponse response = new CartItemResponse();
+    private CartItemVO buildCartItemVO(CartItemDO cartItem) {
+        CartItemVO response = new CartItemVO();
         response.setId(cartItem.getId());
         response.setUserId(cartItem.getUserId());
         response.setProductId(cartItem.getProductId());
@@ -51,7 +51,7 @@ public class CartServiceImpl implements CartService {
         response.setCreatedAt(cartItem.getCreatedAt());
 
         // 查询商品详情并填充
-        Product product = productMapper.findById(cartItem.getProductId());
+        ProductDO product = productMapper.findById(cartItem.getProductId());
         if (product != null) {
             response.setProductName(product.getName());
             response.setProductSubtitle(product.getSubtitle());
@@ -71,7 +71,7 @@ public class CartServiceImpl implements CartService {
      * 验证购物车项所有权
      */
     private void validateCartItemOwnership(Long cartItemId) {
-        CartItem cartItem = cartItemMapper.findById(cartItemId);
+        CartItemDO cartItem = cartItemMapper.findById(cartItemId);
         if (cartItem == null) {
             throw new BusinessException(ResultCode.CART_ITEM_NOT_FOUND);
         }
@@ -81,22 +81,22 @@ public class CartServiceImpl implements CartService {
     }
 
     @Override
-    public List<CartItemResponse> getCartItems() {
+    public List<CartItemVO> getCartItems() {
         Long userId = getCurrentUserId();
-        List<CartItem> cartItems = cartItemMapper.findByUserId(userId);
+        List<CartItemDO> cartItems = cartItemMapper.findByUserId(userId);
 
         return cartItems.stream()
-                .map(this::buildCartItemResponse)
+                .map(this::buildCartItemVO)
                 .collect(Collectors.toList());
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public CartItemResponse addToCart(CartItemRequest request) {
+    public CartItemVO addToCart(CartItemRequest request) {
         Long userId = getCurrentUserId();
 
         // 验证商品是否存在且可售
-        Product product = productMapper.findById(request.getProductId());
+        ProductDO product = productMapper.findById(request.getProductId());
         if (product == null) {
             throw new BusinessException(ResultCode.PRODUCT_NOT_FOUND);
         }
@@ -110,7 +110,7 @@ public class CartServiceImpl implements CartService {
         }
 
         // 检查商品是否已在购物车中
-        CartItem existingItem = cartItemMapper.findByUserIdAndProductId(userId, request.getProductId());
+        CartItemDO existingItem = cartItemMapper.findByUserIdAndProductId(userId, request.getProductId());
 
         if (existingItem != null) {
             // 商品已存在，增加数量
@@ -123,23 +123,23 @@ public class CartServiceImpl implements CartService {
 
             cartItemMapper.updateQuantity(existingItem.getId(), newQuantity);
             existingItem.setQuantity(newQuantity);
-            return buildCartItemResponse(existingItem);
+            return buildCartItemVO(existingItem);
         } else {
             // 新增购物车项
-            CartItem cartItem = new CartItem();
+            CartItemDO cartItem = new CartItemDO();
             cartItem.setUserId(userId);
             cartItem.setProductId(request.getProductId());
             cartItem.setQuantity(request.getQuantity());
             cartItem.setChecked(1); // 默认选中
 
             cartItemMapper.insert(cartItem);
-            return buildCartItemResponse(cartItem);
+            return buildCartItemVO(cartItem);
         }
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public CartItemResponse updateQuantity(Long id, Integer quantity) {
+    public CartItemVO updateQuantity(Long id, Integer quantity) {
         // 验证所有权
         validateCartItemOwnership(id);
 
@@ -148,10 +148,10 @@ public class CartServiceImpl implements CartService {
         }
 
         // 获取购物车项
-        CartItem cartItem = cartItemMapper.findById(id);
+        CartItemDO cartItem = cartItemMapper.findById(id);
 
         // 验证商品库存
-        Product product = productMapper.findById(cartItem.getProductId());
+        ProductDO product = productMapper.findById(cartItem.getProductId());
         if (product == null) {
             throw new BusinessException(ResultCode.PRODUCT_NOT_FOUND);
         }
@@ -163,7 +163,7 @@ public class CartServiceImpl implements CartService {
         cartItemMapper.updateQuantity(id, quantity);
         cartItem.setQuantity(quantity);
 
-        return buildCartItemResponse(cartItem);
+        return buildCartItemVO(cartItem);
     }
 
     @Override
@@ -209,7 +209,7 @@ public class CartServiceImpl implements CartService {
         // 验证所有购物车项的所有权
         Long userId = getCurrentUserId();
         for (Long id : ids) {
-            CartItem cartItem = cartItemMapper.findById(id);
+            CartItemDO cartItem = cartItemMapper.findById(id);
             if (cartItem == null || !cartItem.getUserId().equals(userId)) {
                 throw new BusinessException(ResultCode.FORBIDDEN);
             }
@@ -228,11 +228,11 @@ public class CartServiceImpl implements CartService {
     @Override
     public BigDecimal getCartTotal() {
         Long userId = getCurrentUserId();
-        List<CartItem> checkedItems = cartItemMapper.findCheckedByUserId(userId);
+        List<CartItemDO> checkedItems = cartItemMapper.findCheckedByUserId(userId);
 
         BigDecimal total = BigDecimal.ZERO;
-        for (CartItem item : checkedItems) {
-            Product product = productMapper.findById(item.getProductId());
+        for (CartItemDO item : checkedItems) {
+            ProductDO product = productMapper.findById(item.getProductId());
             if (product != null) {
                 BigDecimal itemTotal = product.getPrice().multiply(new BigDecimal(item.getQuantity()));
                 total = total.add(itemTotal);

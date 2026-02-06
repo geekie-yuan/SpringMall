@@ -8,7 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import site.geekie.shop.shoppingmall.common.Result;
 import site.geekie.shop.shoppingmall.dto.request.AddressRequest;
-import site.geekie.shop.shoppingmall.dto.response.AddressResponse;
+import site.geekie.shop.shoppingmall.vo.AddressVO;
 import site.geekie.shop.shoppingmall.service.AddressService;
 
 import java.util.List;
@@ -50,8 +50,8 @@ public class AddressController {
      */
     @Operation(summary = "获取地址列表")
     @GetMapping
-    public Result<List<AddressResponse>> getAddressList() {
-        List<AddressResponse> addresses = addressService.getAddressList();
+    public Result<List<AddressVO>> getAddressList() {
+        List<AddressVO> addresses = addressService.getAddressList();
         return Result.success(addresses);
     }
 
@@ -66,8 +66,8 @@ public class AddressController {
      */
     @Operation(summary = "获取默认地址")
     @GetMapping("/default")
-    public Result<AddressResponse> getDefaultAddress() {
-        AddressResponse address = addressService.getDefaultAddress();
+    public Result<AddressVO> getDefaultAddress() {
+        AddressVO address = addressService.getDefaultAddress();
         return Result.success(address);
     }
 
@@ -86,8 +86,8 @@ public class AddressController {
      */
     @Operation(summary = "获取地址详情")
     @GetMapping("/{id}")
-    public Result<AddressResponse> getAddressById(@PathVariable Long id) {
-        AddressResponse address = addressService.getAddressById(id);
+    public Result<AddressVO> getAddressById(@PathVariable Long id) {
+        AddressVO address = addressService.getAddressById(id);
         return Result.success(address);
     }
 
@@ -109,8 +109,8 @@ public class AddressController {
      */
     @Operation(summary = "新增地址")
     @PostMapping
-    public Result<AddressResponse> addAddress(@Valid @RequestBody AddressRequest request) {
-        AddressResponse address = addressService.addAddress(request);
+    public Result<AddressVO> addAddress(@Valid @RequestBody AddressRequest request) {
+        AddressVO address = addressService.addAddress(request);
         return Result.success("地址添加成功", address);
     }
 
@@ -130,9 +130,9 @@ public class AddressController {
      */
     @Operation(summary = "修改地址")
     @PutMapping("/{id}")
-    public Result<AddressResponse> updateAddress(@PathVariable Long id,
+    public Result<AddressVO> updateAddress(@PathVariable Long id,
                                                   @Valid @RequestBody AddressRequest request) {
-        AddressResponse address = addressService.updateAddress(id, request);
+        AddressVO address = addressService.updateAddress(id, request);
         return Result.success("地址修改成功", address);
     }
 

@@ -8,9 +8,9 @@ import org.springframework.transaction.annotation.Transactional;
 import site.geekie.shop.shoppingmall.common.PageResult;
 import site.geekie.shop.shoppingmall.common.ResultCode;
 import site.geekie.shop.shoppingmall.dto.request.ProductRequest;
-import site.geekie.shop.shoppingmall.dto.response.ProductResponse;
-import site.geekie.shop.shoppingmall.entity.Category;
-import site.geekie.shop.shoppingmall.entity.Product;
+import site.geekie.shop.shoppingmall.entity.CategoryDO;
+import site.geekie.shop.shoppingmall.entity.ProductDO;
+import site.geekie.shop.shoppingmall.vo.ProductVO;
 import site.geekie.shop.shoppingmall.exception.BusinessException;
 import site.geekie.shop.shoppingmall.mapper.CategoryMapper;
 import site.geekie.shop.shoppingmall.mapper.ProductMapper;
@@ -33,42 +33,42 @@ public class ProductServiceImpl implements ProductService {
     private final CategoryMapper categoryMapper;
 
     @Override
-    public PageResult<ProductResponse> getAllProducts(int page, int size, String keyword, Long categoryId, Integer status) {
+    public PageResult<ProductVO> getAllProducts(int page, int size, String keyword, Long categoryId, Integer status) {
         PageHelper.startPage(page, size);
-        List<Product> products = productMapper.findAllWithFilter(keyword, categoryId, status);
-        PageInfo<Product> pageInfo = new PageInfo<>(products);
-        List<ProductResponse> list = convertListToResponses(products);
+        List<ProductDO> products = productMapper.findAllWithFilter(keyword, categoryId, status);
+        PageInfo<ProductDO> pageInfo = new PageInfo<>(products);
+        List<ProductVO> list = convertListToResponses(products);
         return new PageResult<>(list, pageInfo.getTotal(), page, size);
     }
 
     @Override
-    public List<ProductResponse> getProductsByCategoryId(Long categoryId) {
-        List<Product> products = productMapper.findByCategoryId(categoryId);
+    public List<ProductVO> getProductsByCategoryId(Long categoryId) {
+        List<ProductDO> products = productMapper.findByCategoryId(categoryId);
         return products.stream()
                 .map(this::convertToResponse)
                 .collect(Collectors.toList());
     }
 
     @Override
-    public List<ProductResponse> getProductsByStatus(Integer status) {
-        List<Product> products = productMapper.findByStatus(status);
+    public List<ProductVO> getProductsByStatus(Integer status) {
+        List<ProductDO> products = productMapper.findByStatus(status);
         return products.stream()
                 .map(this::convertToResponse)
                 .collect(Collectors.toList());
     }
 
     @Override
-    public PageResult<ProductResponse> searchProducts(String keyword, int page, int size) {
+    public PageResult<ProductVO> searchProducts(String keyword, int page, int size) {
         PageHelper.startPage(page, size);
-        List<Product> products = productMapper.searchByKeyword(keyword);
-        PageInfo<Product> pageInfo = new PageInfo<>(products);
-        List<ProductResponse> list = convertListToResponses(products);
+        List<ProductDO> products = productMapper.searchByKeyword(keyword);
+        PageInfo<ProductDO> pageInfo = new PageInfo<>(products);
+        List<ProductVO> list = convertListToResponses(products);
         return new PageResult<>(list, pageInfo.getTotal(), page, size);
     }
 
     @Override
-    public ProductResponse getProductById(Long id) {
-        Product product = productMapper.findById(id);
+    public ProductVO getProductById(Long id) {
+        ProductDO product = productMapper.findById(id);
         if (product == null) {
             throw new BusinessException(ResultCode.PRODUCT_NOT_FOUND);
         }
@@ -77,15 +77,15 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional
-    public ProductResponse addProduct(ProductRequest request) {
+    public ProductVO addProduct(ProductRequest request) {
         // 1. 验证分类是否存在
-        Category category = categoryMapper.findById(request.getCategoryId());
+        CategoryDO category = categoryMapper.findById(request.getCategoryId());
         if (category == null) {
             throw new BusinessException(ResultCode.CATEGORY_NOT_FOUND);
         }
 
         // 2. 创建商品
-        Product product = new Product();
+        ProductDO product = new ProductDO();
         product.setCategoryId(request.getCategoryId());
         product.setName(request.getName());
         product.setSubtitle(request.getSubtitle());
@@ -103,16 +103,16 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional
-    public ProductResponse updateProduct(Long id, ProductRequest request) {
+    public ProductVO updateProduct(Long id, ProductRequest request) {
         // 1. 查询商品是否存在
-        Product product = productMapper.findById(id);
+        ProductDO product = productMapper.findById(id);
         if (product == null) {
             throw new BusinessException(ResultCode.PRODUCT_NOT_FOUND);
         }
 
         // 2. 如果要修改分类，验证分类是否存在
         if (request.getCategoryId() != null && !request.getCategoryId().equals(product.getCategoryId())) {
-            Category category = categoryMapper.findById(request.getCategoryId());
+            CategoryDO category = categoryMapper.findById(request.getCategoryId());
             if (category == null) {
                 throw new BusinessException(ResultCode.CATEGORY_NOT_FOUND);
             }
@@ -138,7 +138,7 @@ public class ProductServiceImpl implements ProductService {
     @Transactional
     public void deleteProduct(Long id) {
         // 1. 查询商品是否存在
-        Product product = productMapper.findById(id);
+        ProductDO product = productMapper.findById(id);
         if (product == null) {
             throw new BusinessException(ResultCode.PRODUCT_NOT_FOUND);
         }
@@ -151,7 +151,7 @@ public class ProductServiceImpl implements ProductService {
     @Transactional
     public void decreaseStock(Long id, Integer quantity) {
         // 1. 查询商品是否存在
-        Product product = productMapper.findById(id);
+        ProductDO product = productMapper.findById(id);
         if (product == null) {
             throw new BusinessException(ResultCode.PRODUCT_NOT_FOUND);
         }
@@ -167,7 +167,7 @@ public class ProductServiceImpl implements ProductService {
     @Transactional
     public void increaseStock(Long id, Integer quantity) {
         // 1. 查询商品是否存在
-        Product product = productMapper.findById(id);
+        ProductDO product = productMapper.findById(id);
         if (product == null) {
             throw new BusinessException(ResultCode.PRODUCT_NOT_FOUND);
         }
@@ -179,20 +179,20 @@ public class ProductServiceImpl implements ProductService {
     /**
      * 批量将实体转换为响应DTO，对分类使用 IN 查询避免 N+1
      */
-    private List<ProductResponse> convertListToResponses(List<Product> products) {
+    private List<ProductVO> convertListToResponses(List<ProductDO> products) {
         List<Long> categoryIds = products.stream()
-                .map(Product::getCategoryId)
+                .map(ProductDO::getCategoryId)
                 .filter(id -> id != null)
                 .distinct()
                 .collect(Collectors.toList());
-        Map<Long, Category> categoryMap = categoryIds.isEmpty()
+        Map<Long, CategoryDO> categoryMap = categoryIds.isEmpty()
                 ? Collections.emptyMap()
                 : categoryMapper.findByIds(categoryIds).stream()
-                        .collect(Collectors.toMap(Category::getId, c -> c));
+                        .collect(Collectors.toMap(CategoryDO::getId, c -> c));
 
         return products.stream()
                 .map(product -> {
-                    ProductResponse response = new ProductResponse(
+                    ProductVO response = new ProductVO(
                             product.getId(),
                             product.getCategoryId(),
                             product.getName(),
@@ -205,7 +205,7 @@ public class ProductServiceImpl implements ProductService {
                             product.getStatus(),
                             product.getCreatedAt()
                     );
-                    Category category = categoryMap.get(product.getCategoryId());
+                    CategoryDO category = categoryMap.get(product.getCategoryId());
                     if (category != null) {
                         response.setCategoryName(category.getName());
                     }
@@ -220,8 +220,8 @@ public class ProductServiceImpl implements ProductService {
      * @param product 商品实体
      * @return 商品响应DTO
      */
-    private ProductResponse convertToResponse(Product product) {
-        ProductResponse response = new ProductResponse(
+    private ProductVO convertToResponse(ProductDO product) {
+        ProductVO response = new ProductVO(
                 product.getId(),
                 product.getCategoryId(),
                 product.getName(),
@@ -236,7 +236,7 @@ public class ProductServiceImpl implements ProductService {
         );
 
         // 填充分类名称
-        Category category = categoryMapper.findById(product.getCategoryId());
+        CategoryDO category = categoryMapper.findById(product.getCategoryId());
         if (category != null) {
             response.setCategoryName(category.getName());
         }
@@ -248,7 +248,7 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional
-    public ProductResponse createProduct(ProductRequest request) {
+    public ProductVO createProduct(ProductRequest request) {
         // 直接调用addProduct，保持一致性
         return addProduct(request);
     }
@@ -257,7 +257,7 @@ public class ProductServiceImpl implements ProductService {
     @Transactional
     public void updateProductStatus(Long id, Integer status) {
         // 1. 查询商品是否存在
-        Product product = productMapper.findById(id);
+        ProductDO product = productMapper.findById(id);
         if (product == null) {
             throw new BusinessException(ResultCode.PRODUCT_NOT_FOUND);
         }
@@ -268,7 +268,7 @@ public class ProductServiceImpl implements ProductService {
         }
 
         // 3. 更新状态
-        Product updateProduct = new Product();
+        ProductDO updateProduct = new ProductDO();
         updateProduct.setId(id);
         updateProduct.setStatus(status);
         productMapper.updateById(updateProduct);
@@ -278,7 +278,7 @@ public class ProductServiceImpl implements ProductService {
     @Transactional
     public void updateProductStock(Long id, Integer stock) {
         // 1. 查询商品是否存在
-        Product product = productMapper.findById(id);
+        ProductDO product = productMapper.findById(id);
         if (product == null) {
             throw new BusinessException(ResultCode.PRODUCT_NOT_FOUND);
         }
@@ -289,7 +289,7 @@ public class ProductServiceImpl implements ProductService {
         }
 
         // 3. 更新库存
-        Product updateProduct = new Product();
+        ProductDO updateProduct = new ProductDO();
         updateProduct.setId(id);
         updateProduct.setStock(stock);
         productMapper.updateById(updateProduct);

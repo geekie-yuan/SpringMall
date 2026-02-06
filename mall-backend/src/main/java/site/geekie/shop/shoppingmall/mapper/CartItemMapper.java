@@ -2,7 +2,7 @@ package site.geekie.shop.shoppingmall.mapper;
 
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
-import site.geekie.shop.shoppingmall.entity.CartItem;
+import site.geekie.shop.shoppingmall.entity.CartItemDO;
 
 import java.util.List;
 
@@ -19,7 +19,7 @@ public interface CartItemMapper {
      * @param id 购物车项ID
      * @return 购物车项信息，不存在返回null
      */
-    CartItem findById(@Param("id") Long id);
+    CartItemDO findById(@Param("id") Long id);
 
     /**
      * 根据用户ID查询所有购物车项
@@ -28,7 +28,7 @@ public interface CartItemMapper {
      * @param userId 用户ID
      * @return 购物车项列表
      */
-    List<CartItem> findByUserId(@Param("userId") Long userId);
+    List<CartItemDO> findByUserId(@Param("userId") Long userId);
 
     /**
      * 根据用户ID和商品ID查询购物车项
@@ -38,7 +38,7 @@ public interface CartItemMapper {
      * @param productId 商品ID
      * @return 购物车项信息，不存在返回null
      */
-    CartItem findByUserIdAndProductId(@Param("userId") Long userId, @Param("productId") Long productId);
+    CartItemDO findByUserIdAndProductId(@Param("userId") Long userId, @Param("productId") Long productId);
 
     /**
      * 根据用户ID查询已选中的购物车项
@@ -46,7 +46,7 @@ public interface CartItemMapper {
      * @param userId 用户ID
      * @return 已选中的购物车项列表
      */
-    List<CartItem> findCheckedByUserId(@Param("userId") Long userId);
+    List<CartItemDO> findCheckedByUserId(@Param("userId") Long userId);
 
     /**
      * 插入新购物车项
@@ -54,7 +54,7 @@ public interface CartItemMapper {
      * @param cartItem 购物车项信息
      * @return 影响行数
      */
-    int insert(CartItem cartItem);
+    int insert(CartItemDO cartItem);
 
     /**
      * 更新购物车项数量

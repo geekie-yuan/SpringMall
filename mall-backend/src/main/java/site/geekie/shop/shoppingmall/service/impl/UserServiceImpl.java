@@ -10,8 +10,8 @@ import org.springframework.transaction.annotation.Transactional;
 import site.geekie.shop.shoppingmall.common.PageResult;
 import site.geekie.shop.shoppingmall.common.ResultCode;
 import site.geekie.shop.shoppingmall.dto.request.UpdatePasswordRequest;
-import site.geekie.shop.shoppingmall.dto.response.UserResponse;
-import site.geekie.shop.shoppingmall.entity.User;
+import site.geekie.shop.shoppingmall.entity.UserDO;
+import site.geekie.shop.shoppingmall.vo.UserVO;
 import site.geekie.shop.shoppingmall.exception.BusinessException;
 import site.geekie.shop.shoppingmall.mapper.UserMapper;
 import site.geekie.shop.shoppingmall.security.SecurityUser;
@@ -46,9 +46,9 @@ public class UserServiceImpl implements UserService {
      * @throws BusinessException 当用户不存在时抛出
      */
     @Override
-    public UserResponse getCurrentUser() {
-        User user = getCurrentUserEntity();
-        return convertToUserResponse(user);
+    public UserVO getCurrentUser() {
+        UserDO user = getCurrentUserEntity();
+        return convertToUserVO(user);
     }
 
     /**
@@ -59,12 +59,12 @@ public class UserServiceImpl implements UserService {
      * @throws BusinessException 当用户不存在时抛出
      */
     @Override
-    public UserResponse getUserById(Long id) {
-        User user = userMapper.findById(id);
+    public UserVO getUserById(Long id) {
+        UserDO user = userMapper.findById(id);
         if (user == null) {
             throw new BusinessException(ResultCode.USER_NOT_FOUND);
         }
-        return convertToUserResponse(user);
+        return convertToUserVO(user);
     }
 
     /**
@@ -76,8 +76,8 @@ public class UserServiceImpl implements UserService {
      */
     @Override
     @Transactional
-    public User updateUser(User user) {
-        User currentUser = getCurrentUserEntity();
+    public UserDO updateUser(UserDO user) {
+        UserDO currentUser = getCurrentUserEntity();
         user.setId(currentUser.getId()); // 确保只能更新自己的信息
         userMapper.updateById(user);
         return userMapper.findById(currentUser.getId());
@@ -93,7 +93,7 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public void updatePassword(UpdatePasswordRequest request) {
-        User currentUser = getCurrentUserEntity();
+        UserDO currentUser = getCurrentUserEntity();
 
         // 验证旧密码
         if (!passwordEncoder.matches(request.getOldPassword(), currentUser.getPassword())) {
@@ -112,13 +112,13 @@ public class UserServiceImpl implements UserService {
      * @return 用户实体
      * @throws BusinessException 当用户不存在时抛出
      */
-    private User getCurrentUserEntity() {
+    private UserDO getCurrentUserEntity() {
         // 从Security上下文获取认证用户
         SecurityUser securityUser = (SecurityUser) SecurityContextHolder.getContext()
                 .getAuthentication()
                 .getPrincipal();
         // 从数据库查询最新用户信息
-        User user = userMapper.findById(securityUser.getUser().getId());
+        UserDO user = userMapper.findById(securityUser.getUser().getId());
         if (user == null) {
             throw new BusinessException(ResultCode.USER_NOT_FOUND);
         }
@@ -126,14 +126,14 @@ public class UserServiceImpl implements UserService {
     }
 
     /**
-     * 将User实体转换为UserResponse对象
+     * 将User实体转换为UserVO对象
      * 排除密码等敏感信息
      *
      * @param user 用户实体
      * @return 用户响应对象
      */
-    private UserResponse convertToUserResponse(User user) {
-        return new UserResponse(
+    private UserVO convertToUserVO(UserDO user) {
+        return new UserVO(
                 user.getId(),
                 user.getUsername(),
                 user.getEmail(),
@@ -153,12 +153,12 @@ public class UserServiceImpl implements UserService {
      * @return 用户列表
      */
     @Override
-    public PageResult<UserResponse> getAllUsers(int page, int size, String keyword, String role, Integer status) {
+    public PageResult<UserVO> getAllUsers(int page, int size, String keyword, String role, Integer status) {
         PageHelper.startPage(page, size);
-        java.util.List<User> users = userMapper.findAllWithFilter(keyword, role, status);
-        PageInfo<User> pageInfo = new PageInfo<>(users);
-        java.util.List<UserResponse> list = users.stream()
-                .map(this::convertToUserResponse)
+        java.util.List<UserDO> users = userMapper.findAllWithFilter(keyword, role, status);
+        PageInfo<UserDO> pageInfo = new PageInfo<>(users);
+        java.util.List<UserVO> list = users.stream()
+                .map(this::convertToUserVO)
                 .collect(java.util.stream.Collectors.toList());
         return new PageResult<>(list, pageInfo.getTotal(), page, size);
     }
@@ -172,7 +172,7 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public void updateUserStatus(Long id, Integer status) {
-        User user = userMapper.findById(id);
+        UserDO user = userMapper.findById(id);
         if (user == null) {
             throw new BusinessException(ResultCode.USER_NOT_FOUND);
         }
@@ -189,7 +189,7 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public void updateUserRole(Long id, String role) {
-        User user = userMapper.findById(id);
+        UserDO user = userMapper.findById(id);
         if (user == null) {
             throw new BusinessException(ResultCode.USER_NOT_FOUND);
         }

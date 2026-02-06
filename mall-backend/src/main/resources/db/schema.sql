@@ -9,7 +9,7 @@ USE mall;
 -- ----------------------------------------
 -- 1. 用户表
 -- ----------------------------------------
-CREATE TABLE `user` (
+CREATE TABLE `mall_user` (
     `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '用户ID',
     `username` VARCHAR(50) NOT NULL COMMENT '用户名',
     `password` VARCHAR(255) NOT NULL COMMENT '密码（加密）',
@@ -29,7 +29,7 @@ CREATE TABLE `user` (
 -- ----------------------------------------
 -- 2. 商品分类表（支持多级）
 -- ----------------------------------------
-CREATE TABLE `category` (
+CREATE TABLE `mall_category` (
     `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '分类ID',
     `name` VARCHAR(100) NOT NULL COMMENT '分类名称',
     `parent_id` BIGINT DEFAULT 0 COMMENT '父分类ID，0为顶级',
@@ -46,7 +46,7 @@ CREATE TABLE `category` (
 -- ----------------------------------------
 -- 3. 商品表
 -- ----------------------------------------
-CREATE TABLE `product` (
+CREATE TABLE `mall_product` (
     `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '商品ID',
     `category_id` BIGINT NOT NULL COMMENT '分类ID',
     `name` VARCHAR(200) NOT NULL COMMENT '商品名称',
@@ -67,7 +67,7 @@ CREATE TABLE `product` (
 -- ----------------------------------------
 -- 4. 购物车表
 -- ----------------------------------------
-CREATE TABLE `cart_item` (
+CREATE TABLE `mall_cart_item` (
     `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '购物车ID',
     `user_id` BIGINT NOT NULL COMMENT '用户ID',
     `product_id` BIGINT NOT NULL COMMENT '商品ID',
@@ -83,7 +83,7 @@ CREATE TABLE `cart_item` (
 -- ----------------------------------------
 -- 5. 收货地址表
 -- ----------------------------------------
-CREATE TABLE `address` (
+CREATE TABLE `mall_address` (
     `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '地址ID',
     `user_id` BIGINT NOT NULL COMMENT '用户ID',
     `receiver_name` VARCHAR(50) NOT NULL COMMENT '收货人姓名',
@@ -102,7 +102,7 @@ CREATE TABLE `address` (
 -- ----------------------------------------
 -- 6. 订单主表
 -- ----------------------------------------
-CREATE TABLE `order` (
+CREATE TABLE `mall_order` (
     `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '订单ID',
     `order_no` VARCHAR(50) NOT NULL COMMENT '订单号',
     `user_id` BIGINT NOT NULL COMMENT '用户ID',
@@ -129,7 +129,7 @@ CREATE TABLE `order` (
 -- ----------------------------------------
 -- 7. 订单明细表
 -- ----------------------------------------
-CREATE TABLE `order_item` (
+CREATE TABLE `mall_order_item` (
     `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '明细ID',
     `order_id` BIGINT NOT NULL COMMENT '订单ID',
     `product_id` BIGINT NOT NULL COMMENT '商品ID',
@@ -145,18 +145,41 @@ CREATE TABLE `order_item` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='订单明细表';
 
 -- ----------------------------------------
+-- 审计日志表
+-- ----------------------------------------
+CREATE TABLE IF NOT EXISTS `mall_audit_log` (
+    `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+    `user_id` BIGINT COMMENT '操作用户ID（未登录时为NULL）',
+    `username` VARCHAR(50) COMMENT '操作用户名',
+    `operation` VARCHAR(200) NOT NULL COMMENT '操作描述',
+    `type` VARCHAR(20) NOT NULL COMMENT '操作类型：CREATE/UPDATE/DELETE/READ/LOGIN/PAYMENT',
+    `method` VARCHAR(200) NOT NULL COMMENT '方法签名',
+    `params` TEXT COMMENT '请求参数（JSON格式）',
+    `result` VARCHAR(20) NOT NULL COMMENT '执行结果：SUCCESS/FAILURE',
+    `error_msg` TEXT COMMENT '错误信息（失败时记录）',
+    `duration` INT COMMENT '执行耗时（毫秒）',
+    `ip` VARCHAR(50) COMMENT '操作IP地址',
+    `user_agent` VARCHAR(500) COMMENT '用户代理',
+    `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '操作时间',
+    PRIMARY KEY (`id`),
+    INDEX `idx_user_id` (`user_id`),
+    INDEX `idx_type` (`type`),
+    INDEX `idx_created_at` (`created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='审计日志表';
+
+-- ----------------------------------------
 -- 初始数据
 -- ----------------------------------------
 
 -- 插入默认admin账户（密码: admin123）
-INSERT INTO `user` (`username`, `password`, `email`, `role`, `status`) VALUES
+INSERT INTO `mall_user` (`username`, `password`, `email`, `role`, `status`) VALUES
 ('admin', '$2a$10$uISN1BbnQjhKwrx4twz31.X/8cdzxjO.4hvYMPfbWnpYdBlmWgX0G', 'admin@mall.com', 'ADMIN', 1);
 -- 插入默认user账户（密码: 123456）
-INSERT INTO `user` (`username`, `password`, `email`, `role`, `status`) VALUES
+INSERT INTO `mall_user` (`username`, `password`, `email`, `role`, `status`) VALUES
 ('user', '$2a$10$sVu5LD/7oO8OMJ1wyGy6gueaIwyXdizADClstPIxw5Ux7hbmYLlry', 'user@mall.com', 'USER', 1);
 
 -- 插入示例分类
-INSERT INTO `category` (`name`, `parent_id`, `level`, `sort_order`) VALUES
+INSERT INTO `mall_category` (`name`, `parent_id`, `level`, `sort_order`) VALUES
 ('实体商品', 0, 1, 1),
 ('虚拟商品', 1, 1, 2);
 

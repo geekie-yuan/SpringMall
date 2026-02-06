@@ -2,7 +2,7 @@ package site.geekie.shop.shoppingmall.service;
 
 import site.geekie.shop.shoppingmall.dto.request.PaymentNotifyRequest;
 import site.geekie.shop.shoppingmall.dto.request.PaymentRequest;
-import site.geekie.shop.shoppingmall.dto.response.PaymentResponse;
+import site.geekie.shop.shoppingmall.vo.PaymentVO;
 
 /**
  * 支付服务接口
@@ -20,7 +20,7 @@ public interface PaymentService {
      * @param request 支付请求
      * @return 支付响应
      */
-    PaymentResponse pay(PaymentRequest request);
+    PaymentVO pay(PaymentRequest request);
 
     /**
      * 处理支付回调（模拟）

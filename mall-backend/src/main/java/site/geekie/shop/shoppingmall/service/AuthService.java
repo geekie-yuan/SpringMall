@@ -2,7 +2,7 @@ package site.geekie.shop.shoppingmall.service;
 
 import site.geekie.shop.shoppingmall.dto.request.LoginRequest;
 import site.geekie.shop.shoppingmall.dto.request.RegisterRequest;
-import site.geekie.shop.shoppingmall.dto.response.LoginResponse;
+import site.geekie.shop.shoppingmall.vo.LoginVO;
 
 /**
  * 认证服务接口
@@ -34,5 +34,5 @@ public interface AuthService {
      * @throws org.springframework.security.authentication.BadCredentialsException
      *         当用户名或密码错误时抛出
      */
-    LoginResponse login(LoginRequest request);
+    LoginVO login(LoginRequest request);
 }

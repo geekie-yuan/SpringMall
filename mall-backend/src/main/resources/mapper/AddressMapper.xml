@@ -11,7 +11,7 @@
 <mapper namespace="site.geekie.shop.shoppingmall.mapper.AddressMapper">
 
     <!-- 地址实体结果映射 -->
-    <resultMap id="BaseResultMap" type="site.geekie.shop.shoppingmall.entity.Address">
+    <resultMap id="BaseResultMap" type="site.geekie.shop.shoppingmall.entity.AddressDO">
         <id column="id" property="id"/>
         <result column="user_id" property="userId"/>
         <result column="receiver_name" property="receiverName"/>
@@ -35,7 +35,7 @@
     <select id="findById" resultMap="BaseResultMap">
         SELECT
         <include refid="Base_Column_List"/>
-        FROM address
+        FROM mall_address
         WHERE id = #{id}
     </select>
 
@@ -43,7 +43,7 @@
     <select id="findByUserId" resultMap="BaseResultMap">
         SELECT
         <include refid="Base_Column_List"/>
-        FROM address
+        FROM mall_address
         WHERE user_id = #{userId}
         ORDER BY is_default DESC, created_at DESC
     </select>
@@ -52,23 +52,23 @@
     <select id="findDefaultByUserId" resultMap="BaseResultMap">
         SELECT
         <include refid="Base_Column_List"/>
-        FROM address
+        FROM mall_address
         WHERE user_id = #{userId} AND is_default = 1
         LIMIT 1
     </select>
 
     <!-- 插入新地址记录 -->
-    <insert id="insert" parameterType="site.geekie.shop.shoppingmall.entity.Address"
+    <insert id="insert" parameterType="site.geekie.shop.shoppingmall.entity.AddressDO"
             useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO address (user_id, receiver_name, phone, province, city, district,
+        INSERT INTO mall_address (user_id, receiver_name, phone, province, city, district,
                              detail_address, is_default)
         VALUES (#{userId}, #{receiverName}, #{phone}, #{province}, #{city}, #{district},
                 #{detailAddress}, #{isDefault})
     </insert>
 
     <!-- 更新地址信息 -->
-    <update id="updateById" parameterType="site.geekie.shop.shoppingmall.entity.Address">
-        UPDATE address
+    <update id="updateById" parameterType="site.geekie.shop.shoppingmall.entity.AddressDO">
+        UPDATE mall_address
         <set>
             <if test="receiverName != null">receiver_name = #{receiverName},</if>
             <if test="phone != null">phone = #{phone},</if>
@@ -83,28 +83,28 @@
 
     <!-- 取消用户的所有默认地址 -->
     <update id="cancelDefaultByUserId">
-        UPDATE address
+        UPDATE mall_address
         SET is_default = 0
         WHERE user_id = #{userId}
     </update>
 
     <!-- 设置为默认地址 -->
     <update id="setDefault">
-        UPDATE address
+        UPDATE mall_address
         SET is_default = 1
         WHERE id = #{id}
     </update>
 
     <!-- 删除地址 -->
     <delete id="deleteById">
-        DELETE FROM address
+        DELETE FROM mall_address
         WHERE id = #{id}
     </delete>
 
     <!-- 统计用户的地址数量 -->
     <select id="countByUserId" resultType="int">
         SELECT COUNT(*)
-        FROM address
+        FROM mall_address
         WHERE user_id = #{userId}
     </select>
 

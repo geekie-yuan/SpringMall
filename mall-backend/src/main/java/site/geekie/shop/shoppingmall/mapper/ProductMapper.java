@@ -2,7 +2,7 @@ package site.geekie.shop.shoppingmall.mapper;
 
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
-import site.geekie.shop.shoppingmall.entity.Product;
+import site.geekie.shop.shoppingmall.entity.ProductDO;
 
 import java.util.List;
 
@@ -19,7 +19,7 @@ public interface ProductMapper {
      * @param id 商品ID
      * @return 商品信息，不存在返回null
      */
-    Product findById(@Param("id") Long id);
+    ProductDO findById(@Param("id") Long id);
 
     /**
      * 查询所有商品
@@ -27,7 +27,7 @@ public interface ProductMapper {
      *
      * @return 所有商品列表
      */
-    List<Product> findAll();
+    List<ProductDO> findAll();
 
     /**
      * 带过滤条件查询所有商品
@@ -38,7 +38,7 @@ public interface ProductMapper {
      * @param status 状态（0-下架，1-上架）
      * @return 商品列表
      */
-    List<Product> findAllWithFilter(@Param("keyword") String keyword,
+    List<ProductDO> findAllWithFilter(@Param("keyword") String keyword,
                                      @Param("categoryId") Long categoryId,
                                      @Param("status") Integer status);
 
@@ -49,7 +49,7 @@ public interface ProductMapper {
      * @param categoryId 分类ID
      * @return 商品列表
      */
-    List<Product> findByCategoryId(@Param("categoryId") Long categoryId);
+    List<ProductDO> findByCategoryId(@Param("categoryId") Long categoryId);
 
     /**
      * 根据状态查询商品列表
@@ -58,7 +58,7 @@ public interface ProductMapper {
      * @param status 状态（0-下架，1-上架）
      * @return 商品列表
      */
-    List<Product> findByStatus(@Param("status") Integer status);
+    List<ProductDO> findByStatus(@Param("status") Integer status);
 
     /**
      * 根据关键词搜索商品
@@ -68,7 +68,7 @@ public interface ProductMapper {
      * @param keyword 搜索关键词
      * @return 商品列表
      */
-    List<Product> searchByKeyword(@Param("keyword") String keyword);
+    List<ProductDO> searchByKeyword(@Param("keyword") String keyword);
 
     /**
      * 插入新商品
@@ -76,7 +76,7 @@ public interface ProductMapper {
      * @param product 商品信息
      * @return 影响行数
      */
-    int insert(Product product);
+    int insert(ProductDO product);
 
     /**
      * 根据ID更新商品信息
@@ -85,7 +85,7 @@ public interface ProductMapper {
      * @param product 商品信息
      * @return 影响行数
      */
-    int updateById(Product product);
+    int updateById(ProductDO product);
 
     /**
      * 根据ID删除商品

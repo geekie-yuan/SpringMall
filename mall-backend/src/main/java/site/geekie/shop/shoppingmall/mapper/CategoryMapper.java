@@ -2,7 +2,7 @@ package site.geekie.shop.shoppingmall.mapper;
 
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
-import site.geekie.shop.shoppingmall.entity.Category;
+import site.geekie.shop.shoppingmall.entity.CategoryDO;
 
 import java.util.List;
 
@@ -19,7 +19,7 @@ public interface CategoryMapper {
      * @param id 分类ID
      * @return 分类信息，不存在返回null
      */
-    Category findById(@Param("id") Long id);
+    CategoryDO findById(@Param("id") Long id);
 
     /**
      * 查询所有分类
@@ -27,7 +27,7 @@ public interface CategoryMapper {
      *
      * @return 所有分类列表
      */
-    List<Category> findAll();
+    List<CategoryDO> findAll();
 
     /**
      * 根据父分类ID查询子分类列表
@@ -36,7 +36,7 @@ public interface CategoryMapper {
      * @param parentId 父分类ID，0表示查询顶级分类
      * @return 子分类列表
      */
-    List<Category> findByParentId(@Param("parentId") Long parentId);
+    List<CategoryDO> findByParentId(@Param("parentId") Long parentId);
 
     /**
      * 根据层级查询分类列表
@@ -45,7 +45,7 @@ public interface CategoryMapper {
      * @param level 分类层级（1-一级，2-二级，3-三级）
      * @return 指定层级的分类列表
      */
-    List<Category> findByLevel(@Param("level") Integer level);
+    List<CategoryDO> findByLevel(@Param("level") Integer level);
 
     /**
      * 根据状态查询分类列表
@@ -54,7 +54,7 @@ public interface CategoryMapper {
      * @param status 状态（0-禁用，1-正常）
      * @return 指定状态的分类列表
      */
-    List<Category> findByStatus(@Param("status") Integer status);
+    List<CategoryDO> findByStatus(@Param("status") Integer status);
 
     /**
      * 插入新分类
@@ -62,7 +62,7 @@ public interface CategoryMapper {
      * @param category 分类信息
      * @return 影响行数
      */
-    int insert(Category category);
+    int insert(CategoryDO category);
 
     /**
      * 根据ID更新分类信息
@@ -71,7 +71,7 @@ public interface CategoryMapper {
      * @param category 分类信息
      * @return 影响行数
      */
-    int updateById(Category category);
+    int updateById(CategoryDO category);
 
     /**
      * 根据ID删除分类
@@ -87,7 +87,7 @@ public interface CategoryMapper {
      * @param ids 分类ID列表
      * @return 分类列表
      */
-    List<Category> findByIds(@Param("ids") List<Long> ids);
+    List<CategoryDO> findByIds(@Param("ids") List<Long> ids);
 
     /**
      * 统计指定父分类下的子分类数量
@@ -105,5 +105,5 @@ public interface CategoryMapper {
      * @param parentId 父分类ID
      * @return 分类信息，不存在返回null
      */
-    Category findByNameAndParentId(@Param("name") String name, @Param("parentId") Long parentId);
+    CategoryDO findByNameAndParentId(@Param("name") String name, @Param("parentId") Long parentId);
 }

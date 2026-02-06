@@ -1,5 +1,6 @@
 package site.geekie.shop.shoppingmall.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -7,7 +8,7 @@ import org.springframework.web.bind.annotation.*;
 import site.geekie.shop.shoppingmall.common.Result;
 import site.geekie.shop.shoppingmall.dto.request.PaymentNotifyRequest;
 import site.geekie.shop.shoppingmall.dto.request.PaymentRequest;
-import site.geekie.shop.shoppingmall.dto.response.PaymentResponse;
+import site.geekie.shop.shoppingmall.vo.PaymentVO;
 import site.geekie.shop.shoppingmall.service.PaymentService;
 
 /**
@@ -32,10 +33,11 @@ public class PaymentController {
      * @param request 支付请求（订单号）
      * @return 支付结果
      */
+    @Operation(summary = "发起支付（模拟）")
     @PostMapping("/pay")
     @PreAuthorize("hasRole('USER')")
-    public Result<PaymentResponse> pay(@Valid @RequestBody PaymentRequest request) {
-        PaymentResponse response = paymentService.pay(request);
+    public Result<PaymentVO> pay(@Valid @RequestBody PaymentRequest request) {
+        PaymentVO response = paymentService.pay(request);
         return Result.success(response);
     }
 
@@ -49,6 +51,7 @@ public class PaymentController {
      * @param request 支付回调请求
      * @return 操作结果
      */
+    @Operation(summary = "处理支付回调（模拟）")
     @PostMapping("/notify")
     public Result<Void> handlePaymentNotify(@RequestBody PaymentNotifyRequest request) {
         paymentService.handlePaymentNotify(request);

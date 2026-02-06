@@ -5,8 +5,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import site.geekie.shop.shoppingmall.common.ResultCode;
 import site.geekie.shop.shoppingmall.dto.request.CategoryRequest;
-import site.geekie.shop.shoppingmall.dto.response.CategoryResponse;
-import site.geekie.shop.shoppingmall.entity.Category;
+import site.geekie.shop.shoppingmall.entity.CategoryDO;
+import site.geekie.shop.shoppingmall.vo.CategoryVO;
 import site.geekie.shop.shoppingmall.exception.BusinessException;
 import site.geekie.shop.shoppingmall.mapper.CategoryMapper;
 import site.geekie.shop.shoppingmall.service.CategoryService;
@@ -26,20 +26,20 @@ public class CategoryServiceImpl implements CategoryService {
     private final CategoryMapper categoryMapper;
 
     @Override
-    public List<CategoryResponse> getAllCategories() {
-        List<Category> categories = categoryMapper.findAll();
+    public List<CategoryVO> getAllCategories() {
+        List<CategoryDO> categories = categoryMapper.findAll();
         return categories.stream()
                 .map(this::convertToResponse)
                 .collect(Collectors.toList());
     }
 
     @Override
-    public List<CategoryResponse> getCategoryTree() {
+    public List<CategoryVO> getCategoryTree() {
         // 获取所有分类
-        List<Category> allCategories = categoryMapper.findAll();
+        List<CategoryDO> allCategories = categoryMapper.findAll();
 
         // 转换为Response对象
-        List<CategoryResponse> allResponses = allCategories.stream()
+        List<CategoryVO> allResponses = allCategories.stream()
                 .map(this::convertToResponse)
                 .collect(Collectors.toList());
 
@@ -48,16 +48,16 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
-    public List<CategoryResponse> getCategoriesByParentId(Long parentId) {
-        List<Category> categories = categoryMapper.findByParentId(parentId);
+    public List<CategoryVO> getCategoriesByParentId(Long parentId) {
+        List<CategoryDO> categories = categoryMapper.findByParentId(parentId);
         return categories.stream()
                 .map(this::convertToResponse)
                 .collect(Collectors.toList());
     }
 
     @Override
-    public CategoryResponse getCategoryById(Long id) {
-        Category category = categoryMapper.findById(id);
+    public CategoryVO getCategoryById(Long id) {
+        CategoryDO category = categoryMapper.findById(id);
         if (category == null) {
             throw new BusinessException(ResultCode.CATEGORY_NOT_FOUND);
         }
@@ -66,10 +66,10 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     @Transactional
-    public CategoryResponse addCategory(CategoryRequest request) {
+    public CategoryVO addCategory(CategoryRequest request) {
         // 1. 验证父分类存在性（如果不是顶级分类）
         if (request.getParentId() > 0) {
-            Category parentCategory = categoryMapper.findById(request.getParentId());
+            CategoryDO parentCategory = categoryMapper.findById(request.getParentId());
             if (parentCategory == null) {
                 throw new BusinessException(ResultCode.INVALID_PARENT_CATEGORY);
             }
@@ -91,14 +91,14 @@ public class CategoryServiceImpl implements CategoryService {
         }
 
         // 2. 检查同级分类名称是否重复
-        Category existingCategory = categoryMapper.findByNameAndParentId(
+        CategoryDO existingCategory = categoryMapper.findByNameAndParentId(
                 request.getName(), request.getParentId());
         if (existingCategory != null) {
             throw new BusinessException(ResultCode.CATEGORY_NAME_DUPLICATE);
         }
 
         // 3. 创建分类
-        Category category = new Category();
+        CategoryDO category = new CategoryDO();
         category.setName(request.getName());
         category.setParentId(request.getParentId());
         category.setLevel(request.getLevel());
@@ -113,15 +113,15 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     @Transactional
-    public CategoryResponse updateCategory(Long id, CategoryRequest request) {
+    public CategoryVO updateCategory(Long id, CategoryRequest request) {
         // 1. 查询分类是否存在
-        Category category = categoryMapper.findById(id);
+        CategoryDO category = categoryMapper.findById(id);
         if (category == null) {
             throw new BusinessException(ResultCode.CATEGORY_NOT_FOUND);
         }
 
         // 2. 检查名称是否与同级其他分类重复
-        Category existingCategory = categoryMapper.findByNameAndParentId(
+        CategoryDO existingCategory = categoryMapper.findByNameAndParentId(
                 request.getName(), category.getParentId());
         if (existingCategory != null && !existingCategory.getId().equals(id)) {
             throw new BusinessException(ResultCode.CATEGORY_NAME_DUPLICATE);
@@ -142,7 +142,7 @@ public class CategoryServiceImpl implements CategoryService {
     @Transactional
     public void deleteCategory(Long id) {
         // 1. 查询分类是否存在
-        Category category = categoryMapper.findById(id);
+        CategoryDO category = categoryMapper.findById(id);
         if (category == null) {
             throw new BusinessException(ResultCode.CATEGORY_NOT_FOUND);
         }
@@ -167,13 +167,13 @@ public class CategoryServiceImpl implements CategoryService {
      * @param parentId 父分类ID
      * @return 树形结构的分类列表
      */
-    private List<CategoryResponse> buildTree(List<CategoryResponse> allCategories, Long parentId) {
-        List<CategoryResponse> tree = new ArrayList<>();
+    private List<CategoryVO> buildTree(List<CategoryVO> allCategories, Long parentId) {
+        List<CategoryVO> tree = new ArrayList<>();
 
-        for (CategoryResponse category : allCategories) {
+        for (CategoryVO category : allCategories) {
             if (category.getParentId().equals(parentId)) {
                 // 递归查找子分类
-                List<CategoryResponse> children = buildTree(allCategories, category.getId());
+                List<CategoryVO> children = buildTree(allCategories, category.getId());
                 if (!children.isEmpty()) {
                     category.setChildren(children);
                 }
@@ -190,8 +190,8 @@ public class CategoryServiceImpl implements CategoryService {
      * @param category 分类实体
      * @return 分类响应DTO
      */
-    private CategoryResponse convertToResponse(Category category) {
-        return new CategoryResponse(
+    private CategoryVO convertToResponse(CategoryDO category) {
+        return new CategoryVO(
                 category.getId(),
                 category.getName(),
                 category.getParentId(),

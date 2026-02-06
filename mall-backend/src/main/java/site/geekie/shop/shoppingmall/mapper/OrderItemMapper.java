@@ -2,7 +2,7 @@ package site.geekie.shop.shoppingmall.mapper;
 
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
-import site.geekie.shop.shoppingmall.entity.OrderItem;
+import site.geekie.shop.shoppingmall.entity.OrderItemDO;
 
 import java.util.List;
 
@@ -19,7 +19,7 @@ public interface OrderItemMapper {
      * @param orderId 订单ID
      * @return 订单明细列表
      */
-    List<OrderItem> findByOrderId(@Param("orderId") Long orderId);
+    List<OrderItemDO> findByOrderId(@Param("orderId") Long orderId);
 
     /**
      * 批量插入订单明细
@@ -27,7 +27,8 @@ public interface OrderItemMapper {
      * @param items 订单明细列表
      * @return 影响行数
      */
-    int batchInsert(@Param("items") List<OrderItem> items);
+    int batchInsert(@Param("items") List<OrderItemDO> items)
+;
 
     /**
      * 插入单个订单明细
@@ -35,5 +36,5 @@ public interface OrderItemMapper {
      * @param item 订单明细
      * @return 影响行数
      */
-    int insert(OrderItem item);
+    int insert(OrderItemDO item);
 }

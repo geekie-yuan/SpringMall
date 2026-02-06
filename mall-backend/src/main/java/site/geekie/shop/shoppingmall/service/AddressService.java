@@ -1,7 +1,7 @@
 package site.geekie.shop.shoppingmall.service;
 
 import site.geekie.shop.shoppingmall.dto.request.AddressRequest;
-import site.geekie.shop.shoppingmall.dto.response.AddressResponse;
+import site.geekie.shop.shoppingmall.vo.AddressVO;
 
 import java.util.List;
 
@@ -23,14 +23,14 @@ public interface AddressService {
      *
      * @return 地址列表
      */
-    List<AddressResponse> getAddressList();
+    List<AddressVO> getAddressList();
 
     /**
      * 获取当前用户的默认地址
      *
      * @return 默认地址，不存在则返回null
      */
-    AddressResponse getDefaultAddress();
+    AddressVO getDefaultAddress();
 
     /**
      * 根据地址ID获取地址详情
@@ -41,7 +41,7 @@ public interface AddressService {
      * @throws site.geekie.shop.shoppingmall.exception.BusinessException
      *         当地址不存在或不属于当前用户时抛出
      */
-    AddressResponse getAddressById(Long id);
+    AddressVO getAddressById(Long id);
 
     /**
      * 新增收货地址
@@ -50,7 +50,7 @@ public interface AddressService {
      * @param request 地址请求
      * @return 新增的地址信息
      */
-    AddressResponse addAddress(AddressRequest request);
+    AddressVO addAddress(AddressRequest request);
 
     /**
      * 修改收货地址
@@ -62,7 +62,7 @@ public interface AddressService {
      * @throws site.geekie.shop.shoppingmall.exception.BusinessException
      *         当地址不存在或不属于当前用户时抛出
      */
-    AddressResponse updateAddress(Long id, AddressRequest request);
+    AddressVO updateAddress(Long id, AddressRequest request);
 
     /**
      * 删除收货地址

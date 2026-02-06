@@ -2,7 +2,7 @@ package site.geekie.shop.shoppingmall.service;
 
 import site.geekie.shop.shoppingmall.common.PageResult;
 import site.geekie.shop.shoppingmall.dto.request.ProductRequest;
-import site.geekie.shop.shoppingmall.dto.response.ProductResponse;
+import site.geekie.shop.shoppingmall.vo.ProductVO;
 
 import java.util.List;
 
@@ -18,7 +18,7 @@ public interface ProductService {
      *
      * @return 所有商品列表
      */
-    PageResult<ProductResponse> getAllProducts(int page, int size, String keyword, Long categoryId, Integer status);
+    PageResult<ProductVO> getAllProducts(int page, int size, String keyword, Long categoryId, Integer status);
 
     /**
      * 根据分类ID获取商品列表
@@ -26,7 +26,7 @@ public interface ProductService {
      * @param categoryId 分类ID
      * @return 商品列表
      */
-    List<ProductResponse> getProductsByCategoryId(Long categoryId);
+    List<ProductVO> getProductsByCategoryId(Long categoryId);
 
     /**
      * 根据状态获取商品列表
@@ -34,7 +34,7 @@ public interface ProductService {
      * @param status 状态（0-下架，1-上架）
      * @return 商品列表
      */
-    List<ProductResponse> getProductsByStatus(Integer status);
+    List<ProductVO> getProductsByStatus(Integer status);
 
     /**
      * 搜索商品
@@ -43,7 +43,7 @@ public interface ProductService {
      * @param keyword 搜索关键词
      * @return 商品列表
      */
-    PageResult<ProductResponse> searchProducts(String keyword, int page, int size);
+    PageResult<ProductVO> searchProducts(String keyword, int page, int size);
 
     /**
      * 根据ID获取商品详情
@@ -53,7 +53,7 @@ public interface ProductService {
      * @throws site.geekie.shop.shoppingmall.exception.BusinessException
      *         当商品不存在时抛出
      */
-    ProductResponse getProductById(Long id);
+    ProductVO getProductById(Long id);
 
     /**
      * 新增商品
@@ -64,7 +64,7 @@ public interface ProductService {
      * @throws site.geekie.shop.shoppingmall.exception.BusinessException
      *         当分类不存在时抛出
      */
-    ProductResponse addProduct(ProductRequest request);
+    ProductVO addProduct(ProductRequest request);
 
     /**
      * 修改商品信息
@@ -75,7 +75,7 @@ public interface ProductService {
      * @throws site.geekie.shop.shoppingmall.exception.BusinessException
      *         当商品不存在或分类不存在时抛出
      */
-    ProductResponse updateProduct(Long id, ProductRequest request);
+    ProductVO updateProduct(Long id, ProductRequest request);
 
     /**
      * 删除商品
@@ -117,7 +117,7 @@ public interface ProductService {
      * @param request 商品请求
      * @return 新增的商品信息
      */
-    ProductResponse createProduct(ProductRequest request);
+    ProductVO createProduct(ProductRequest request);
 
     /**
      * 更新商品状态（管理员）

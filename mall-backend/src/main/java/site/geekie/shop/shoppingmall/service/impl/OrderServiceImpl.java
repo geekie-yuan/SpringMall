@@ -10,8 +10,8 @@ import site.geekie.shop.shoppingmall.common.PageResult;
 import site.geekie.shop.shoppingmall.common.OrderStatus;
 import site.geekie.shop.shoppingmall.common.ResultCode;
 import site.geekie.shop.shoppingmall.dto.request.OrderRequest;
-import site.geekie.shop.shoppingmall.dto.response.OrderItemResponse;
-import site.geekie.shop.shoppingmall.dto.response.OrderResponse;
+import site.geekie.shop.shoppingmall.vo.OrderItemVO;
+import site.geekie.shop.shoppingmall.vo.OrderVO;
 import site.geekie.shop.shoppingmall.entity.*;
 import site.geekie.shop.shoppingmall.exception.BusinessException;
 import site.geekie.shop.shoppingmall.mapper.*;
@@ -49,8 +49,8 @@ public class OrderServiceImpl implements OrderService {
     /**
      * 构建订单响应对象
      */
-    private OrderResponse buildOrderResponse(Order order, boolean includeItems) {
-        OrderResponse response = new OrderResponse();
+    private OrderVO buildOrderVO(OrderDO order, boolean includeItems) {
+        OrderVO response = new OrderVO();
         response.setId(order.getId());
         response.setOrderNo(order.getOrderNo());
         response.setUserId(order.getUserId());
@@ -78,9 +78,9 @@ public class OrderServiceImpl implements OrderService {
         response.setUpdatedAt(order.getUpdatedAt());
 
         if (includeItems) {
-            List<OrderItem> items = orderItemMapper.findByOrderId(order.getId());
-            List<OrderItemResponse> itemResponses = items.stream()
-                    .map(item -> new OrderItemResponse(
+            List<OrderItemDO> items = orderItemMapper.findByOrderId(order.getId());
+            List<OrderItemVO> itemResponses = items.stream()
+                    .map(item -> new OrderItemVO(
                             item.getId(),
                             item.getProductId(),
                             item.getProductName(),
@@ -98,17 +98,17 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public OrderResponse createOrder(OrderRequest request) {
+    public OrderVO createOrder(OrderRequest request) {
         Long userId = getCurrentUserId();
 
         // 1. 查询购物车中已选中的商品
-        List<CartItem> checkedItems = cartItemMapper.findCheckedByUserId(userId);
+        List<CartItemDO> checkedItems = cartItemMapper.findCheckedByUserId(userId);
         if (checkedItems == null || checkedItems.isEmpty()) {
             throw new BusinessException(ResultCode.NO_CHECKED_CART_ITEMS);
         }
 
         // 2. 验证地址
-        Address address = addressMapper.findById(request.getAddressId());
+        AddressDO address = addressMapper.findById(request.getAddressId());
         if (address == null) {
             throw new BusinessException(ResultCode.ADDRESS_NOT_FOUND);
         }
@@ -118,10 +118,10 @@ public class OrderServiceImpl implements OrderService {
 
         // 3. 验证库存并计算总价
         BigDecimal totalAmount = BigDecimal.ZERO;
-        List<OrderItem> orderItems = new ArrayList<>();
+        List<OrderItemDO> orderItems = new ArrayList<>();
 
-        for (CartItem cartItem : checkedItems) {
-            Product product = productMapper.findById(cartItem.getProductId());
+        for (CartItemDO cartItem : checkedItems) {
+            ProductDO product = productMapper.findById(cartItem.getProductId());
             if (product == null) {
                 throw new BusinessException(ResultCode.PRODUCT_NOT_FOUND);
             }
@@ -137,7 +137,7 @@ public class OrderServiceImpl implements OrderService {
             totalAmount = totalAmount.add(itemTotal);
 
             // 准备订单明细（稍后插入）
-            OrderItem orderItem = new OrderItem();
+            OrderItemDO orderItem = new OrderItemDO();
             orderItem.setProductId(product.getId());
             orderItem.setProductName(product.getName());
             orderItem.setProductImage(product.getMainImage());
@@ -148,7 +148,7 @@ public class OrderServiceImpl implements OrderService {
         }
 
         // 4. 扣减库存（使用乐观锁）
-        for (OrderItem orderItem : orderItems) {
+        for (OrderItemDO orderItem : orderItems) {
             int result = productMapper.decreaseStock(orderItem.getProductId(), orderItem.getQuantity());
             if (result == 0) {
                 // 库存不足或商品不存在
@@ -160,7 +160,7 @@ public class OrderServiceImpl implements OrderService {
         String orderNo = OrderNoGenerator.generateOrderNo();
 
         // 6. 创建订单主表
-        Order order = new Order();
+        OrderDO order = new OrderDO();
         order.setOrderNo(orderNo);
         order.setUserId(userId);
         order.setTotalAmount(totalAmount);
@@ -176,33 +176,33 @@ public class OrderServiceImpl implements OrderService {
         orderMapper.insert(order);
 
         // 7. 创建订单明细
-        for (OrderItem item : orderItems) {
+        for (OrderItemDO item : orderItems) {
             item.setOrderId(order.getId());
         }
         orderItemMapper.batchInsert(orderItems);
 
         // 8. 清空已购买的购物车商品
         List<Long> cartItemIds = checkedItems.stream()
-                .map(CartItem::getId)
+                .map(CartItemDO::getId)
                 .collect(Collectors.toList());
         cartItemMapper.deleteByIds(cartItemIds);
 
         // 9. 返回订单信息
-        return buildOrderResponse(order, true);
+        return buildOrderVO(order, true);
     }
 
     @Override
-    public List<OrderResponse> getMyOrders() {
+    public List<OrderVO> getMyOrders() {
         Long userId = getCurrentUserId();
-        List<Order> orders = orderMapper.findByUserId(userId);
+        List<OrderDO> orders = orderMapper.findByUserId(userId);
 
         return orders.stream()
-                .map(o -> buildOrderResponse(o, true))
+                .map(o -> buildOrderVO(o, true))
                 .collect(Collectors.toList());
     }
 
     @Override
-    public List<OrderResponse> getMyOrdersByStatus(String status) {
+    public List<OrderVO> getMyOrdersByStatus(String status) {
         // 验证状态是否合法
         try {
             OrderStatus.fromCode(status);
@@ -211,16 +211,16 @@ public class OrderServiceImpl implements OrderService {
         }
 
         Long userId = getCurrentUserId();
-        List<Order> orders = orderMapper.findByUserIdAndStatus(userId, status);
+        List<OrderDO> orders = orderMapper.findByUserIdAndStatus(userId, status);
 
         return orders.stream()
-                .map(o -> buildOrderResponse(o, true))
+                .map(o -> buildOrderVO(o, true))
                 .collect(Collectors.toList());
     }
 
     @Override
-    public OrderResponse getOrderDetail(String orderNo) {
-        Order order = orderMapper.findByOrderNo(orderNo);
+    public OrderVO getOrderDetail(String orderNo) {
+        OrderDO order = orderMapper.findByOrderNo(orderNo);
         if (order == null) {
             throw new BusinessException(ResultCode.ORDER_NOT_FOUND);
         }
@@ -231,13 +231,13 @@ public class OrderServiceImpl implements OrderService {
             throw new BusinessException(ResultCode.FORBIDDEN);
         }
 
-        return buildOrderResponse(order, true);
+        return buildOrderVO(order, true);
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void cancelOrder(String orderNo) {
-        Order order = orderMapper.findByOrderNo(orderNo);
+        OrderDO order = orderMapper.findByOrderNo(orderNo);
         if (order == null) {
             throw new BusinessException(ResultCode.ORDER_NOT_FOUND);
         }
@@ -255,8 +255,8 @@ public class OrderServiceImpl implements OrderService {
         }
 
         // 恢复库存
-        List<OrderItem> items = orderItemMapper.findByOrderId(order.getId());
-        for (OrderItem item : items) {
+        List<OrderItemDO> items = orderItemMapper.findByOrderId(order.getId());
+        for (OrderItemDO item : items) {
             productMapper.increaseStock(item.getProductId(), item.getQuantity());
         }
 
@@ -267,7 +267,7 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void confirmReceipt(String orderNo) {
-        Order order = orderMapper.findByOrderNo(orderNo);
+        OrderDO order = orderMapper.findByOrderNo(orderNo);
         if (order == null) {
             throw new BusinessException(ResultCode.ORDER_NOT_FOUND);
         }
@@ -291,18 +291,18 @@ public class OrderServiceImpl implements OrderService {
     // ===== 管理员方法实现 =====
 
     @Override
-    public PageResult<OrderResponse> getAllOrders(int page, int size) {
+    public PageResult<OrderVO> getAllOrders(int page, int size) {
         PageHelper.startPage(page, size);
-        List<Order> orders = orderMapper.findAll();
-        PageInfo<Order> pageInfo = new PageInfo<>(orders);
-        List<OrderResponse> list = orders.stream()
-                .map(o -> buildOrderResponse(o, false))
+        List<OrderDO> orders = orderMapper.findAll();
+        PageInfo<OrderDO> pageInfo = new PageInfo<>(orders);
+        List<OrderVO> list = orders.stream()
+                .map(o -> buildOrderVO(o, false))
                 .collect(Collectors.toList());
         return new PageResult<>(list, pageInfo.getTotal(), page, size);
     }
 
     @Override
-    public PageResult<OrderResponse> getAllOrdersByStatus(String status, int page, int size) {
+    public PageResult<OrderVO> getAllOrdersByStatus(String status, int page, int size) {
         // 验证状态是否合法
         try {
             OrderStatus.fromCode(status);
@@ -311,29 +311,29 @@ public class OrderServiceImpl implements OrderService {
         }
 
         PageHelper.startPage(page, size);
-        List<Order> orders = orderMapper.findAllByStatus(status);
-        PageInfo<Order> pageInfo = new PageInfo<>(orders);
-        List<OrderResponse> list = orders.stream()
-                .map(o -> buildOrderResponse(o, false))
+        List<OrderDO> orders = orderMapper.findAllByStatus(status);
+        PageInfo<OrderDO> pageInfo = new PageInfo<>(orders);
+        List<OrderVO> list = orders.stream()
+                .map(o -> buildOrderVO(o, false))
                 .collect(Collectors.toList());
         return new PageResult<>(list, pageInfo.getTotal(), page, size);
     }
 
     @Override
-    public OrderResponse getOrderDetailAdmin(String orderNo) {
-        Order order = orderMapper.findByOrderNo(orderNo);
+    public OrderVO getOrderDetailAdmin(String orderNo) {
+        OrderDO order = orderMapper.findByOrderNo(orderNo);
         if (order == null) {
             throw new BusinessException(ResultCode.ORDER_NOT_FOUND);
         }
 
         // 管理员查看订单详情不需要验证所有权
-        return buildOrderResponse(order, true);
+        return buildOrderVO(order, true);
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void shipOrder(String orderNo) {
-        Order order = orderMapper.findByOrderNo(orderNo);
+        OrderDO order = orderMapper.findByOrderNo(orderNo);
         if (order == null) {
             throw new BusinessException(ResultCode.ORDER_NOT_FOUND);
         }
@@ -351,7 +351,7 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void cancelOrderByAdmin(String orderNo) {
-        Order order = orderMapper.findByOrderNo(orderNo);
+        OrderDO order = orderMapper.findByOrderNo(orderNo);
         if (order == null) {
             throw new BusinessException(ResultCode.ORDER_NOT_FOUND);
         }
@@ -363,8 +363,8 @@ public class OrderServiceImpl implements OrderService {
         }
 
         // 恢复库存
-        List<OrderItem> items = orderItemMapper.findByOrderId(order.getId());
-        for (OrderItem item : items) {
+        List<OrderItemDO> items = orderItemMapper.findByOrderId(order.getId());
+        for (OrderItemDO item : items) {
             productMapper.increaseStock(item.getProductId(), item.getQuantity());
         }
 

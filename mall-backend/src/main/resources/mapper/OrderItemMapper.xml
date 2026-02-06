@@ -4,7 +4,7 @@
 <mapper namespace="site.geekie.shop.shoppingmall.mapper.OrderItemMapper">
 
     <!-- 结果映射 -->
-    <resultMap id="BaseResultMap" type="site.geekie.shop.shoppingmall.entity.OrderItem">
+    <resultMap id="BaseResultMap" type="site.geekie.shop.shoppingmall.entity.OrderItemDO">
         <id column="id" property="id"/>
         <result column="order_id" property="orderId"/>
         <result column="product_id" property="productId"/>
@@ -25,13 +25,13 @@
     <!-- 根据订单ID查询所有订单明细 -->
     <select id="findByOrderId" resultMap="BaseResultMap">
         SELECT <include refid="Base_Column_List"/>
-        FROM order_item
+        FROM mall_order_item
         WHERE order_id = #{orderId}
     </select>
 
     <!-- 批量插入订单明细 -->
     <insert id="batchInsert">
-        INSERT INTO order_item (
+        INSERT INTO mall_order_item (
             order_id, product_id, product_name, product_image,
             unit_price, quantity, total_price
         ) VALUES
@@ -45,7 +45,7 @@
 
     <!-- 插入单个订单明细 -->
     <insert id="insert" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO order_item (
+        INSERT INTO mall_order_item (
             order_id, product_id, product_name, product_image,
             unit_price, quantity, total_price
         ) VALUES (

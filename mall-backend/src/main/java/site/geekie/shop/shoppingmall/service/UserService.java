@@ -2,8 +2,8 @@ package site.geekie.shop.shoppingmall.service;
 
 import site.geekie.shop.shoppingmall.common.PageResult;
 import site.geekie.shop.shoppingmall.dto.request.UpdatePasswordRequest;
-import site.geekie.shop.shoppingmall.dto.response.UserResponse;
-import site.geekie.shop.shoppingmall.entity.User;
+import site.geekie.shop.shoppingmall.entity.UserDO;
+import site.geekie.shop.shoppingmall.vo.UserVO;
 
 /**
  * 用户服务接口
@@ -26,7 +26,7 @@ public interface UserService {
      * @throws site.geekie.shop.shoppingmall.exception.BusinessException
      *         当用户未找到时抛出
      */
-    UserResponse getCurrentUser();
+    UserVO getCurrentUser();
 
     /**
      * 根据用户ID查询用户信息
@@ -36,7 +36,7 @@ public interface UserService {
      * @throws site.geekie.shop.shoppingmall.exception.BusinessException
      *         当用户不存在时抛出
      */
-    UserResponse getUserById(Long id);
+    UserVO getUserById(Long id);
 
     /**
      * 更新当前登录用户信息
@@ -45,7 +45,7 @@ public interface UserService {
      * @param user 包含待更新字段的用户对象
      * @return 更新后的用户实体
      */
-    User updateUser(User user);
+    UserDO updateUser(UserDO user);
 
     /**
      * 修改当前登录用户密码
@@ -64,7 +64,7 @@ public interface UserService {
      *
      * @return 用户列表
      */
-    PageResult<UserResponse> getAllUsers(int page, int size, String keyword, String role, Integer status);
+    PageResult<UserVO> getAllUsers(int page, int size, String keyword, String role, Integer status);
 
     /**
      * 更新用户状态（管理员）

@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import site.geekie.shop.shoppingmall.common.PageResult;
 import site.geekie.shop.shoppingmall.common.Result;
 import site.geekie.shop.shoppingmall.dto.request.ProductRequest;
-import site.geekie.shop.shoppingmall.dto.response.ProductResponse;
+import site.geekie.shop.shoppingmall.vo.ProductVO;
 import site.geekie.shop.shoppingmall.service.ProductService;
 
 import java.util.List;
@@ -40,7 +40,7 @@ public class ProductController {
      */
     @Operation(summary = "获取所有商品")
     @GetMapping
-    public Result<PageResult<ProductResponse>> getAllProducts(
+    public Result<PageResult<ProductVO>> getAllProducts(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") @Max(100) int size) {
         return Result.success(productService.getAllProducts(page, size, null, null, null));
@@ -55,8 +55,8 @@ public class ProductController {
      */
     @Operation(summary = "根据分类获取商品")
     @GetMapping("/category/{categoryId}")
-    public Result<List<ProductResponse>> getProductsByCategory(@PathVariable Long categoryId) {
-        List<ProductResponse> products = productService.getProductsByCategoryId(categoryId);
+    public Result<List<ProductVO>> getProductsByCategory(@PathVariable Long categoryId) {
+        List<ProductVO> products = productService.getProductsByCategoryId(categoryId);
         return Result.success(products);
     }
 
@@ -69,7 +69,7 @@ public class ProductController {
      */
     @Operation(summary = "搜索商品")
     @GetMapping("/search")
-    public Result<PageResult<ProductResponse>> searchProducts(
+    public Result<PageResult<ProductVO>> searchProducts(
             @RequestParam String keyword,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") @Max(100) int size) {
@@ -85,8 +85,8 @@ public class ProductController {
      */
     @Operation(summary = "获取商品详情")
     @GetMapping("/{id}")
-    public Result<ProductResponse> getProductById(@PathVariable Long id) {
-        ProductResponse product = productService.getProductById(id);
+    public Result<ProductVO> getProductById(@PathVariable Long id) {
+        ProductVO product = productService.getProductById(id);
         return Result.success(product);
     }
 
@@ -100,8 +100,8 @@ public class ProductController {
     @Operation(summary = "新增商品")
     @SecurityRequirement(name = "Bearer Authentication")
     @PostMapping
-    public Result<ProductResponse> addProduct(@Valid @RequestBody ProductRequest request) {
-        ProductResponse product = productService.addProduct(request);
+    public Result<ProductVO> addProduct(@Valid @RequestBody ProductRequest request) {
+        ProductVO product = productService.addProduct(request);
         return Result.success("商品添加成功", product);
     }
 
@@ -116,9 +116,9 @@ public class ProductController {
     @Operation(summary = "修改商品")
     @SecurityRequirement(name = "Bearer Authentication")
     @PutMapping("/{id}")
-    public Result<ProductResponse> updateProduct(@PathVariable Long id,
+    public Result<ProductVO> updateProduct(@PathVariable Long id,
                                                   @Valid @RequestBody ProductRequest request) {
-        ProductResponse product = productService.updateProduct(id, request);
+        ProductVO product = productService.updateProduct(id, request);
         return Result.success("商品修改成功", product);
     }
 

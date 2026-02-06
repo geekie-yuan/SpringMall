@@ -9,8 +9,8 @@ import site.geekie.shop.shoppingmall.common.OrderStatus;
 import site.geekie.shop.shoppingmall.common.ResultCode;
 import site.geekie.shop.shoppingmall.dto.request.PaymentNotifyRequest;
 import site.geekie.shop.shoppingmall.dto.request.PaymentRequest;
-import site.geekie.shop.shoppingmall.dto.response.PaymentResponse;
-import site.geekie.shop.shoppingmall.entity.Order;
+import site.geekie.shop.shoppingmall.entity.OrderDO;
+import site.geekie.shop.shoppingmall.vo.PaymentVO;
 import site.geekie.shop.shoppingmall.exception.BusinessException;
 import site.geekie.shop.shoppingmall.mapper.OrderMapper;
 import site.geekie.shop.shoppingmall.security.SecurityUser;
@@ -41,9 +41,9 @@ public class PaymentServiceImpl implements PaymentService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public PaymentResponse pay(PaymentRequest request) {
+    public PaymentVO pay(PaymentRequest request) {
         // 1. 查询订单
-        Order order = orderMapper.findByOrderNo(request.getOrderNo());
+        OrderDO order = orderMapper.findByOrderNo(request.getOrderNo());
         if (order == null) {
             throw new BusinessException(ResultCode.ORDER_NOT_FOUND);
         }
@@ -75,7 +75,7 @@ public class PaymentServiceImpl implements PaymentService {
         log.info("模拟支付成功 - 订单号: {}, 交易流水号: {}", order.getOrderNo(), transactionNo);
 
         // 6. 返回支付结果
-        PaymentResponse response = new PaymentResponse();
+        PaymentVO response = new PaymentVO();
         response.setOrderNo(order.getOrderNo());
         response.setPayAmount(order.getPayAmount());
         response.setPaymentMethod(paymentMethod);
@@ -93,7 +93,7 @@ public class PaymentServiceImpl implements PaymentService {
                  request.getOrderNo(), request.getTransactionNo(), request.getPaymentStatus());
 
         // 1. 查询订单
-        Order order = orderMapper.findByOrderNo(request.getOrderNo());
+        OrderDO order = orderMapper.findByOrderNo(request.getOrderNo());
         if (order == null) {
             log.error("支付回调失败 - 订单不存在: {}", request.getOrderNo());
             throw new BusinessException(ResultCode.ORDER_NOT_FOUND);

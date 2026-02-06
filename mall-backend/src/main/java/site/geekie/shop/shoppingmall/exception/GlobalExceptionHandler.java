@@ -2,6 +2,8 @@ package site.geekie.shop.shoppingmall.exception;
 
 import site.geekie.shop.shoppingmall.common.Result;
 import site.geekie.shop.shoppingmall.common.ResultCode;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
@@ -62,6 +64,19 @@ public class GlobalExceptionHandler {
                 .map(FieldError::getDefaultMessage)
                 .collect(Collectors.joining("; "));
         log.error("Validation exception: {}", errorMessage, e);
+        return Result.error(ResultCode.BAD_REQUEST, errorMessage);
+    }
+
+    /**
+     * 处理参数约束校验异常（@Validated + @Max 等触发）
+     */
+    @ExceptionHandler(ConstraintViolationException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public Result<?> handleConstraintViolationException(ConstraintViolationException e) {
+        String errorMessage = e.getConstraintViolations().stream()
+                .map(ConstraintViolation::getMessage)
+                .collect(Collectors.joining("; "));
+        log.error("Constraint violation: {}", errorMessage, e);
         return Result.error(ResultCode.BAD_REQUEST, errorMessage);
     }
 

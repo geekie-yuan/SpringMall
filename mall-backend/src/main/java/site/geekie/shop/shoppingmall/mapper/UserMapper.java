@@ -1,7 +1,7 @@
 package site.geekie.shop.shoppingmall.mapper;
 
 import org.apache.ibatis.annotations.Param;
-import site.geekie.shop.shoppingmall.entity.User;
+import site.geekie.shop.shoppingmall.entity.UserDO;
 
 /**
  * 用户数据访问接口
@@ -23,7 +23,7 @@ public interface UserMapper {
      * @param id 用户ID
      * @return 用户实体，不存在则返回null
      */
-    User findById(@Param("id") Long id);
+    UserDO findById(@Param("id") Long id);
 
     /**
      * 根据用户名查询用户
@@ -32,7 +32,7 @@ public interface UserMapper {
      * @param username 用户名
      * @return 用户实体，不存在则返回null
      */
-    User findByUsername(@Param("username") String username);
+    UserDO findByUsername(@Param("username") String username);
 
     /**
      * 根据邮箱查询用户
@@ -41,7 +41,7 @@ public interface UserMapper {
      * @param email 邮箱地址
      * @return 用户实体，不存在则返回null
      */
-    User findByEmail(@Param("email") String email);
+    UserDO findByEmail(@Param("email") String email);
 
     /**
      * 根据手机号查询用户
@@ -50,7 +50,7 @@ public interface UserMapper {
      * @param phone 手机号
      * @return 用户实体，不存在则返回null
      */
-    User findByPhone(@Param("phone") String phone);
+    UserDO findByPhone(@Param("phone") String phone);
 
     /**
      * 插入新用户记录
@@ -59,7 +59,7 @@ public interface UserMapper {
      * @param user 用户实体（插入后会自动填充ID）
      * @return 影响的行数（成功为1）
      */
-    int insert(User user);
+    int insert(UserDO user);
 
     /**
      * 根据用户ID更新用户信息
@@ -68,7 +68,7 @@ public interface UserMapper {
      * @param user 包含待更新字段的用户实体（必须包含ID）
      * @return 影响的行数（成功为1）
      */
-    int updateById(User user);
+    int updateById(UserDO user);
 
     /**
      * 更新用户密码
@@ -97,7 +97,7 @@ public interface UserMapper {
      *
      * @return 用户列表
      */
-    java.util.List<User> findAll();
+    java.util.List<UserDO> findAll();
 
     /**
      * 带过滤条件查询所有用户（管理员）
@@ -108,7 +108,7 @@ public interface UserMapper {
      * @param status 用户状态（1-正常，0-禁用）
      * @return 用户列表
      */
-    java.util.List<User> findAllWithFilter(@Param("keyword") String keyword,
+    java.util.List<UserDO> findAllWithFilter(@Param("keyword") String keyword,
                                             @Param("role") String role,
                                             @Param("status") Integer status);
 

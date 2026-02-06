@@ -1,7 +1,7 @@
 package site.geekie.shop.shoppingmall.service;
 
 import site.geekie.shop.shoppingmall.dto.request.CategoryRequest;
-import site.geekie.shop.shoppingmall.dto.response.CategoryResponse;
+import site.geekie.shop.shoppingmall.vo.CategoryVO;
 
 import java.util.List;
 
@@ -17,7 +17,7 @@ public interface CategoryService {
      *
      * @return 所有分类列表
      */
-    List<CategoryResponse> getAllCategories();
+    List<CategoryVO> getAllCategories();
 
     /**
      * 获取分类树形结构
@@ -25,7 +25,7 @@ public interface CategoryService {
      *
      * @return 分类树列表（仅包含一级分类，children包含子分类）
      */
-    List<CategoryResponse> getCategoryTree();
+    List<CategoryVO> getCategoryTree();
 
     /**
      * 根据父分类ID获取子分类列表
@@ -33,7 +33,7 @@ public interface CategoryService {
      * @param parentId 父分类ID，0表示获取一级分类
      * @return 子分类列表
      */
-    List<CategoryResponse> getCategoriesByParentId(Long parentId);
+    List<CategoryVO> getCategoriesByParentId(Long parentId);
 
     /**
      * 根据ID获取分类详情
@@ -43,7 +43,7 @@ public interface CategoryService {
      * @throws site.geekie.shop.shoppingmall.exception.BusinessException
      *         当分类不存在时抛出
      */
-    CategoryResponse getCategoryById(Long id);
+    CategoryVO getCategoryById(Long id);
 
     /**
      * 新增分类
@@ -54,7 +54,7 @@ public interface CategoryService {
      * @throws site.geekie.shop.shoppingmall.exception.BusinessException
      *         当父分类不存在或层级不合法时抛出
      */
-    CategoryResponse addCategory(CategoryRequest request);
+    CategoryVO addCategory(CategoryRequest request);
 
     /**
      * 修改分类信息
@@ -66,7 +66,7 @@ public interface CategoryService {
      * @throws site.geekie.shop.shoppingmall.exception.BusinessException
      *         当分类不存在时抛出
      */
-    CategoryResponse updateCategory(Long id, CategoryRequest request);
+    CategoryVO updateCategory(Long id, CategoryRequest request);
 
     /**
      * 删除分类

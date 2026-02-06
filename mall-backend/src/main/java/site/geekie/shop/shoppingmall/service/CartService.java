@@ -1,7 +1,7 @@
 package site.geekie.shop.shoppingmall.service;
 
 import site.geekie.shop.shoppingmall.dto.request.CartItemRequest;
-import site.geekie.shop.shoppingmall.dto.response.CartItemResponse;
+import site.geekie.shop.shoppingmall.vo.CartItemVO;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -17,7 +17,7 @@ public interface CartService {
      *
      * @return 购物车项列表
      */
-    List<CartItemResponse> getCartItems();
+    List<CartItemVO> getCartItems();
 
     /**
      * 添加商品到购物车
@@ -26,7 +26,7 @@ public interface CartService {
      * @param request 购物车请求
      * @return 购物车项响应
      */
-    CartItemResponse addToCart(CartItemRequest request);
+    CartItemVO addToCart(CartItemRequest request);
 
     /**
      * 更新购物车项数量
@@ -35,7 +35,7 @@ public interface CartService {
      * @param quantity 新数量
      * @return 更新后的购物车项
      */
-    CartItemResponse updateQuantity(Long id, Integer quantity);
+    CartItemVO updateQuantity(Long id, Integer quantity);
 
     /**
      * 更新购物车项选中状态

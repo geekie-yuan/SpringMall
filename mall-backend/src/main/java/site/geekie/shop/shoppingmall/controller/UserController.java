@@ -8,8 +8,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import site.geekie.shop.shoppingmall.common.Result;
 import site.geekie.shop.shoppingmall.dto.request.UpdatePasswordRequest;
-import site.geekie.shop.shoppingmall.dto.response.UserResponse;
-import site.geekie.shop.shoppingmall.entity.User;
+import site.geekie.shop.shoppingmall.vo.UserVO;
+import site.geekie.shop.shoppingmall.entity.UserDO;
 import site.geekie.shop.shoppingmall.service.UserService;
 
 /**
@@ -49,8 +49,8 @@ public class UserController {
      */
     @Operation(summary = "获取当前用户信息")
     @GetMapping("/profile")
-    public Result<UserResponse> getProfile() {
-        UserResponse user = userService.getCurrentUser();
+    public Result<UserVO> getProfile() {
+        UserVO user = userService.getCurrentUser();
         return Result.success(user);
     }
 
@@ -69,8 +69,8 @@ public class UserController {
      */
     @Operation(summary = "根据ID查询用户信息")
     @GetMapping("/{id}")
-    public Result<UserResponse> getUserById(@PathVariable Long id) {
-        UserResponse user = userService.getUserById(id);
+    public Result<UserVO> getUserById(@PathVariable Long id) {
+        UserVO user = userService.getUserById(id);
         return Result.success(user);
     }
 
@@ -88,8 +88,8 @@ public class UserController {
      */
     @Operation(summary = "更新用户信息")
     @PutMapping("/profile")
-    public Result<User> updateProfile(@RequestBody User user) {
-        User updatedUser = userService.updateUser(user);
+    public Result<UserDO> updateProfile(@RequestBody UserDO user) {
+        UserDO updatedUser = userService.updateUser(user);
         return Result.success(updatedUser);
     }
 

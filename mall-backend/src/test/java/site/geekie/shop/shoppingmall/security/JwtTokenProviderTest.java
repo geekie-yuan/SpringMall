@@ -39,8 +39,7 @@ class JwtTokenProviderTest {
     void testGenerateToken_Success() {
         // --- 准备阶段 (Arrange) ---
         // 模拟一个 UserDetails 对象
-        String expectedUsername = "geekie_admin";
-        UserDetails userDetails = new User(expectedUsername, "password123", Collections.emptyList());
+        UserDetails userDetails = new User("adminTest", "test123456", Collections.emptyList());
 
         // --- 执行阶段 (Act) ---
         // 调用公有方法，它内部会去调用 private createToken
@@ -58,7 +57,7 @@ class JwtTokenProviderTest {
 
         // 验证用户名是否一致
         String actualUsername = jwtTokenProvider.getUsernameFromToken(token);
-        assertEquals(expectedUsername, actualUsername, "Token中的用户名应与输入一致");
+        assertEquals("adminTest", actualUsername, "Token中的用户名应与输入一致");
 
         // 3. 验证过期时间是否被正确设置
         // 现在的逻辑是：过期时间 = 当前时间 + 1小时

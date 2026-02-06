@@ -1,7 +1,7 @@
 package site.geekie.shop.shoppingmall.mapper;
 
 import org.apache.ibatis.annotations.Param;
-import site.geekie.shop.shoppingmall.entity.Address;
+import site.geekie.shop.shoppingmall.entity.AddressDO;
 
 import java.util.List;
 
@@ -25,7 +25,7 @@ public interface AddressMapper {
      * @param id 地址ID
      * @return 地址实体，不存在则返回null
      */
-    Address findById(@Param("id") Long id);
+    AddressDO findById(@Param("id") Long id);
 
     /**
      * 根据用户ID查询该用户的所有地址列表
@@ -33,7 +33,7 @@ public interface AddressMapper {
      * @param userId 用户ID
      * @return 地址列表
      */
-    List<Address> findByUserId(@Param("userId") Long userId);
+    List<AddressDO> findByUserId(@Param("userId") Long userId);
 
     /**
      * 获取用户的默认地址
@@ -41,7 +41,7 @@ public interface AddressMapper {
      * @param userId 用户ID
      * @return 默认地址，不存在则返回null
      */
-    Address findDefaultByUserId(@Param("userId") Long userId);
+    AddressDO findDefaultByUserId(@Param("userId") Long userId);
 
     /**
      * 插入新地址记录
@@ -50,7 +50,7 @@ public interface AddressMapper {
      * @param address 地址实体（插入后会自动填充ID）
      * @return 影响的行数（成功为1）
      */
-    int insert(Address address);
+    int insert(AddressDO address);
 
     /**
      * 根据地址ID更新地址信息
@@ -59,7 +59,7 @@ public interface AddressMapper {
      * @param address 包含待更新字段的地址实体（必须包含ID）
      * @return 影响的行数（成功为1）
      */
-    int updateById(Address address);
+    int updateById(AddressDO address);
 
     /**
      * 取消用户的所有默认地址

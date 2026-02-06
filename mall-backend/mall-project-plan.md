@@ -141,7 +141,7 @@ Mall Backend API - 小型在线商城后端
 
 ```
 ┌─────────────────┐       ┌─────────────────┐
-│      user       │       │    category     │
+│   mall_user     │       │  mall_category  │
 ├─────────────────┤       ├─────────────────┤
 │ id (PK)         │       │ id (PK)         │
 │ username        │       │ name            │
@@ -159,7 +159,7 @@ Mall Backend API - 小型在线商城后端
          │                              │
          ▼                              ▼
 ┌─────────────────┐       ┌─────────────────┐
-│     address     │       │     product     │
+│  mall_address   │       │  mall_product   │
 ├─────────────────┤       ├─────────────────┤
 │ id (PK)         │       │ id (PK)         │
 │ user_id (FK)    │       │ category_id(FK) │
@@ -179,7 +179,7 @@ Mall Backend API - 小型在线商城后端
          │                         │
          │                         ▼
          │                ┌─────────────────┐
-         │                │    cart_item    │
+         │                │ mall_cart_item  │
          │                ├─────────────────┤
          │                │ id (PK)         │
          │                │ user_id (FK)    │◄────┐
@@ -194,7 +194,7 @@ Mall Backend API - 小型在线商城后端
          │                         │
          ▼                         │
 ┌─────────────────┐                │
-│      order      │                │
+│   mall_order    │                │
 ├─────────────────┤                │
 │ id (PK)         │                │
 │ order_no        │ (唯一订单号)    │
@@ -217,7 +217,7 @@ Mall Backend API - 小型在线商城后端
          │
          ▼
 ┌─────────────────┐
-│   order_item    │
+│mall_order_item  │
 ├─────────────────┤
 │ id (PK)         │
 │ order_id (FK)   │
@@ -235,13 +235,13 @@ Mall Backend API - 小型在线商城后端
 
 | 序号 | 表名 | 说明 |
 |------|------|------|
-| 1 | user | 用户表 |
-| 2 | category | 商品分类表（支持多级） |
-| 3 | product | 商品表 |
-| 4 | cart_item | 购物车表 |
-| 5 | address | 收货地址表 |
-| 6 | order | 订单主表 |
-| 7 | order_item | 订单明细表 |
+| 1 | mall_user | 用户表 |
+| 2 | mall_category | 商品分类表（支持多级） |
+| 3 | mall_product | 商品表 |
+| 4 | mall_cart_item | 购物车表 |
+| 5 | mall_address | 收货地址表 |
+| 6 | mall_order | 订单主表 |
+| 7 | mall_order_item | 订单明细表 |
 
 ### 4.3 建表 SQL
 
@@ -257,7 +257,7 @@ USE mall;
 -- ----------------------------------------
 -- 1. 用户表
 -- ----------------------------------------
-CREATE TABLE `user` (
+CREATE TABLE `mall_user` (
     `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '用户ID',
     `username` VARCHAR(50) NOT NULL COMMENT '用户名',
     `password` VARCHAR(255) NOT NULL COMMENT '密码（加密）',
@@ -277,7 +277,7 @@ CREATE TABLE `user` (
 -- ----------------------------------------
 -- 2. 商品分类表（支持多级）
 -- ----------------------------------------
-CREATE TABLE `category` (
+CREATE TABLE `mall_category` (
     `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '分类ID',
     `name` VARCHAR(100) NOT NULL COMMENT '分类名称',
     `parent_id` BIGINT DEFAULT 0 COMMENT '父分类ID，0为顶级',
@@ -294,7 +294,7 @@ CREATE TABLE `category` (
 -- ----------------------------------------
 -- 3. 商品表
 -- ----------------------------------------
-CREATE TABLE `product` (
+CREATE TABLE `mall_product` (
     `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '商品ID',
     `category_id` BIGINT NOT NULL COMMENT '分类ID',
     `name` VARCHAR(200) NOT NULL COMMENT '商品名称',
@@ -315,7 +315,7 @@ CREATE TABLE `product` (
 -- ----------------------------------------
 -- 4. 购物车表
 -- ----------------------------------------
-CREATE TABLE `cart_item` (
+CREATE TABLE `mall_cart_item` (
     `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '购物车ID',
     `user_id` BIGINT NOT NULL COMMENT '用户ID',
     `product_id` BIGINT NOT NULL COMMENT '商品ID',
@@ -331,7 +331,7 @@ CREATE TABLE `cart_item` (
 -- ----------------------------------------
 -- 5. 收货地址表
 -- ----------------------------------------
-CREATE TABLE `address` (
+CREATE TABLE `mall_address` (
     `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '地址ID',
     `user_id` BIGINT NOT NULL COMMENT '用户ID',
     `receiver_name` VARCHAR(50) NOT NULL COMMENT '收货人姓名',
@@ -350,7 +350,7 @@ CREATE TABLE `address` (
 -- ----------------------------------------
 -- 6. 订单主表
 -- ----------------------------------------
-CREATE TABLE `order` (
+CREATE TABLE `mall_order` (
     `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '订单ID',
     `order_no` VARCHAR(50) NOT NULL COMMENT '订单号',
     `user_id` BIGINT NOT NULL COMMENT '用户ID',
@@ -377,7 +377,7 @@ CREATE TABLE `order` (
 -- ----------------------------------------
 -- 7. 订单明细表
 -- ----------------------------------------
-CREATE TABLE `order_item` (
+CREATE TABLE `mall_order_item` (
     `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '明细ID',
     `order_id` BIGINT NOT NULL COMMENT '订单ID',
     `product_id` BIGINT NOT NULL COMMENT '商品ID',
@@ -397,11 +397,11 @@ CREATE TABLE `order_item` (
 -- ----------------------------------------
 
 -- 插入管理员账户（密码: admin123，需使用BCrypt加密后的值）
-INSERT INTO `user` (`username`, `password`, `email`, `role`, `status`) VALUES
+INSERT INTO `mall_user` (`username`, `password`, `email`, `role`, `status`) VALUES
 ('admin', '$2a$10$uISN1BbnQjhKwrx4twz31.X/8cdzxjO.4hvYMPfbWnpYdBlmWgX0G', 'admin@mall.com', 'ADMIN', 1);
 
 -- 插入示例分类
-INSERT INTO `category` (`name`, `parent_id`, `level`, `sort_order`) VALUES
+INSERT INTO `mall_category` (`name`, `parent_id`, `level`, `sort_order`) VALUES
 ('电子产品', 0, 1, 1),
 ('服装', 0, 1, 2),
 ('食品', 0, 1, 3),

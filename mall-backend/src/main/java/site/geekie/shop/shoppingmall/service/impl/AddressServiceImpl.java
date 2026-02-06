@@ -6,8 +6,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import site.geekie.shop.shoppingmall.common.ResultCode;
 import site.geekie.shop.shoppingmall.dto.request.AddressRequest;
-import site.geekie.shop.shoppingmall.dto.response.AddressResponse;
-import site.geekie.shop.shoppingmall.entity.Address;
+import site.geekie.shop.shoppingmall.entity.AddressDO;
+import site.geekie.shop.shoppingmall.vo.AddressVO;
 import site.geekie.shop.shoppingmall.exception.BusinessException;
 import site.geekie.shop.shoppingmall.mapper.AddressMapper;
 import site.geekie.shop.shoppingmall.security.SecurityUser;
@@ -34,33 +34,33 @@ public class AddressServiceImpl implements AddressService {
     private final AddressMapper addressMapper;
 
     @Override
-    public List<AddressResponse> getAddressList() {
+    public List<AddressVO> getAddressList() {
         Long userId = getCurrentUserId();
-        List<Address> addresses = addressMapper.findByUserId(userId);
+        List<AddressDO> addresses = addressMapper.findByUserId(userId);
         return addresses.stream()
                 .map(this::convertToResponse)
                 .collect(Collectors.toList());
     }
 
     @Override
-    public AddressResponse getDefaultAddress() {
+    public AddressVO getDefaultAddress() {
         Long userId = getCurrentUserId();
-        Address address = addressMapper.findDefaultByUserId(userId);
+        AddressDO address = addressMapper.findDefaultByUserId(userId);
         return address != null ? convertToResponse(address) : null;
     }
 
     @Override
-    public AddressResponse getAddressById(Long id) {
-        Address address = getAddressAndCheckOwner(id);
+    public AddressVO getAddressById(Long id) {
+        AddressDO address = getAddressAndCheckOwner(id);
         return convertToResponse(address);
     }
 
     @Override
     @Transactional
-    public AddressResponse addAddress(AddressRequest request) {
+    public AddressVO addAddress(AddressRequest request) {
         Long userId = getCurrentUserId();
 
-        Address address = new Address();
+        AddressDO address = new AddressDO();
         address.setUserId(userId);
         address.setReceiverName(request.getReceiverName());
         address.setPhone(request.getPhone());
@@ -86,8 +86,8 @@ public class AddressServiceImpl implements AddressService {
 
     @Override
     @Transactional
-    public AddressResponse updateAddress(Long id, AddressRequest request) {
-        Address address = getAddressAndCheckOwner(id);
+    public AddressVO updateAddress(Long id, AddressRequest request) {
+        AddressDO address = getAddressAndCheckOwner(id);
 
         address.setReceiverName(request.getReceiverName());
         address.setPhone(request.getPhone());
@@ -109,14 +109,14 @@ public class AddressServiceImpl implements AddressService {
     @Override
     @Transactional
     public void deleteAddress(Long id) {
-        Address address = getAddressAndCheckOwner(id);
+        AddressDO address = getAddressAndCheckOwner(id);
         boolean wasDefault = address.getIsDefault() == 1;
 
         addressMapper.deleteById(id);
 
         // 如果删除的是默认地址，将第一个地址设为默认
         if (wasDefault) {
-            List<Address> addresses = addressMapper.findByUserId(address.getUserId());
+            List<AddressDO> addresses = addressMapper.findByUserId(address.getUserId());
             if (!addresses.isEmpty()) {
                 addressMapper.setDefault(addresses.get(0).getId());
             }
@@ -126,7 +126,7 @@ public class AddressServiceImpl implements AddressService {
     @Override
     @Transactional
     public void setDefaultAddress(Long id) {
-        Address address = getAddressAndCheckOwner(id);
+        AddressDO address = getAddressAndCheckOwner(id);
 
         // 取消当前用户的所有默认地址
         addressMapper.cancelDefaultByUserId(address.getUserId());
@@ -143,8 +143,8 @@ public class AddressServiceImpl implements AddressService {
      * @return 地址实体
      * @throws BusinessException 当地址不存在或不属于当前用户时抛出
      */
-    private Address getAddressAndCheckOwner(Long id) {
-        Address address = addressMapper.findById(id);
+    private AddressDO getAddressAndCheckOwner(Long id) {
+        AddressDO address = addressMapper.findById(id);
         if (address == null) {
             throw new BusinessException(ResultCode.ADDRESS_NOT_FOUND);
         }
@@ -170,13 +170,13 @@ public class AddressServiceImpl implements AddressService {
     }
 
     /**
-     * 将Address实体转换为AddressResponse对象
+     * 将Address实体转换为AddressVO对象
      *
      * @param address 地址实体
      * @return 地址响应对象
      */
-    private AddressResponse convertToResponse(Address address) {
-        return new AddressResponse(
+    private AddressVO convertToResponse(AddressDO address) {
+        return new AddressVO(
                 address.getId(),
                 address.getUserId(),
                 address.getReceiverName(),
