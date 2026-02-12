@@ -6,18 +6,11 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * 当前用户 ID 注解
- * 用于自动注入当前登录用户的 ID 到方法参数中
+ * 标注此注解的 Controller 方法参数将自动注入当前登录用户 ID
  *
- * 使用示例：
- * <pre>
- * public OrderVO createOrder(@CurrentUserId Long userId, OrderRequest request) {
- *     // userId 会自动从 SecurityContext 中提取
- * }
- * </pre>
- *
- * @author backend-dev
- * @since 2026-02-06
+ * @author springMall
+ * @since 1.0.0
+ * @see site.geekie.shop.shoppingmall.config.CurrentUserIdResolver
  */
 @Target(ElementType.PARAMETER)
 @Retention(RetentionPolicy.RUNTIME)
