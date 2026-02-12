@@ -1,7 +1,7 @@
 package site.geekie.shop.shoppingmall.service;
 
-import site.geekie.shop.shoppingmall.dto.request.PaymentNotifyRequest;
-import site.geekie.shop.shoppingmall.dto.request.PaymentRequest;
+import site.geekie.shop.shoppingmall.dto.PaymentDTO;
+import site.geekie.shop.shoppingmall.dto.PaymentNotifyDTO;
 import site.geekie.shop.shoppingmall.vo.PaymentVO;
 
 /**
@@ -18,9 +18,10 @@ public interface PaymentService {
      * 4. 返回支付结果
      *
      * @param request 支付请求
+     * @param userId 当前登录用户ID
      * @return 支付响应
      */
-    PaymentVO pay(PaymentRequest request);
+    PaymentVO pay(PaymentDTO request, Long userId);
 
     /**
      * 处理支付回调（模拟）
@@ -31,5 +32,5 @@ public interface PaymentService {
      *
      * @param request 支付回调请求
      */
-    void handlePaymentNotify(PaymentNotifyRequest request);
+    void handlePaymentNotify(PaymentNotifyDTO request);
 }

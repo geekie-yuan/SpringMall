@@ -7,8 +7,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import site.geekie.shop.shoppingmall.common.OrderStatus;
 import site.geekie.shop.shoppingmall.common.ResultCode;
-import site.geekie.shop.shoppingmall.dto.request.PaymentNotifyRequest;
-import site.geekie.shop.shoppingmall.dto.request.PaymentRequest;
+import site.geekie.shop.shoppingmall.dto.PaymentDTO;
+import site.geekie.shop.shoppingmall.dto.PaymentNotifyDTO;
 import site.geekie.shop.shoppingmall.entity.OrderDO;
 import site.geekie.shop.shoppingmall.vo.PaymentVO;
 import site.geekie.shop.shoppingmall.exception.BusinessException;
@@ -30,18 +30,9 @@ public class PaymentServiceImpl implements PaymentService {
 
     private final OrderMapper orderMapper;
 
-    /**
-     * 获取当前登录用户ID
-     */
-    private Long getCurrentUserId() {
-        SecurityUser securityUser = (SecurityUser) SecurityContextHolder.getContext()
-                .getAuthentication().getPrincipal();
-        return securityUser.getUser().getId();
-    }
-
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public PaymentVO pay(PaymentRequest request) {
+    public PaymentVO pay(PaymentDTO request, Long userId) {
         // 1. 查询订单
         OrderDO order = orderMapper.findByOrderNo(request.getOrderNo());
         if (order == null) {
@@ -49,7 +40,6 @@ public class PaymentServiceImpl implements PaymentService {
         }
 
         // 2. 验证订单所有权
-        Long userId = getCurrentUserId();
         if (!order.getUserId().equals(userId)) {
             throw new BusinessException(ResultCode.FORBIDDEN);
         }
@@ -88,7 +78,7 @@ public class PaymentServiceImpl implements PaymentService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void handlePaymentNotify(PaymentNotifyRequest request) {
+    public void handlePaymentNotify(PaymentNotifyDTO request) {
         log.info("收到支付回调 - 订单号: {}, 交易流水号: {}, 状态: {}",
                  request.getOrderNo(), request.getTransactionNo(), request.getPaymentStatus());
 

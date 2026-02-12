@@ -1,16 +1,14 @@
 package site.geekie.shop.shoppingmall.service.impl;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import site.geekie.shop.shoppingmall.common.ResultCode;
-import site.geekie.shop.shoppingmall.dto.request.AddressRequest;
+import site.geekie.shop.shoppingmall.dto.AddressDTO;
 import site.geekie.shop.shoppingmall.entity.AddressDO;
 import site.geekie.shop.shoppingmall.vo.AddressVO;
 import site.geekie.shop.shoppingmall.exception.BusinessException;
 import site.geekie.shop.shoppingmall.mapper.AddressMapper;
-import site.geekie.shop.shoppingmall.security.SecurityUser;
 import site.geekie.shop.shoppingmall.service.AddressService;
 
 import java.util.List;
@@ -34,8 +32,7 @@ public class AddressServiceImpl implements AddressService {
     private final AddressMapper addressMapper;
 
     @Override
-    public List<AddressVO> getAddressList() {
-        Long userId = getCurrentUserId();
+    public List<AddressVO> getAddressList(Long userId) {
         List<AddressDO> addresses = addressMapper.findByUserId(userId);
         return addresses.stream()
                 .map(this::convertToResponse)
@@ -43,23 +40,20 @@ public class AddressServiceImpl implements AddressService {
     }
 
     @Override
-    public AddressVO getDefaultAddress() {
-        Long userId = getCurrentUserId();
+    public AddressVO getDefaultAddress(Long userId) {
         AddressDO address = addressMapper.findDefaultByUserId(userId);
         return address != null ? convertToResponse(address) : null;
     }
 
     @Override
-    public AddressVO getAddressById(Long id) {
-        AddressDO address = getAddressAndCheckOwner(id);
+    public AddressVO getAddressById(Long id, Long userId) {
+        AddressDO address = getAddressAndCheckOwner(id, userId);
         return convertToResponse(address);
     }
 
     @Override
     @Transactional
-    public AddressVO addAddress(AddressRequest request) {
-        Long userId = getCurrentUserId();
-
+    public AddressVO addAddress(AddressDTO request, Long userId) {
         AddressDO address = new AddressDO();
         address.setUserId(userId);
         address.setReceiverName(request.getReceiverName());
@@ -86,8 +80,8 @@ public class AddressServiceImpl implements AddressService {
 
     @Override
     @Transactional
-    public AddressVO updateAddress(Long id, AddressRequest request) {
-        AddressDO address = getAddressAndCheckOwner(id);
+    public AddressVO updateAddress(Long id, AddressDTO request, Long userId) {
+        AddressDO address = getAddressAndCheckOwner(id, userId);
 
         address.setReceiverName(request.getReceiverName());
         address.setPhone(request.getPhone());
@@ -108,8 +102,8 @@ public class AddressServiceImpl implements AddressService {
 
     @Override
     @Transactional
-    public void deleteAddress(Long id) {
-        AddressDO address = getAddressAndCheckOwner(id);
+    public void deleteAddress(Long id, Long userId) {
+        AddressDO address = getAddressAndCheckOwner(id, userId);
         boolean wasDefault = address.getIsDefault() == 1;
 
         addressMapper.deleteById(id);
@@ -125,8 +119,8 @@ public class AddressServiceImpl implements AddressService {
 
     @Override
     @Transactional
-    public void setDefaultAddress(Long id) {
-        AddressDO address = getAddressAndCheckOwner(id);
+    public void setDefaultAddress(Long id, Long userId) {
+        AddressDO address = getAddressAndCheckOwner(id, userId);
 
         // 取消当前用户的所有默认地址
         addressMapper.cancelDefaultByUserId(address.getUserId());
@@ -140,33 +134,21 @@ public class AddressServiceImpl implements AddressService {
      * 确保地址存在且属于当前用户
      *
      * @param id 地址ID
+     * @param userId 当前用户ID
      * @return 地址实体
      * @throws BusinessException 当地址不存在或不属于当前用户时抛出
      */
-    private AddressDO getAddressAndCheckOwner(Long id) {
+    private AddressDO getAddressAndCheckOwner(Long id, Long userId) {
         AddressDO address = addressMapper.findById(id);
         if (address == null) {
             throw new BusinessException(ResultCode.ADDRESS_NOT_FOUND);
         }
 
-        Long userId = getCurrentUserId();
         if (!address.getUserId().equals(userId)) {
             throw new BusinessException(ResultCode.ADDRESS_NOT_FOUND);
         }
 
         return address;
-    }
-
-    /**
-     * 获取当前登录用户ID
-     *
-     * @return 用户ID
-     */
-    private Long getCurrentUserId() {
-        SecurityUser securityUser = (SecurityUser) SecurityContextHolder.getContext()
-                .getAuthentication()
-                .getPrincipal();
-        return securityUser.getUser().getId();
     }
 
     /**

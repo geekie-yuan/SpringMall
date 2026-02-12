@@ -9,7 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 import site.geekie.shop.shoppingmall.common.PageResult;
 import site.geekie.shop.shoppingmall.common.OrderStatus;
 import site.geekie.shop.shoppingmall.common.ResultCode;
-import site.geekie.shop.shoppingmall.dto.request.OrderRequest;
+import site.geekie.shop.shoppingmall.dto.OrderDTO;
 import site.geekie.shop.shoppingmall.vo.OrderItemVO;
 import site.geekie.shop.shoppingmall.vo.OrderVO;
 import site.geekie.shop.shoppingmall.entity.*;
@@ -36,15 +36,6 @@ public class OrderServiceImpl implements OrderService {
     private final CartItemMapper cartItemMapper;
     private final ProductMapper productMapper;
     private final AddressMapper addressMapper;
-
-    /**
-     * 获取当前登录用户ID
-     */
-    private Long getCurrentUserId() {
-        SecurityUser securityUser = (SecurityUser) SecurityContextHolder.getContext()
-                .getAuthentication().getPrincipal();
-        return securityUser.getUser().getId();
-    }
 
     /**
      * 构建订单响应对象
@@ -98,9 +89,7 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public OrderVO createOrder(OrderRequest request) {
-        Long userId = getCurrentUserId();
-
+    public OrderVO createOrder(OrderDTO request, Long userId) {
         // 1. 查询购物车中已选中的商品
         List<CartItemDO> checkedItems = cartItemMapper.findCheckedByUserId(userId);
         if (checkedItems == null || checkedItems.isEmpty()) {
@@ -192,8 +181,7 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
-    public List<OrderVO> getMyOrders() {
-        Long userId = getCurrentUserId();
+    public List<OrderVO> getMyOrders(Long userId) {
         List<OrderDO> orders = orderMapper.findByUserId(userId);
 
         return orders.stream()
@@ -202,7 +190,7 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
-    public List<OrderVO> getMyOrdersByStatus(String status) {
+    public List<OrderVO> getMyOrdersByStatus(String status, Long userId) {
         // 验证状态是否合法
         try {
             OrderStatus.fromCode(status);
@@ -210,7 +198,6 @@ public class OrderServiceImpl implements OrderService {
             throw new BusinessException(ResultCode.INVALID_ORDER_STATUS);
         }
 
-        Long userId = getCurrentUserId();
         List<OrderDO> orders = orderMapper.findByUserIdAndStatus(userId, status);
 
         return orders.stream()
@@ -219,14 +206,13 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
-    public OrderVO getOrderDetail(String orderNo) {
+    public OrderVO getOrderDetail(String orderNo, Long userId) {
         OrderDO order = orderMapper.findByOrderNo(orderNo);
         if (order == null) {
             throw new BusinessException(ResultCode.ORDER_NOT_FOUND);
         }
 
         // 验证订单所有权
-        Long userId = getCurrentUserId();
         if (!order.getUserId().equals(userId)) {
             throw new BusinessException(ResultCode.FORBIDDEN);
         }
@@ -236,14 +222,12 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void cancelOrder(String orderNo) {
+    public void cancelOrder(String orderNo, Long userId) {
         OrderDO order = orderMapper.findByOrderNo(orderNo);
         if (order == null) {
             throw new BusinessException(ResultCode.ORDER_NOT_FOUND);
         }
 
-        // 验证订单所有权
-        Long userId = getCurrentUserId();
         if (!order.getUserId().equals(userId)) {
             throw new BusinessException(ResultCode.FORBIDDEN);
         }
@@ -266,14 +250,12 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void confirmReceipt(String orderNo) {
+    public void confirmReceipt(String orderNo, Long userId) {
         OrderDO order = orderMapper.findByOrderNo(orderNo);
         if (order == null) {
             throw new BusinessException(ResultCode.ORDER_NOT_FOUND);
         }
 
-        // 验证订单所有权
-        Long userId = getCurrentUserId();
         if (!order.getUserId().equals(userId)) {
             throw new BusinessException(ResultCode.FORBIDDEN);
         }

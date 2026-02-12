@@ -1,17 +1,15 @@
 package site.geekie.shop.shoppingmall.service.impl;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import site.geekie.shop.shoppingmall.dto.request.CartItemRequest;
+import site.geekie.shop.shoppingmall.dto.CartItemDTO;
 import site.geekie.shop.shoppingmall.entity.CartItemDO;
 import site.geekie.shop.shoppingmall.entity.ProductDO;
 import site.geekie.shop.shoppingmall.vo.CartItemVO;
 import site.geekie.shop.shoppingmall.exception.BusinessException;
 import site.geekie.shop.shoppingmall.mapper.CartItemMapper;
 import site.geekie.shop.shoppingmall.mapper.ProductMapper;
-import site.geekie.shop.shoppingmall.security.SecurityUser;
 import site.geekie.shop.shoppingmall.service.CartService;
 import site.geekie.shop.shoppingmall.common.ResultCode;
 
@@ -28,15 +26,6 @@ public class CartServiceImpl implements CartService {
 
     private final CartItemMapper cartItemMapper;
     private final ProductMapper productMapper;
-
-    /**
-     * 获取当前登录用户ID
-     */
-    private Long getCurrentUserId() {
-        SecurityUser securityUser = (SecurityUser) SecurityContextHolder.getContext()
-                .getAuthentication().getPrincipal();
-        return securityUser.getUser().getId();
-    }
 
     /**
      * 填充商品详情到购物车响应对象
@@ -70,19 +59,18 @@ public class CartServiceImpl implements CartService {
     /**
      * 验证购物车项所有权
      */
-    private void validateCartItemOwnership(Long cartItemId) {
+    private void validateCartItemOwnership(Long cartItemId, Long userId) {
         CartItemDO cartItem = cartItemMapper.findById(cartItemId);
         if (cartItem == null) {
             throw new BusinessException(ResultCode.CART_ITEM_NOT_FOUND);
         }
-        if (!cartItem.getUserId().equals(getCurrentUserId())) {
+        if (!cartItem.getUserId().equals(userId)) {
             throw new BusinessException(ResultCode.FORBIDDEN);
         }
     }
 
     @Override
-    public List<CartItemVO> getCartItems() {
-        Long userId = getCurrentUserId();
+    public List<CartItemVO> getCartItems(Long userId) {
         List<CartItemDO> cartItems = cartItemMapper.findByUserId(userId);
 
         return cartItems.stream()
@@ -92,9 +80,7 @@ public class CartServiceImpl implements CartService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public CartItemVO addToCart(CartItemRequest request) {
-        Long userId = getCurrentUserId();
-
+    public CartItemVO addToCart(CartItemDTO request, Long userId) {
         // 验证商品是否存在且可售
         ProductDO product = productMapper.findById(request.getProductId());
         if (product == null) {
@@ -139,9 +125,9 @@ public class CartServiceImpl implements CartService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public CartItemVO updateQuantity(Long id, Integer quantity) {
+    public CartItemVO updateQuantity(Long id, Integer quantity, Long userId) {
         // 验证所有权
-        validateCartItemOwnership(id);
+        validateCartItemOwnership(id, userId);
 
         if (quantity < 1) {
             throw new BusinessException(ResultCode.INVALID_PARAMETER);
@@ -168,9 +154,9 @@ public class CartServiceImpl implements CartService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void updateChecked(Long id, Integer checked) {
+    public void updateChecked(Long id, Integer checked, Long userId) {
         // 验证所有权
-        validateCartItemOwnership(id);
+        validateCartItemOwnership(id, userId);
 
         if (checked != 0 && checked != 1) {
             throw new BusinessException(ResultCode.INVALID_PARAMETER);
@@ -181,33 +167,31 @@ public class CartServiceImpl implements CartService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void updateAllChecked(Integer checked) {
+    public void updateAllChecked(Integer checked, Long userId) {
         if (checked != 0 && checked != 1) {
             throw new BusinessException(ResultCode.INVALID_PARAMETER);
         }
 
-        Long userId = getCurrentUserId();
         cartItemMapper.updateAllChecked(userId, checked);
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void deleteCartItem(Long id) {
+    public void deleteCartItem(Long id, Long userId) {
         // 验证所有权
-        validateCartItemOwnership(id);
+        validateCartItemOwnership(id, userId);
 
         cartItemMapper.deleteById(id);
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void deleteCartItems(List<Long> ids) {
+    public void deleteCartItems(List<Long> ids, Long userId) {
         if (ids == null || ids.isEmpty()) {
             throw new BusinessException(ResultCode.INVALID_PARAMETER);
         }
 
         // 验证所有购物车项的所有权
-        Long userId = getCurrentUserId();
         for (Long id : ids) {
             CartItemDO cartItem = cartItemMapper.findById(id);
             if (cartItem == null || !cartItem.getUserId().equals(userId)) {
@@ -220,14 +204,12 @@ public class CartServiceImpl implements CartService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void clearCart() {
-        Long userId = getCurrentUserId();
+    public void clearCart(Long userId) {
         cartItemMapper.deleteByUserId(userId);
     }
 
     @Override
-    public BigDecimal getCartTotal() {
-        Long userId = getCurrentUserId();
+    public BigDecimal getCartTotal(Long userId) {
         List<CartItemDO> checkedItems = cartItemMapper.findCheckedByUserId(userId);
 
         BigDecimal total = BigDecimal.ZERO;
@@ -243,8 +225,7 @@ public class CartServiceImpl implements CartService {
     }
 
     @Override
-    public int getCartCount() {
-        Long userId = getCurrentUserId();
+    public int getCartCount(Long userId) {
         return cartItemMapper.countByUserId(userId);
     }
 }

@@ -1,7 +1,7 @@
 package site.geekie.shop.shoppingmall.service;
 
 import site.geekie.shop.shoppingmall.common.PageResult;
-import site.geekie.shop.shoppingmall.dto.request.OrderRequest;
+import site.geekie.shop.shoppingmall.dto.OrderDTO;
 import site.geekie.shop.shoppingmall.vo.OrderVO;
 
 import java.util.List;
@@ -22,32 +22,36 @@ public interface OrderService {
      * 6. 清空已购买的购物车商品
      *
      * @param request 订单请求（包含收货地址ID和备注）
+     * @param userId 当前登录用户ID
      * @return 订单响应
      */
-    OrderVO createOrder(OrderRequest request);
+    OrderVO createOrder(OrderDTO request, Long userId);
 
     /**
      * 获取当前用户的所有订单
      *
+     * @param userId 当前登录用户ID
      * @return 订单列表
      */
-    List<OrderVO> getMyOrders();
+    List<OrderVO> getMyOrders(Long userId);
 
     /**
      * 根据状态获取当前用户的订单
      *
      * @param status 订单状态
+     * @param userId 当前登录用户ID
      * @return 订单列表
      */
-    List<OrderVO> getMyOrdersByStatus(String status);
+    List<OrderVO> getMyOrdersByStatus(String status, Long userId);
 
     /**
      * 获取订单详情
      *
      * @param orderNo 订单号
+     * @param userId 当前登录用户ID
      * @return 订单详情
      */
-    OrderVO getOrderDetail(String orderNo);
+    OrderVO getOrderDetail(String orderNo, Long userId);
 
     /**
      * 取消订单
@@ -55,16 +59,18 @@ public interface OrderService {
      * 取消后恢复库存
      *
      * @param orderNo 订单号
+     * @param userId 当前登录用户ID
      */
-    void cancelOrder(String orderNo);
+    void cancelOrder(String orderNo, Long userId);
 
     /**
      * 确认收货
      * 只有已发货状态的订单可以确认收货
      *
      * @param orderNo 订单号
+     * @param userId 当前登录用户ID
      */
-    void confirmReceipt(String orderNo);
+    void confirmReceipt(String orderNo, Long userId);
 
     // ===== 管理员方法 =====
 

@@ -1,13 +1,15 @@
 package site.geekie.shop.shoppingmall.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+import site.geekie.shop.shoppingmall.annotation.CurrentUserId;
 import site.geekie.shop.shoppingmall.common.Result;
-import site.geekie.shop.shoppingmall.dto.request.AddressRequest;
+import site.geekie.shop.shoppingmall.dto.AddressDTO;
 import site.geekie.shop.shoppingmall.vo.AddressVO;
 import site.geekie.shop.shoppingmall.service.AddressService;
 
@@ -35,39 +37,32 @@ import java.util.List;
 @SecurityRequirement(name = "Bearer Authentication")
 public class AddressController {
 
-    // 地址服务
     private final AddressService addressService;
 
     /**
      * 获取当前用户的地址列表
      * 返回所有地址，按默认地址优先、创建时间倒序排列
      *
-     * 请求路径：GET /api/v1/addresses
-     * 认证：需要Bearer Token
-     * 权限：USER角色
-     *
+     * @param userId 当前登录用户ID（自动注入）
      * @return 包含地址列表的统一响应对象
      */
     @Operation(summary = "获取地址列表")
     @GetMapping
-    public Result<List<AddressVO>> getAddressList() {
-        List<AddressVO> addresses = addressService.getAddressList();
+    public Result<List<AddressVO>> getAddressList(@Parameter(hidden = true) @CurrentUserId Long userId) {
+        List<AddressVO> addresses = addressService.getAddressList(userId);
         return Result.success(addresses);
     }
 
     /**
      * 获取当前用户的默认地址
      *
-     * 请求路径：GET /api/v1/addresses/default
-     * 认证：需要Bearer Token
-     * 权限：USER角色
-     *
+     * @param userId 当前登录用户ID（自动注入）
      * @return 包含默认地址的统一响应对象，无默认地址时data为null
      */
     @Operation(summary = "获取默认地址")
     @GetMapping("/default")
-    public Result<AddressVO> getDefaultAddress() {
-        AddressVO address = addressService.getDefaultAddress();
+    public Result<AddressVO> getDefaultAddress(@Parameter(hidden = true) @CurrentUserId Long userId) {
+        AddressVO address = addressService.getDefaultAddress(userId);
         return Result.success(address);
     }
 
@@ -75,19 +70,16 @@ public class AddressController {
      * 根据ID获取地址详情
      * 仅允许查询当前用户自己的地址
      *
-     * 请求路径：GET /api/v1/addresses/{id}
-     * 认证：需要Bearer Token
-     * 权限：USER角色
-     *
      * @param id 地址ID
+     * @param userId 当前登录用户ID（自动注入）
      * @return 包含地址详情的统一响应对象
      * @throws site.geekie.shop.shoppingmall.exception.BusinessException
      *         当地址不存在或不属于当前用户时抛出
      */
     @Operation(summary = "获取地址详情")
     @GetMapping("/{id}")
-    public Result<AddressVO> getAddressById(@PathVariable Long id) {
-        AddressVO address = addressService.getAddressById(id);
+    public Result<AddressVO> getAddressById(@PathVariable Long id, @Parameter(hidden = true) @CurrentUserId Long userId) {
+        AddressVO address = addressService.getAddressById(id, userId);
         return Result.success(address);
     }
 
@@ -95,22 +87,14 @@ public class AddressController {
      * 新增收货地址
      * 如果是第一个地址，自动设为默认
      *
-     * 请求路径：POST /api/v1/addresses
-     * 认证：需要Bearer Token
-     * 权限：USER角色
-     * 验证规则：
-     *   - 收货人姓名：2-50字符
-     *   - 联系电话：11位手机号
-     *   - 省市区：必填
-     *   - 详细地址：5-200字符
-     *
      * @param request 地址请求
+     * @param userId 当前登录用户ID（自动注入）
      * @return 包含新增地址信息的统一响应对象
      */
     @Operation(summary = "新增地址")
     @PostMapping
-    public Result<AddressVO> addAddress(@Valid @RequestBody AddressRequest request) {
-        AddressVO address = addressService.addAddress(request);
+    public Result<AddressVO> addAddress(@Valid @RequestBody AddressDTO request, @Parameter(hidden = true) @CurrentUserId Long userId) {
+        AddressVO address = addressService.addAddress(request, userId);
         return Result.success("地址添加成功", address);
     }
 
@@ -118,21 +102,17 @@ public class AddressController {
      * 修改收货地址
      * 仅允许修改当前用户自己的地址
      *
-     * 请求路径：PUT /api/v1/addresses/{id}
-     * 认证：需要Bearer Token
-     * 权限：USER角色
-     *
      * @param id 地址ID
      * @param request 地址请求
+     * @param userId 当前登录用户ID（自动注入）
      * @return 包含修改后地址信息的统一响应对象
      * @throws site.geekie.shop.shoppingmall.exception.BusinessException
      *         当地址不存在或不属于当前用户时抛出
      */
     @Operation(summary = "修改地址")
     @PutMapping("/{id}")
-    public Result<AddressVO> updateAddress(@PathVariable Long id,
-                                                  @Valid @RequestBody AddressRequest request) {
-        AddressVO address = addressService.updateAddress(id, request);
+    public Result<AddressVO> updateAddress(@PathVariable Long id, @Valid @RequestBody AddressDTO request, @Parameter(hidden = true) @CurrentUserId Long userId) {
+        AddressVO address = addressService.updateAddress(id, request, userId);
         return Result.success("地址修改成功", address);
     }
 
@@ -141,19 +121,16 @@ public class AddressController {
      * 仅允许删除当前用户自己的地址
      * 如果删除的是默认地址，会自动将第一个地址设为默认
      *
-     * 请求路径：DELETE /api/v1/addresses/{id}
-     * 认证：需要Bearer Token
-     * 权限：USER角色
-     *
      * @param id 地址ID
+     * @param userId 当前登录用户ID（自动注入）
      * @return 统一响应对象
      * @throws site.geekie.shop.shoppingmall.exception.BusinessException
      *         当地址不存在或不属于当前用户时抛出
      */
     @Operation(summary = "删除地址")
     @DeleteMapping("/{id}")
-    public Result<Void> deleteAddress(@PathVariable Long id) {
-        addressService.deleteAddress(id);
+    public Result<Void> deleteAddress(@PathVariable Long id, @Parameter(hidden = true) @CurrentUserId Long userId) {
+        addressService.deleteAddress(id, userId);
         return Result.success("地址删除成功", null);
     }
 
@@ -161,19 +138,16 @@ public class AddressController {
      * 设置默认地址
      * 会自动取消当前用户的其他默认地址
      *
-     * 请求路径：PUT /api/v1/addresses/{id}/default
-     * 认证：需要Bearer Token
-     * 权限：USER角色
-     *
      * @param id 地址ID
+     * @param userId 当前登录用户ID（自动注入）
      * @return 统一响应对象
      * @throws site.geekie.shop.shoppingmall.exception.BusinessException
      *         当地址不存在或不属于当前用户时抛出
      */
     @Operation(summary = "设置默认地址")
     @PutMapping("/{id}/default")
-    public Result<Void> setDefaultAddress(@PathVariable Long id) {
-        addressService.setDefaultAddress(id);
+    public Result<Void> setDefaultAddress(@PathVariable Long id, @Parameter(hidden = true) @CurrentUserId Long userId) {
+        addressService.setDefaultAddress(id, userId);
         return Result.success("默认地址设置成功", null);
     }
 }
