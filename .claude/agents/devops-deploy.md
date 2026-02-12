@@ -1,18 +1,8 @@
 ---
 name: devops-deploy
-description: >
-  springMall 的 DevOps 与部署 Agent。负责 Docker、docker-compose、
-  Dockerfile、Nginx 配置和环境变量管理。代码变更后验证部署配置一致性。
-  凡涉及基础设施或部署相关变更，或在 test-validator 通过且部署文件
-  被修改时，均委托给此 Agent。
-model: sonnet
-tools:
-  - read
-  - edit
-  - write
-  - bash
-  - glob
-  - grep
+description: "springMall 的 DevOps 与部署 Agent。负责 Docker、docker-compose、 Dockerfile、Nginx 配置和环境变量管理。代码变更后验证部署配置一致性。 凡涉及基础设施或部署相关变更，或在 test-validator 通过且部署文件 被修改时，均委托给此 Agent。\\n"
+tools: read, edit, write, bash, glob, grep
+model: haiku
 ---
 
 # devops-deploy — 基础设施与部署 Agent

@@ -82,37 +82,7 @@ springMall 是一个全栈电商应用项目。
 5. backend-dev 完成变更后 → **doc-writer** 根据交接信息生成或更新 `DevDoc/` 文档（可与 code-reviewer 并行）
 
 ---
-
-## 3. 构建命令
-
-### 后端
-```bash
-cd mall-backend
-mvnw compile                        # 快速语法/类型检查（无需数据库）
-mvnw test                           # 完整测试套件
-mvnw clean package -DskipTests      # 打包 JAR 供 Docker 使用
-```
-
-### 前端
-```bash
-cd mall-frontend
-npm run dev                         # 开发服务器，端口 3000
-npm run build                       # 生产构建 → dist/
-npm run preview                     # 本地预览生产构建
-```
-
-### Docker
-```bash
-# 在项目根目录执行
-docker compose up -d --build        # 全量重建并启动
-docker compose down                 # 停止并移除容器
-docker compose logs -f backend      # 追踪后端日志
-docker compose logs -f frontend     # 追踪前端日志
-```
-
----
-
-## 4. 编码规范
+## 3. 编码规范
 
 ### Java（后端）
 - **Lombok**：实体类用 `@Data`。Service 和 Controller 中用 `@RequiredArgsConstructor` 做依赖注入。
@@ -140,7 +110,7 @@ docker compose logs -f frontend     # 追踪前端日志
 
 ---
 
-## 5. 安全策略
+## 4. 安全策略
 
 以下规则不得违反，任何 Agent 均无权覆盖。
 
@@ -149,7 +119,6 @@ docker compose logs -f frontend     # 追踪前端日志
 3. **绝不**在未写明回滚方案的情况下修改 `schema.sql` 或任何数据库迁移脚本。
 4. **绝不**在未获得用户明确确认的情况下执行 `rm -rf`、`git reset --hard`、`git checkout .`、`DROP TABLE` 或 `format` 命令。（`block-dangerous.sh` hook 自动执行此拦截。）
 5. `application.yml` 中的 JWT Secret 和数据库密码仅供本地开发使用。Docker 部署时由环境变量覆盖。保持此模式不变。
-6. CORS 当前设为 `*`（允许所有源）。这是开发期的刻意选择。未经开发者确认不要收紧。
 7. 后端 `Dockerfile` 的 HEALTHCHECK 指向 `/actuator/health`，但项目未引入 actuator 依赖。正确的健康检查端点是 `/api/v1/categories`（`docker-compose.yml` 中已正确使用）。不要仅为修补此问题而引入 actuator。
 
 ---
@@ -175,7 +144,7 @@ docker compose logs -f frontend     # 追踪前端日志
         code-reviewer — 审查所有变更文件（仅读不写）
                │
                ▼
-        test-validator — mvnw test + npm run build(用户请求测试时才触发)
+        test-validator — mvnw test + pnpm run build(用户请求测试时才触发)
                │
                ▼
   （若涉及基础设施）devops-deploy — 验证 Docker 配置(用户请求测试时才触发)

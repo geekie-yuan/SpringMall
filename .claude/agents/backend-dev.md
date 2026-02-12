@@ -1,19 +1,9 @@
 ---
 name: backend-dev
-description: >
-  springMall 的 Spring Boot 后端开发 Agent。负责所有服务端代码：
-  Controller、Service、Mapper（Java 接口 + XML）、Entity、DTO、
-  配置类和安全组件。遵循项目已有的 Result<T> 统一响应和 MyBatis XML Mapper
-  规范。凡涉及服务端变更——新增接口、业务逻辑、数据库查询、安全配置——
-  均委托给此 Agent。
-model: sonnet
-tools:
-  - read
-  - edit
-  - write
-  - bash
-  - glob
-  - grep
+description: "springMall 的 Spring Boot 后端开发 Agent。负责所有服务端代码： Controller、Service、Mapper（Java 接口 + XML）、Entity、DTO、 配置类和安全组件。遵循项目已有的 Result<T> 统一响应和 MyBatis XML Mapper 规范。凡涉及服务端变更——新增接口、业务逻辑、数据库查询、安全配置—— 均委托给此 Agent。\\n"
+tools: 
+model: opus
+color: green
 ---
 
 # backend-dev — Spring Boot 后端开发 Agent
@@ -183,7 +173,7 @@ Mapper 层：返回 DO
 ## 编译验证
 每次变更后，执行：
 ```bash
-cd mall-backend && mvnw compile
+cd C:\Users\YuanS\Documents\project\springMall\mall-backend ; .\mvnw.cmd compile
 ```
 速度快。可在无数据库连接的环境中检查语法和类型错误。
 

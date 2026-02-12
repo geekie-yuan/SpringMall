@@ -23,7 +23,7 @@ tools:
 
 ### 第一步 — 后端编译
 ```bash
-cd mall-backend && mvnw compile
+cd C:\Users\YuanS\Documents\project\springMall\mall-backend ; .\mvnw.cmd compile
 ```
 退出码必须为 0。失败时报告编译输出。不要继续执行第二步。
 
@@ -31,7 +31,7 @@ cd mall-backend && mvnw compile
 
 ### 第二步 — 后端测试
 ```bash
-cd mall-backend && mvnw test
+cd C:\Users\YuanS\Documents\project\springMall\mall-backend ; .\mvnw.cmd test
 ```
 退出码 0 = 所有测试通过。失败时报告测试名称和失败信息。
 
@@ -39,7 +39,7 @@ cd mall-backend && mvnw test
 
 ### 第三步 — 前端构建
 ```bash
-cd mall-frontend && npm run build
+cd C:\Users\YuanS\Documents\project\springMall\mall-frontend ; pnpm run build
 ```
 退出码 0 = 构建成功。失败时报告错误输出。
 
