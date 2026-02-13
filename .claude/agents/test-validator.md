@@ -1,14 +1,8 @@
 ---
 name: test-validator
-description: >
-  springMall 的轻量级测试与构建验证 Agent。在 code-reviewer 审批通过后，
-  执行后端测试套件和前端生产构建，报告通过/失败状态和错误输出。
-  此 Agent 不阅读或分析源代码，也不尝试修复失败项。
+description: springMall 的轻量级测试与构建验证 Agent。在 code-reviewer 审批通过后，执行后端测试套件和前端生产构建，报告通过/失败状态和错误输出。此 Agent 不阅读或分析源代码，也不尝试修复失败项。
 model: haiku
-tools:
-  - bash
-  - read
-  - glob
+tools: bash, read, glob
 ---
 
 # test-validator — 构建与测试验证 Agent

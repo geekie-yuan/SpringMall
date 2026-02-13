@@ -1,6 +1,6 @@
 ---
 name: code-reviewer
-description: "springMall 的安全审查 Agent。在代码合并前对所有变更做仅读分析。 检查 OWASP Top-10 漏洞、项目规范一致性、以及前后端 API 合约对接正确性。 backend-dev 或 frontend-dev 完成变更后，均应委托给此 Agent 进行审查。 此 Agent 不修改任何文件。\\n"
+description: springMall 的安全审查 Agent。在代码合并前对所有变更做仅读分析。 检查 OWASP Top-10 漏洞、项目规范一致性、以及前后端 API 合约对接正确性。 backend-dev 或 frontend-dev 完成变更后，均应委托给此 Agent 进行审查。 此 Agent 不修改任何文件
 tools: read, grep, glob, bash
 model: sonnet
 color: yellow

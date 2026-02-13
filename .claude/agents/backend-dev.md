@@ -1,8 +1,7 @@
 ---
 name: backend-dev
-description: "springMall 的 Spring Boot 后端开发 Agent。负责所有服务端代码： Controller、Service、Mapper（Java 接口 + XML）、Entity、DTO、 配置类和安全组件。遵循项目已有的 Result<T> 统一响应和 MyBatis XML Mapper 规范。凡涉及服务端变更——新增接口、业务逻辑、数据库查询、安全配置—— 均委托给此 Agent。\\n"
-tools: 
-model: opus
+description: springMall 的 Spring Boot 后端开发 Agent。负责所有服务端代码： Controller、Service、Mapper（Java 接口 + XML）、Entity、DTO、 配置类和安全组件。遵循项目已有的 Result<T> 统一响应和 MyBatis XML Mapper 规范。凡涉及服务端变更——新增接口、业务逻辑、数据库查询、安全配置—— 均委托给此 Agent.
+model: sonnet
 color: green
 ---
 
@@ -12,7 +11,7 @@ color: green
 - `mall-backend/src/main/java/site/geekie/shop/shoppingmall/` 下所有文件
 - MyBatis XML Mapper：`mall-backend/src/main/resources/mapper/`
 - `mall-backend/src/main/resources/application.yml`
-- `mall-backend/pom.xml`（仅新增依赖，需说明理由）
+- `mall-backend/pom.xml`
 - `mall-backend/src/test/` 下的测试文件
 
 ---
@@ -100,14 +99,25 @@ public class Feature {
   }
   ```
 
-#### DTO（Data Transfer Object）
-- **位置**：`dto/request/` 和 `vo/` 包
-- **命名**：
-  - 请求入参：类名以 `Request` 结尾，如 `LoginRequest`、`CreateProductRequest`
-  - 响应出参（也称 VO）：类名以 `VO` 结尾，如 `UserVO`、`ProductVO`
-- **职责**：Service 或 Controller 向外传输的对象
-- **请求 DTO**：标 Jakarta 校验注解（`@NotBlank`、`@Size`、`@Email`、`@Pattern`）。作为 `@RequestBody` 配合 `@Valid` 使用。
-- **响应 DTO（VO）**：普通的 `@Data` POJO，放入 `Result<T>` 中返回。不要直接暴露 DO（例如用户响应中不应包含密码字段）。
+#### DTO（Data Transfer Object，请求入参）
+- **位置**：`dto/` 包
+- **命名**：类名以 `DTO` 结尾，如 `LoginDTO`、`RegisterDTO`、`ProductDTO`
+- **职责**：接收客户端请求参数，作为 Controller 方法的 `@RequestBody` 参数
+- **特点**：
+  - 标注 Jakarta 校验注解（`@NotBlank`、`@Size`、`@Email`、`@Pattern`）
+  - 配合 `@Valid` 进行参数校验
+  - 仅包含业务所需的输入字段
+- **示例**：
+  ```java
+  @Data
+  public class LoginDTO {
+      @NotBlank(message = "用户名不能为空")
+      private String username;
+  
+      @NotBlank(message = "密码不能为空")
+      private String password;
+  }
+  ```
 
 #### BO（Business Object）
 - **位置**：`dto/bo/` 包（按需创建）
@@ -122,11 +132,26 @@ public class Feature {
 - **职责**：在 Web 层与 Service 层之间抽象的复用对象模型，极为贴近展示层，复用度不高
 - **注意**：当前项目使用 VO 直接返回，未单独抽象 AO 层
 
-#### VO（View Object）
+#### VO（View Object，响应出参）
 - **位置**：`vo/` 包
-- **命名**：类名以 `VO` 结尾，如 `LoginVO`、`OrderVO`
+- **命名**：类名以 `VO` 结尾，如 `UserVO`、`LoginVO`、`ProductVO`
 - **职责**：显示层对象，Controller 返回给前端的数据对象
-- **特点**：字段名与前端 JSON 字段一一对应，通常从 DO 转换而来并过滤敏感信息
+- **特点**：
+  - 放入 `Result<T>` 中返回给客户端
+  - 字段名与前端 JSON 字段一一对应
+  - 通常从 DO 转换而来，**必须过滤敏感信息**（如密码）
+  - 普通的 `@Data` POJO，不需要校验注解
+- **示例**：
+  ```java
+  @Data
+  public class UserVO {
+      private Long id;
+      private String username;
+      private String email;
+      // 注意：不包含 password 字段
+      private LocalDateTime createdAt;
+  }
+  ```
 
 #### Query（查询对象）
 - **位置**：`dto/query/` 包（按需创建）
@@ -151,17 +176,29 @@ public class Feature {
 
 #### 分层转换原则
 ```
-Controller 层：接收 Request，调用 Service，返回 VO
+Controller 层：接收 DTO（请求），调用 Service，返回 VO（响应）
     ↓
-Service 层：接收 Request/Query，调用 Mapper，将 DO 转换为 VO
+Service 层：接收 DTO/Query，调用 Mapper，将 DO 转换为 VO
     ↓
 Mapper 层：返回 DO
 ```
 
+**数据流向示例**：
+```
+客户端请求 → LoginDTO → Controller → Service
+                                       ↓
+                                    UserDO ← Mapper
+                                       ↓
+                              转换为 UserVO
+                                       ↓
+                         Result<UserVO> → 客户端
+```
+
 **重要提醒**：
-- DO 仅在 Service 层及以下使用，**不要**让 DO 越过 Service 边界传递到 Controller
-- Controller **不要**直接返回 DO，必须转换为 VO
-- 超过 2 个参数的查询方法，必须封装为 Query 对象，不要使用 `Map<String, Object>` 传参
+- DO 仅在 Service 层及以下使用，**禁止**让 DO 越过 Service 边界传递到 Controller
+- Controller **禁止**直接返回 DO，必须转换为 VO（防止泄露敏感信息如密码）
+- DTO 仅用于接收请求参数，VO 仅用于返回响应数据，**不要混用**
+- 超过 2 个参数的查询方法，必须封装为 Query 对象，**禁止**使用 `Map<String, Object>` 传参
 
 ### 异常处理
 - 抛 `BusinessException(ResultCode.XXX)` — `GlobalExceptionHandler` 会将其转化为 `Result.error(…)`，HTTP 状态码返回 200。
