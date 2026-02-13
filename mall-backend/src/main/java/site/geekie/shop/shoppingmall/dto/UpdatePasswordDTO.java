@@ -1,4 +1,4 @@
-package site.geekie.shop.shoppingmall.dto.request;
+package site.geekie.shop.shoppingmall.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -10,7 +10,7 @@ import lombok.Data;
  *
  */
 @Data
-public class UpdatePasswordRequest {
+public class UpdatePasswordDTO {
 
     /**
      * 旧密码

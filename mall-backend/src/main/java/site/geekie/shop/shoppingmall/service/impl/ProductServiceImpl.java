@@ -7,7 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import site.geekie.shop.shoppingmall.common.PageResult;
 import site.geekie.shop.shoppingmall.common.ResultCode;
-import site.geekie.shop.shoppingmall.dto.request.ProductRequest;
+import site.geekie.shop.shoppingmall.dto.ProductDTO;
 import site.geekie.shop.shoppingmall.entity.CategoryDO;
 import site.geekie.shop.shoppingmall.entity.ProductDO;
 import site.geekie.shop.shoppingmall.vo.ProductVO;
@@ -77,7 +77,7 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional
-    public ProductVO addProduct(ProductRequest request) {
+    public ProductVO addProduct(ProductDTO request) {
         // 1. 验证分类是否存在
         CategoryDO category = categoryMapper.findById(request.getCategoryId());
         if (category == null) {
@@ -103,7 +103,7 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional
-    public ProductVO updateProduct(Long id, ProductRequest request) {
+    public ProductVO updateProduct(Long id, ProductDTO request) {
         // 1. 查询商品是否存在
         ProductDO product = productMapper.findById(id);
         if (product == null) {
@@ -248,7 +248,7 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional
-    public ProductVO createProduct(ProductRequest request) {
+    public ProductVO createProduct(ProductDTO request) {
         // 直接调用addProduct，保持一致性
         return addProduct(request);
     }

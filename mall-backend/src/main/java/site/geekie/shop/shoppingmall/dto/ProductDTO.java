@@ -1,4 +1,4 @@
-package site.geekie.shop.shoppingmall.dto.request;
+package site.geekie.shop.shoppingmall.dto;
 
 import jakarta.validation.constraints.*;
 import lombok.Data;
@@ -10,7 +10,7 @@ import java.math.BigDecimal;
  * 用于新增和修改商品
  */
 @Data
-public class ProductRequest {
+public class ProductDTO {
 
     /**
      * 分类ID

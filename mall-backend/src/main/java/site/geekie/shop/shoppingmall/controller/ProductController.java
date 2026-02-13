@@ -10,7 +10,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import site.geekie.shop.shoppingmall.common.PageResult;
 import site.geekie.shop.shoppingmall.common.Result;
-import site.geekie.shop.shoppingmall.dto.request.ProductRequest;
+import site.geekie.shop.shoppingmall.dto.ProductDTO;
 import site.geekie.shop.shoppingmall.vo.ProductVO;
 import site.geekie.shop.shoppingmall.service.ProductService;
 
@@ -100,7 +100,7 @@ public class ProductController {
     @Operation(summary = "新增商品")
     @SecurityRequirement(name = "Bearer Authentication")
     @PostMapping
-    public Result<ProductVO> addProduct(@Valid @RequestBody ProductRequest request) {
+    public Result<ProductVO> addProduct(@Valid @RequestBody ProductDTO request) {
         ProductVO product = productService.addProduct(request);
         return Result.success("商品添加成功", product);
     }
@@ -117,7 +117,7 @@ public class ProductController {
     @SecurityRequirement(name = "Bearer Authentication")
     @PutMapping("/{id}")
     public Result<ProductVO> updateProduct(@PathVariable Long id,
-                                                  @Valid @RequestBody ProductRequest request) {
+                                                  @Valid @RequestBody ProductDTO request) {
         ProductVO product = productService.updateProduct(id, request);
         return Result.success("商品修改成功", product);
     }

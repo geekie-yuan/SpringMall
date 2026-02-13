@@ -7,7 +7,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import site.geekie.shop.shoppingmall.common.Result;
-import site.geekie.shop.shoppingmall.dto.request.UpdatePasswordRequest;
+import site.geekie.shop.shoppingmall.dto.UpdatePasswordDTO;
 import site.geekie.shop.shoppingmall.vo.UserVO;
 import site.geekie.shop.shoppingmall.entity.UserDO;
 import site.geekie.shop.shoppingmall.service.UserService;
@@ -110,7 +110,7 @@ public class UserController {
      */
     @Operation(summary = "修改密码")
     @PutMapping("/password")
-    public Result<Void> updatePassword(@Valid @RequestBody UpdatePasswordRequest request) {
+    public Result<Void> updatePassword(@Valid @RequestBody UpdatePasswordDTO request) {
         userService.updatePassword(request);
         return Result.success("密码修改成功", null);
     }

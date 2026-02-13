@@ -1,7 +1,7 @@
 package site.geekie.shop.shoppingmall.service;
 
 import site.geekie.shop.shoppingmall.common.PageResult;
-import site.geekie.shop.shoppingmall.dto.request.UpdatePasswordRequest;
+import site.geekie.shop.shoppingmall.dto.UpdatePasswordDTO;
 import site.geekie.shop.shoppingmall.entity.UserDO;
 import site.geekie.shop.shoppingmall.vo.UserVO;
 
@@ -55,7 +55,7 @@ public interface UserService {
      * @throws site.geekie.shop.shoppingmall.exception.BusinessException
      *         当旧密码错误时抛出
      */
-    void updatePassword(UpdatePasswordRequest request);
+    void updatePassword(UpdatePasswordDTO request);
 
     // ===== 管理员方法 =====
 

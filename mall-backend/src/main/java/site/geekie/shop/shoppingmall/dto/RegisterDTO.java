@@ -1,4 +1,4 @@
-package site.geekie.shop.shoppingmall.dto.request;
+package site.geekie.shop.shoppingmall.dto;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -12,7 +12,7 @@ import lombok.Data;
  *
  */
 @Data
-public class RegisterRequest {
+public class RegisterDTO {
 
     /**
      * 用户名

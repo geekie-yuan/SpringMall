@@ -1,4 +1,4 @@
-package site.geekie.shop.shoppingmall.dto.request;
+package site.geekie.shop.shoppingmall.dto;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
@@ -9,7 +9,7 @@ import lombok.Data;
  * 用于添加商品到购物车
  */
 @Data
-public class CartItemRequest {
+public class CartItemDTO {
 
     /**
      * 商品ID

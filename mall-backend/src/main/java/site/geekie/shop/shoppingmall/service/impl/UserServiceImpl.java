@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import site.geekie.shop.shoppingmall.common.PageResult;
 import site.geekie.shop.shoppingmall.common.ResultCode;
-import site.geekie.shop.shoppingmall.dto.request.UpdatePasswordRequest;
+import site.geekie.shop.shoppingmall.dto.UpdatePasswordDTO;
 import site.geekie.shop.shoppingmall.entity.UserDO;
 import site.geekie.shop.shoppingmall.vo.UserVO;
 import site.geekie.shop.shoppingmall.exception.BusinessException;
@@ -92,7 +92,7 @@ public class UserServiceImpl implements UserService {
      */
     @Override
     @Transactional
-    public void updatePassword(UpdatePasswordRequest request) {
+    public void updatePassword(UpdatePasswordDTO request) {
         UserDO currentUser = getCurrentUserEntity();
 
         // 验证旧密码

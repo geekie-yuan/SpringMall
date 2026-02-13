@@ -7,7 +7,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import site.geekie.shop.shoppingmall.common.Result;
-import site.geekie.shop.shoppingmall.dto.request.CategoryRequest;
+import site.geekie.shop.shoppingmall.dto.CategoryDTO;
 import site.geekie.shop.shoppingmall.vo.CategoryVO;
 import site.geekie.shop.shoppingmall.service.CategoryService;
 
@@ -93,7 +93,7 @@ public class CategoryController {
     @Operation(summary = "新增分类")
     @SecurityRequirement(name = "Bearer Authentication")
     @PostMapping
-    public Result<CategoryVO> addCategory(@Valid @RequestBody CategoryRequest request) {
+    public Result<CategoryVO> addCategory(@Valid @RequestBody CategoryDTO request) {
         CategoryVO category = categoryService.addCategory(request);
         return Result.success("分类添加成功", category);
     }
@@ -110,7 +110,7 @@ public class CategoryController {
     @SecurityRequirement(name = "Bearer Authentication")
     @PutMapping("/{id}")
     public Result<CategoryVO> updateCategory(@PathVariable Long id,
-                                                    @Valid @RequestBody CategoryRequest request) {
+                                                    @Valid @RequestBody CategoryDTO request) {
         CategoryVO category = categoryService.updateCategory(id, request);
         return Result.success("分类修改成功", category);
     }

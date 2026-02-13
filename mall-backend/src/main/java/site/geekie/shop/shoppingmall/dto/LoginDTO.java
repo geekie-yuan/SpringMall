@@ -1,4 +1,4 @@
-package site.geekie.shop.shoppingmall.dto.request;
+package site.geekie.shop.shoppingmall.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
@@ -9,7 +9,7 @@ import lombok.Data;
  *
  */
 @Data
-public class LoginRequest {
+public class LoginDTO {
 
     /**
      * 用户名

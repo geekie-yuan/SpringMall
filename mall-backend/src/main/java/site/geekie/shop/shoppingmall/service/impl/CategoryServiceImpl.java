@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import site.geekie.shop.shoppingmall.common.ResultCode;
-import site.geekie.shop.shoppingmall.dto.request.CategoryRequest;
+import site.geekie.shop.shoppingmall.dto.CategoryDTO;
 import site.geekie.shop.shoppingmall.entity.CategoryDO;
 import site.geekie.shop.shoppingmall.vo.CategoryVO;
 import site.geekie.shop.shoppingmall.exception.BusinessException;
@@ -66,7 +66,7 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     @Transactional
-    public CategoryVO addCategory(CategoryRequest request) {
+    public CategoryVO addCategory(CategoryDTO request) {
         // 1. 验证父分类存在性（如果不是顶级分类）
         if (request.getParentId() > 0) {
             CategoryDO parentCategory = categoryMapper.findById(request.getParentId());
@@ -113,7 +113,7 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     @Transactional
-    public CategoryVO updateCategory(Long id, CategoryRequest request) {
+    public CategoryVO updateCategory(Long id, CategoryDTO request) {
         // 1. 查询分类是否存在
         CategoryDO category = categoryMapper.findById(id);
         if (category == null) {

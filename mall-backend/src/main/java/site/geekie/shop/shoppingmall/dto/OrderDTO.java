@@ -1,4 +1,4 @@
-package site.geekie.shop.shoppingmall.dto.request;
+package site.geekie.shop.shoppingmall.dto;
 
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
@@ -8,7 +8,7 @@ import lombok.Data;
  * 用于从购物车创建订单
  */
 @Data
-public class OrderRequest {
+public class OrderDTO {
 
     /**
      * 收货地址ID

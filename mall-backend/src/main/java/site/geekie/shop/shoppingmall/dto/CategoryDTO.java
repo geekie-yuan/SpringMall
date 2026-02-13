@@ -1,4 +1,4 @@
-package site.geekie.shop.shoppingmall.dto.request;
+package site.geekie.shop.shoppingmall.dto;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -11,7 +11,7 @@ import lombok.Data;
  * 用于新增和修改商品分类
  */
 @Data
-public class CategoryRequest {
+public class CategoryDTO {
 
     /**
      * 分类名称

@@ -6,8 +6,8 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import site.geekie.shop.shoppingmall.common.Result;
-import site.geekie.shop.shoppingmall.dto.request.LoginRequest;
-import site.geekie.shop.shoppingmall.dto.request.RegisterRequest;
+import site.geekie.shop.shoppingmall.dto.LoginDTO;
+import site.geekie.shop.shoppingmall.dto.RegisterDTO;
 import site.geekie.shop.shoppingmall.vo.LoginVO;
 import site.geekie.shop.shoppingmall.service.AuthService;
 
@@ -49,7 +49,7 @@ public class AuthController {
      */
     @Operation(summary = "用户注册")
     @PostMapping("/register")
-    public Result<Void> register(@Valid @RequestBody RegisterRequest request) {
+    public Result<Void> register(@Valid @RequestBody RegisterDTO request) {
         authService.register(request);
         return Result.success("注册成功", null);
     }
@@ -71,7 +71,7 @@ public class AuthController {
      */
     @Operation(summary = "用户登录")
     @PostMapping("/login")
-    public Result<LoginVO> login(@Valid @RequestBody LoginRequest request) {
+    public Result<LoginVO> login(@Valid @RequestBody LoginDTO request) {
         LoginVO response = authService.login(request);
         return Result.success(response);
     }

@@ -1,4 +1,4 @@
-package site.geekie.shop.shoppingmall.dto.request;
+package site.geekie.shop.shoppingmall.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
@@ -10,7 +10,7 @@ import lombok.Data;
  * 用于新增和修改收货地址
  */
 @Data
-public class AddressRequest {
+public class AddressDTO {
 
     /**
      * 收货人姓名

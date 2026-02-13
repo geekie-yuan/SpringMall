@@ -1,4 +1,4 @@
-package site.geekie.shop.shoppingmall.dto.request;
+package site.geekie.shop.shoppingmall.dto;
 
 import lombok.Data;
 
@@ -7,7 +7,7 @@ import lombok.Data;
  * 用于接收支付回调通知
  */
 @Data
-public class PaymentNotifyRequest {
+public class PaymentNotifyDTO {
 
     /**
      * 订单号

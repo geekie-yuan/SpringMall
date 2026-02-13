@@ -1,7 +1,7 @@
 package site.geekie.shop.shoppingmall.service;
 
 import site.geekie.shop.shoppingmall.common.PageResult;
-import site.geekie.shop.shoppingmall.dto.request.ProductRequest;
+import site.geekie.shop.shoppingmall.dto.ProductDTO;
 import site.geekie.shop.shoppingmall.vo.ProductVO;
 
 import java.util.List;
@@ -64,7 +64,7 @@ public interface ProductService {
      * @throws site.geekie.shop.shoppingmall.exception.BusinessException
      *         当分类不存在时抛出
      */
-    ProductVO addProduct(ProductRequest request);
+    ProductVO addProduct(ProductDTO request);
 
     /**
      * 修改商品信息
@@ -75,7 +75,7 @@ public interface ProductService {
      * @throws site.geekie.shop.shoppingmall.exception.BusinessException
      *         当商品不存在或分类不存在时抛出
      */
-    ProductVO updateProduct(Long id, ProductRequest request);
+    ProductVO updateProduct(Long id, ProductDTO request);
 
     /**
      * 删除商品
@@ -117,7 +117,7 @@ public interface ProductService {
      * @param request 商品请求
      * @return 新增的商品信息
      */
-    ProductVO createProduct(ProductRequest request);
+    ProductVO createProduct(ProductDTO request);
 
     /**
      * 更新商品状态（管理员）

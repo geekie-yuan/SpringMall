@@ -7,7 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import site.geekie.shop.shoppingmall.common.Result;
-import site.geekie.shop.shoppingmall.dto.request.CategoryRequest;
+import site.geekie.shop.shoppingmall.dto.CategoryDTO;
 import site.geekie.shop.shoppingmall.vo.CategoryVO;
 import site.geekie.shop.shoppingmall.service.CategoryService;
 
@@ -65,7 +65,7 @@ public class AdminCategoryController {
      */
     @Operation(summary = "新增分类")
     @PostMapping
-    public Result<CategoryVO> createCategory(@Valid @RequestBody CategoryRequest request) {
+    public Result<CategoryVO> createCategory(@Valid @RequestBody CategoryDTO request) {
         CategoryVO category = categoryService.addCategory(request);
         return Result.success(category);
     }
@@ -82,7 +82,7 @@ public class AdminCategoryController {
     @PutMapping("/{id}")
     public Result<CategoryVO> updateCategory(
             @PathVariable Long id,
-            @Valid @RequestBody CategoryRequest request) {
+            @Valid @RequestBody CategoryDTO request) {
         CategoryVO category = categoryService.updateCategory(id, request);
         return Result.success(category);
     }

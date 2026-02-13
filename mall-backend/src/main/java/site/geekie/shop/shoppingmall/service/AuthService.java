@@ -1,7 +1,7 @@
 package site.geekie.shop.shoppingmall.service;
 
-import site.geekie.shop.shoppingmall.dto.request.LoginRequest;
-import site.geekie.shop.shoppingmall.dto.request.RegisterRequest;
+import site.geekie.shop.shoppingmall.dto.LoginDTO;
+import site.geekie.shop.shoppingmall.dto.RegisterDTO;
 import site.geekie.shop.shoppingmall.vo.LoginVO;
 
 /**
@@ -23,7 +23,7 @@ public interface AuthService {
      * @throws site.geekie.shop.shoppingmall.exception.BusinessException
      *         当用户名、邮箱或手机号已存在时抛出
      */
-    void register(RegisterRequest request);
+    void register(RegisterDTO request);
 
     /**
      * 用户登录
@@ -34,5 +34,5 @@ public interface AuthService {
      * @throws org.springframework.security.authentication.BadCredentialsException
      *         当用户名或密码错误时抛出
      */
-    LoginVO login(LoginRequest request);
+    LoginVO login(LoginDTO request);
 }
