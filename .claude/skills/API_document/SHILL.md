@@ -3,7 +3,7 @@ name: spring-mall-api
 description: 用于查询后端API接口定义。
 ---
 
-# Spring Mall API 前端开发技能
+# Spring Mall API 
 
 ## 项目配置
 
@@ -11,7 +11,11 @@ description: 用于查询后端API接口定义。
 - **后端**: Spring Boot 3.3.6 + MyBatis + Spring Security + JWT
 - **API基础路径**: `http://localhost:8080/api/v1`
 - **认证方式**: JWT Token (Bearer)
-- **Token有效期**: 24小时
+- **Token有效期**: 24小时(生产)、1年(测试)
+  - User: eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJ1c2VyIiwiaWF0IjoxNzcwOTgzODk1LCJleHAiOjE4MDI1MTk4OTV9.jJFk4lM1F7scTgBmLOr3AGgw-BtNn9acq1urgHaviSlD7VHs71_sW9dirz9s9JFZ
+  - Admin: eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJhZG1pbiIsImlhdCI6MTc3MDk4Mzg5NSwiZXhwIjoxODAyNTE5ODk1fQ.itRJaHoe6rLoEUzw27IPH3hBvxykxKhYo-HISEc8WKXg6TwDCnqD5MdymI3ERuDO
+  - 过期时间: Sat Feb 13 19:58:15 HKT 2027
+
 
 ### 快速配置
 ```javascript

@@ -8,7 +8,7 @@ import java.lang.annotation.Target;
 /**
  * 标注此注解的 Controller 方法参数将自动注入当前登录用户 ID
  *
- * @author springMall
+ * @author yuan
  * @since 1.0.0
  * @see site.geekie.shop.shoppingmall.config.CurrentUserIdResolver
  */

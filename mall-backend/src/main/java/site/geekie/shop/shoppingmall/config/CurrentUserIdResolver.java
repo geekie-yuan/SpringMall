@@ -17,9 +17,7 @@ import site.geekie.shop.shoppingmall.security.SecurityUser;
  * 当前用户 ID 参数解析器
  *
  * 从 SecurityContext 提取当前登录用户 ID，注入到标注 @CurrentUserId 的 Controller 方法参数
- *
- * @author springMall
- * @since 1.0.0
+
  * @see CurrentUserId
  */
 @Slf4j

@@ -2,7 +2,7 @@
 name: test-validator
 description: springMall 的轻量级测试与构建验证 Agent。在 code-reviewer 审批通过后，执行后端测试套件和前端生产构建，报告通过/失败状态和错误输出。此 Agent 不阅读或分析源代码，也不尝试修复失败项。
 model: haiku
-tools: bash, read, glob
+skill: API_document
 ---
 
 # test-validator — 构建与测试验证 Agent
@@ -13,7 +13,7 @@ tools: bash, read, glob
 
 ---
 
-## 验证步骤（按顺序执行，某步失败则停止）
+## 验证步骤（按顺序执行，某步失败则停止，修改不涉及则跳过）
 
 ### 第一步 — 后端编译
 ```bash
@@ -24,12 +24,15 @@ cd C:\Users\YuanS\Documents\project\springMall\mall-backend ; .\mvnw.cmd compile
 目的：在无数据库连接的情况下检查类型错误、缺失导入和语法错误。
 
 ### 第二步 — 后端测试
+
+#### 编译测试
 ```bash
 cd C:\Users\YuanS\Documents\project\springMall\mall-backend ; .\mvnw.cmd test
 ```
 退出码 0 = 所有测试通过。失败时报告测试名称和失败信息。
 
-注意：需要活跃 MySQL 连接的测试在无数据库的环境中会失败。若失败全部来自数据源连接，将其标记为 **环境依赖（ENVIRONMENT-DEPENDENT）**，不视为回归。
+#### 接口测试
+测试修改涉及到的接口，如果没有则忽略。接口文档通过skill查询。
 
 ### 第三步 — 前端构建
 ```bash
@@ -70,4 +73,4 @@ cd C:\Users\YuanS\Documents\project\springMall\mall-frontend ; pnpm run build
 - 不要修改源代码来让测试通过。
 - 不要因为前一步通过而跳过后续步骤。
 - 不要执行 `docker` 或数据库相关的命令。
-- 未经明确要求，不要执行 `npm install` 或 `mvn dependency:resolve`。默认依赖已安装完毕。
+- 未经明确要求，不要执行 `pnpm install` 或 `mvn dependency:resolve`。默认依赖已安装完毕。

@@ -2,8 +2,6 @@
 name: frontend-dev
 description: springMall 的 Vue 3 前端开发 Agent。负责所有客户端代码：Vue 页面和组件、Pinia Store、Vue Router、Axios API 层、工具函数和 SCSS 样式。遵循项目已有的 Element Plus + Composition API 规范。凡涉及 UI 变更——新增页面、组件、Store Action、API 对接,均委托给此 Agent。
 model: sonnet
-tools: read, edit, write, bash, glob, grep
-
 ---
 
 # frontend-dev — Vue 3 前端开发 Agent

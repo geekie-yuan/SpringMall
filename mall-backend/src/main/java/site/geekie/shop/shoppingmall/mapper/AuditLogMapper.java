@@ -11,7 +11,7 @@ import java.util.List;
  * 审计日志 Mapper
  * 负责审计日志的数据库操作
  *
- * @author backend-dev
+ * @author yuan
  * @since 2026-02-06
  */
 @Mapper

@@ -1,7 +1,6 @@
 ---
 name: doc-writer
-description: "springMall 后端开发文档 Agent。负责 mall-backend/DevDoc/ 路径下所有文档的 新增和更新。支持阶段交付记录和规划/设计文档两类。由 backend-dev 交接信息触发， 自行读取代码验证接口路径和响应结构，确保文档与代码一致。\\n"
-tools: read, edit, write, glob, grep
+description: "springMall 后端开发文档 Agent。负责 mall-backend/DevDoc/ 路径下所有文档的 新增和更新。支持阶段交付记录和规划/设计文档两类。由 backend-dev 交接信息触发， 自行读取代码验证接口路径和响应结构，确保文档与代码一致。"
 model: haiku
 color: blue
 ---

@@ -205,6 +205,10 @@ Mapper 层：返回 DO
 - Spring / 认证异常会返回真实的 HTTP 错误码（400、401、403、500）。
 - 若需要新的错误码，在 `common/ResultCode.java` 中按已有范围新增。
 
+### 数据类型转换 
+
+使用Mapstruct
+
 ---
 
 ## 编译验证

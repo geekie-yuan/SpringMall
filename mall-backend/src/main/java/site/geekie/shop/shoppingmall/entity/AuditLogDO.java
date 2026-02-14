@@ -7,7 +7,7 @@ import java.time.LocalDateTime;
  * 审计日志数据对象
  * 用于记录系统中所有关键操作的审计日志
  *
- * @author backend-dev
+ * @author yuan
  * @since 2026-02-06
  */
 @Data
