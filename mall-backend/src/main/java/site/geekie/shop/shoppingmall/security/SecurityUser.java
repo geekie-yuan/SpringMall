@@ -35,7 +35,9 @@ public class SecurityUser implements UserDetails {
      */
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + user.getRole()));
+        // 确保角色名大写，避免大小写不匹配导致403错误
+        String role = user.getRole() != null ? user.getRole().toUpperCase() : "USER";
+        return Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + role));
     }
 
     /**

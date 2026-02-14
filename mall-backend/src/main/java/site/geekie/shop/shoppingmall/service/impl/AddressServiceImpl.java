@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import site.geekie.shop.shoppingmall.common.ResultCode;
+import site.geekie.shop.shoppingmall.converter.AddressConverter;
 import site.geekie.shop.shoppingmall.dto.AddressDTO;
 import site.geekie.shop.shoppingmall.entity.AddressDO;
 import site.geekie.shop.shoppingmall.vo.AddressVO;
@@ -12,7 +13,6 @@ import site.geekie.shop.shoppingmall.mapper.AddressMapper;
 import site.geekie.shop.shoppingmall.service.AddressService;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * 地址服务实现类
@@ -31,24 +31,25 @@ public class AddressServiceImpl implements AddressService {
     // 地址数据访问对象
     private final AddressMapper addressMapper;
 
+    // 地址实体转换器
+    private final AddressConverter addressConverter;
+
     @Override
     public List<AddressVO> getAddressList(Long userId) {
         List<AddressDO> addresses = addressMapper.findByUserId(userId);
-        return addresses.stream()
-                .map(this::convertToResponse)
-                .collect(Collectors.toList());
+        return addressConverter.toVOList(addresses);
     }
 
     @Override
     public AddressVO getDefaultAddress(Long userId) {
         AddressDO address = addressMapper.findDefaultByUserId(userId);
-        return address != null ? convertToResponse(address) : null;
+        return address != null ? addressConverter.toVO(address) : null;
     }
 
     @Override
     public AddressVO getAddressById(Long id, Long userId) {
         AddressDO address = getAddressAndCheckOwner(id, userId);
-        return convertToResponse(address);
+        return addressConverter.toVO(address);
     }
 
     @Override
@@ -75,7 +76,7 @@ public class AddressServiceImpl implements AddressService {
         }
 
         addressMapper.insert(address);
-        return convertToResponse(address);
+        return addressConverter.toVO(address);
     }
 
     @Override
@@ -97,7 +98,7 @@ public class AddressServiceImpl implements AddressService {
         }
 
         addressMapper.updateById(address);
-        return convertToResponse(addressMapper.findById(id));
+        return addressConverter.toVO(addressMapper.findById(id));
     }
 
     @Override
@@ -151,24 +152,4 @@ public class AddressServiceImpl implements AddressService {
         return address;
     }
 
-    /**
-     * 将Address实体转换为AddressVO对象
-     *
-     * @param address 地址实体
-     * @return 地址响应对象
-     */
-    private AddressVO convertToResponse(AddressDO address) {
-        return new AddressVO(
-                address.getId(),
-                address.getUserId(),
-                address.getReceiverName(),
-                address.getPhone(),
-                address.getProvince(),
-                address.getCity(),
-                address.getDistrict(),
-                address.getDetailAddress(),
-                address.getIsDefault(),
-                address.getCreatedAt()
-        );
-    }
 }

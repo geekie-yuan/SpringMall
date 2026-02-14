@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import site.geekie.shop.shoppingmall.common.PageResult;
 import site.geekie.shop.shoppingmall.common.ResultCode;
+import site.geekie.shop.shoppingmall.converter.UserConverter;
 import site.geekie.shop.shoppingmall.dto.UpdatePasswordDTO;
 import site.geekie.shop.shoppingmall.entity.UserDO;
 import site.geekie.shop.shoppingmall.vo.UserVO;
@@ -38,6 +39,9 @@ public class UserServiceImpl implements UserService {
     // 密码编码器（BCrypt）
     private final PasswordEncoder passwordEncoder;
 
+    // 用户实体转换器
+    private final UserConverter userConverter;
+
     /**
      * 获取当前登录用户信息
      * 从Spring Security上下文中获取当前认证用户
@@ -48,7 +52,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserVO getCurrentUser() {
         UserDO user = getCurrentUserEntity();
-        return convertToUserVO(user);
+        return userConverter.toVO(user);
     }
 
     /**
@@ -64,7 +68,7 @@ public class UserServiceImpl implements UserService {
         if (user == null) {
             throw new BusinessException(ResultCode.USER_NOT_FOUND);
         }
-        return convertToUserVO(user);
+        return userConverter.toVO(user);
     }
 
     /**
@@ -125,26 +129,6 @@ public class UserServiceImpl implements UserService {
         return user;
     }
 
-    /**
-     * 将User实体转换为UserVO对象
-     * 排除密码等敏感信息
-     *
-     * @param user 用户实体
-     * @return 用户响应对象
-     */
-    private UserVO convertToUserVO(UserDO user) {
-        return new UserVO(
-                user.getId(),
-                user.getUsername(),
-                user.getEmail(),
-                user.getPhone(),
-                user.getAvatar(),
-                user.getRole(),
-                user.getStatus(),
-                user.getCreatedAt()
-        );
-    }
-
     // ===== 管理员方法实现 =====
 
     /**
@@ -157,9 +141,7 @@ public class UserServiceImpl implements UserService {
         PageHelper.startPage(page, size);
         java.util.List<UserDO> users = userMapper.findAllWithFilter(keyword, role, status);
         PageInfo<UserDO> pageInfo = new PageInfo<>(users);
-        java.util.List<UserVO> list = users.stream()
-                .map(this::convertToUserVO)
-                .collect(java.util.stream.Collectors.toList());
+        java.util.List<UserVO> list = userConverter.toVOList(users);
         return new PageResult<>(list, pageInfo.getTotal(), page, size);
     }
 

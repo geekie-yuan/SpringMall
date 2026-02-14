@@ -9,8 +9,9 @@ import org.springframework.transaction.annotation.Transactional;
 import site.geekie.shop.shoppingmall.common.PageResult;
 import site.geekie.shop.shoppingmall.common.OrderStatus;
 import site.geekie.shop.shoppingmall.common.ResultCode;
+import site.geekie.shop.shoppingmall.converter.OrderConverter;
+import site.geekie.shop.shoppingmall.converter.OrderItemConverter;
 import site.geekie.shop.shoppingmall.dto.OrderDTO;
-import site.geekie.shop.shoppingmall.vo.OrderItemVO;
 import site.geekie.shop.shoppingmall.vo.OrderVO;
 import site.geekie.shop.shoppingmall.entity.*;
 import site.geekie.shop.shoppingmall.exception.BusinessException;
@@ -36,56 +37,9 @@ public class OrderServiceImpl implements OrderService {
     private final CartItemMapper cartItemMapper;
     private final ProductMapper productMapper;
     private final AddressMapper addressMapper;
+    private final OrderConverter orderConverter;
+    private final OrderItemConverter orderItemConverter;
 
-    /**
-     * 构建订单响应对象
-     */
-    private OrderVO buildOrderVO(OrderDO order, boolean includeItems) {
-        OrderVO response = new OrderVO();
-        response.setId(order.getId());
-        response.setOrderNo(order.getOrderNo());
-        response.setUserId(order.getUserId());
-        response.setTotalAmount(order.getTotalAmount());
-        response.setPayAmount(order.getPayAmount());
-        response.setFreight(order.getFreight());
-        response.setStatus(order.getStatus());
-
-        // 设置状态描述
-        try {
-            OrderStatus orderStatus = OrderStatus.fromCode(order.getStatus());
-            response.setStatusDesc(orderStatus.getDescription());
-        } catch (IllegalArgumentException e) {
-            response.setStatusDesc(order.getStatus());
-        }
-
-        response.setPaymentTime(order.getPaymentTime());
-        response.setShipTime(order.getShipTime());
-        response.setCompleteTime(order.getCompleteTime());
-        response.setReceiverName(order.getReceiverName());
-        response.setReceiverPhone(order.getReceiverPhone());
-        response.setReceiverAddress(order.getReceiverAddress());
-        response.setRemark(order.getRemark());
-        response.setCreatedAt(order.getCreatedAt());
-        response.setUpdatedAt(order.getUpdatedAt());
-
-        if (includeItems) {
-            List<OrderItemDO> items = orderItemMapper.findByOrderId(order.getId());
-            List<OrderItemVO> itemResponses = items.stream()
-                    .map(item -> new OrderItemVO(
-                            item.getId(),
-                            item.getProductId(),
-                            item.getProductName(),
-                            item.getProductImage(),
-                            item.getUnitPrice(),
-                            item.getQuantity(),
-                            item.getTotalPrice()
-                    ))
-                    .collect(Collectors.toList());
-            response.setItems(itemResponses);
-        }
-
-        return response;
-    }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -177,7 +131,7 @@ public class OrderServiceImpl implements OrderService {
         cartItemMapper.deleteByIds(cartItemIds);
 
         // 9. 返回订单信息
-        return buildOrderVO(order, true);
+        return orderConverter.toVOWithItems(order, orderItemMapper, orderItemConverter);
     }
 
     @Override
@@ -185,7 +139,7 @@ public class OrderServiceImpl implements OrderService {
         List<OrderDO> orders = orderMapper.findByUserId(userId);
 
         return orders.stream()
-                .map(o -> buildOrderVO(o, true))
+                .map(o -> orderConverter.toVOWithItems(o, orderItemMapper, orderItemConverter))
                 .collect(Collectors.toList());
     }
 
@@ -201,7 +155,7 @@ public class OrderServiceImpl implements OrderService {
         List<OrderDO> orders = orderMapper.findByUserIdAndStatus(userId, status);
 
         return orders.stream()
-                .map(o -> buildOrderVO(o, true))
+                .map(o -> orderConverter.toVOWithItems(o, orderItemMapper, orderItemConverter))
                 .collect(Collectors.toList());
     }
 
@@ -217,7 +171,7 @@ public class OrderServiceImpl implements OrderService {
             throw new BusinessException(ResultCode.FORBIDDEN);
         }
 
-        return buildOrderVO(order, true);
+        return orderConverter.toVOWithItems(order, orderItemMapper, orderItemConverter);
     }
 
     @Override
@@ -277,9 +231,7 @@ public class OrderServiceImpl implements OrderService {
         PageHelper.startPage(page, size);
         List<OrderDO> orders = orderMapper.findAll();
         PageInfo<OrderDO> pageInfo = new PageInfo<>(orders);
-        List<OrderVO> list = orders.stream()
-                .map(o -> buildOrderVO(o, false))
-                .collect(Collectors.toList());
+        List<OrderVO> list = orderConverter.toVOList(orders);
         return new PageResult<>(list, pageInfo.getTotal(), page, size);
     }
 
@@ -295,9 +247,7 @@ public class OrderServiceImpl implements OrderService {
         PageHelper.startPage(page, size);
         List<OrderDO> orders = orderMapper.findAllByStatus(status);
         PageInfo<OrderDO> pageInfo = new PageInfo<>(orders);
-        List<OrderVO> list = orders.stream()
-                .map(o -> buildOrderVO(o, false))
-                .collect(Collectors.toList());
+        List<OrderVO> list = orderConverter.toVOList(orders);
         return new PageResult<>(list, pageInfo.getTotal(), page, size);
     }
 
@@ -309,7 +259,7 @@ public class OrderServiceImpl implements OrderService {
         }
 
         // 管理员查看订单详情不需要验证所有权
-        return buildOrderVO(order, true);
+        return orderConverter.toVOWithItems(order, orderItemMapper, orderItemConverter);
     }
 
     @Override

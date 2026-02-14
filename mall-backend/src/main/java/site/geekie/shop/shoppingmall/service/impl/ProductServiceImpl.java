@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import site.geekie.shop.shoppingmall.common.PageResult;
 import site.geekie.shop.shoppingmall.common.ResultCode;
+import site.geekie.shop.shoppingmall.converter.ProductConverter;
 import site.geekie.shop.shoppingmall.dto.ProductDTO;
 import site.geekie.shop.shoppingmall.entity.CategoryDO;
 import site.geekie.shop.shoppingmall.entity.ProductDO;
@@ -16,10 +17,7 @@ import site.geekie.shop.shoppingmall.mapper.CategoryMapper;
 import site.geekie.shop.shoppingmall.mapper.ProductMapper;
 import site.geekie.shop.shoppingmall.service.ProductService;
 
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * 商品服务实现类
@@ -31,30 +29,27 @@ public class ProductServiceImpl implements ProductService {
 
     private final ProductMapper productMapper;
     private final CategoryMapper categoryMapper;
+    private final ProductConverter productConverter;
 
     @Override
     public PageResult<ProductVO> getAllProducts(int page, int size, String keyword, Long categoryId, Integer status) {
         PageHelper.startPage(page, size);
         List<ProductDO> products = productMapper.findAllWithFilter(keyword, categoryId, status);
         PageInfo<ProductDO> pageInfo = new PageInfo<>(products);
-        List<ProductVO> list = convertListToResponses(products);
+        List<ProductVO> list = productConverter.toVOList(products, categoryMapper);
         return new PageResult<>(list, pageInfo.getTotal(), page, size);
     }
 
     @Override
     public List<ProductVO> getProductsByCategoryId(Long categoryId) {
         List<ProductDO> products = productMapper.findByCategoryId(categoryId);
-        return products.stream()
-                .map(this::convertToResponse)
-                .collect(Collectors.toList());
+        return productConverter.toVOList(products, categoryMapper);
     }
 
     @Override
     public List<ProductVO> getProductsByStatus(Integer status) {
         List<ProductDO> products = productMapper.findByStatus(status);
-        return products.stream()
-                .map(this::convertToResponse)
-                .collect(Collectors.toList());
+        return productConverter.toVOList(products, categoryMapper);
     }
 
     @Override
@@ -62,7 +57,7 @@ public class ProductServiceImpl implements ProductService {
         PageHelper.startPage(page, size);
         List<ProductDO> products = productMapper.searchByKeyword(keyword);
         PageInfo<ProductDO> pageInfo = new PageInfo<>(products);
-        List<ProductVO> list = convertListToResponses(products);
+        List<ProductVO> list = productConverter.toVOList(products, categoryMapper);
         return new PageResult<>(list, pageInfo.getTotal(), page, size);
     }
 
@@ -72,7 +67,7 @@ public class ProductServiceImpl implements ProductService {
         if (product == null) {
             throw new BusinessException(ResultCode.PRODUCT_NOT_FOUND);
         }
-        return convertToResponse(product);
+        return productConverter.toVOWithCategory(product, categoryMapper);
     }
 
     @Override
@@ -98,7 +93,7 @@ public class ProductServiceImpl implements ProductService {
 
         productMapper.insert(product);
 
-        return convertToResponse(product);
+        return productConverter.toVOWithCategory(product, categoryMapper);
     }
 
     @Override
@@ -131,7 +126,7 @@ public class ProductServiceImpl implements ProductService {
 
         productMapper.updateById(product);
 
-        return convertToResponse(product);
+        return productConverter.toVOWithCategory(product, categoryMapper);
     }
 
     @Override
@@ -176,73 +171,6 @@ public class ProductServiceImpl implements ProductService {
         productMapper.increaseStock(id, quantity);
     }
 
-    /**
-     * 批量将实体转换为响应DTO，对分类使用 IN 查询避免 N+1
-     */
-    private List<ProductVO> convertListToResponses(List<ProductDO> products) {
-        List<Long> categoryIds = products.stream()
-                .map(ProductDO::getCategoryId)
-                .filter(id -> id != null)
-                .distinct()
-                .collect(Collectors.toList());
-        Map<Long, CategoryDO> categoryMap = categoryIds.isEmpty()
-                ? Collections.emptyMap()
-                : categoryMapper.findByIds(categoryIds).stream()
-                        .collect(Collectors.toMap(CategoryDO::getId, c -> c));
-
-        return products.stream()
-                .map(product -> {
-                    ProductVO response = new ProductVO(
-                            product.getId(),
-                            product.getCategoryId(),
-                            product.getName(),
-                            product.getSubtitle(),
-                            product.getMainImage(),
-                            product.getImages(),
-                            product.getDetail(),
-                            product.getPrice(),
-                            product.getStock(),
-                            product.getStatus(),
-                            product.getCreatedAt()
-                    );
-                    CategoryDO category = categoryMap.get(product.getCategoryId());
-                    if (category != null) {
-                        response.setCategoryName(category.getName());
-                    }
-                    return response;
-                })
-                .collect(Collectors.toList());
-    }
-
-    /**
-     * 将实体转换为响应DTO
-     *
-     * @param product 商品实体
-     * @return 商品响应DTO
-     */
-    private ProductVO convertToResponse(ProductDO product) {
-        ProductVO response = new ProductVO(
-                product.getId(),
-                product.getCategoryId(),
-                product.getName(),
-                product.getSubtitle(),
-                product.getMainImage(),
-                product.getImages(),
-                product.getDetail(),
-                product.getPrice(),
-                product.getStock(),
-                product.getStatus(),
-                product.getCreatedAt()
-        );
-
-        // 填充分类名称
-        CategoryDO category = categoryMapper.findById(product.getCategoryId());
-        if (category != null) {
-            response.setCategoryName(category.getName());
-        }
-
-        return response;
-    }
 
     // ===== 管理员方法实现 =====
 

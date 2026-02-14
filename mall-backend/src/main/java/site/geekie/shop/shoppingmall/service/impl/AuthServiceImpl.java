@@ -12,6 +12,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import site.geekie.shop.shoppingmall.common.ResultCode;
+import site.geekie.shop.shoppingmall.converter.UserConverter;
 import site.geekie.shop.shoppingmall.dto.LoginDTO;
 import site.geekie.shop.shoppingmall.dto.RegisterDTO;
 import site.geekie.shop.shoppingmall.entity.UserDO;
@@ -47,6 +48,9 @@ public class AuthServiceImpl implements AuthService {
 
     // Spring Security认证管理器
     private final AuthenticationManager authenticationManager;
+
+    // 用户实体转换器
+    private final UserConverter userConverter;
 
     /**
      * 用户注册
@@ -153,7 +157,7 @@ public class AuthServiceImpl implements AuthService {
 
             // 提取用户实体并转换为响应对象
             UserDO user = ((SecurityUser) userDetails).getUser();
-            UserVO userResponse = convertToUserVO(user);
+            UserVO userResponse = userConverter.toVO(user);
 
             log.info("【登录成功】用户名: {}，JWT Token 已生成", request.getUsername());
 
@@ -194,24 +198,4 @@ public class AuthServiceImpl implements AuthService {
         // ====================================================================================================
     }
 
-    /**
-     * 将User实体转换为UserVO对象
-     * 排除密码等敏感信息
-     *
-     * @param user 用户实体
-     * @return 用户响应对象
-     */
-
-    private UserVO convertToUserVO(UserDO user) {
-        return new UserVO(
-                user.getId(),
-                user.getUsername(),
-                user.getEmail(),
-                user.getPhone(),
-                user.getAvatar(),
-                user.getRole(),
-                user.getStatus(),
-                user.getCreatedAt()
-        );
-    }
 }

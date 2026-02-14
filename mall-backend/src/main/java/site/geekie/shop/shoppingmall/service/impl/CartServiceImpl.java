@@ -3,6 +3,8 @@ package site.geekie.shop.shoppingmall.service.impl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import site.geekie.shop.shoppingmall.common.ResultCode;
+import site.geekie.shop.shoppingmall.converter.CartItemConverter;
 import site.geekie.shop.shoppingmall.dto.CartItemDTO;
 import site.geekie.shop.shoppingmall.entity.CartItemDO;
 import site.geekie.shop.shoppingmall.entity.ProductDO;
@@ -11,11 +13,9 @@ import site.geekie.shop.shoppingmall.exception.BusinessException;
 import site.geekie.shop.shoppingmall.mapper.CartItemMapper;
 import site.geekie.shop.shoppingmall.mapper.ProductMapper;
 import site.geekie.shop.shoppingmall.service.CartService;
-import site.geekie.shop.shoppingmall.common.ResultCode;
 
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * 购物车服务实现类
@@ -26,35 +26,8 @@ public class CartServiceImpl implements CartService {
 
     private final CartItemMapper cartItemMapper;
     private final ProductMapper productMapper;
+    private final CartItemConverter cartItemConverter;
 
-    /**
-     * 填充商品详情到购物车响应对象
-     */
-    private CartItemVO buildCartItemVO(CartItemDO cartItem) {
-        CartItemVO response = new CartItemVO();
-        response.setId(cartItem.getId());
-        response.setUserId(cartItem.getUserId());
-        response.setProductId(cartItem.getProductId());
-        response.setQuantity(cartItem.getQuantity());
-        response.setChecked(cartItem.getChecked());
-        response.setCreatedAt(cartItem.getCreatedAt());
-
-        // 查询商品详情并填充
-        ProductDO product = productMapper.findById(cartItem.getProductId());
-        if (product != null) {
-            response.setProductName(product.getName());
-            response.setProductSubtitle(product.getSubtitle());
-            response.setProductImage(product.getMainImage());
-            response.setProductPrice(product.getPrice());
-            response.setProductStock(product.getStock());
-
-            // 计算小计
-            BigDecimal subtotal = product.getPrice().multiply(new BigDecimal(cartItem.getQuantity()));
-            response.setSubtotal(subtotal);
-        }
-
-        return response;
-    }
 
     /**
      * 验证购物车项所有权
@@ -72,10 +45,7 @@ public class CartServiceImpl implements CartService {
     @Override
     public List<CartItemVO> getCartItems(Long userId) {
         List<CartItemDO> cartItems = cartItemMapper.findByUserId(userId);
-
-        return cartItems.stream()
-                .map(this::buildCartItemVO)
-                .collect(Collectors.toList());
+        return cartItemConverter.toVOList(cartItems, productMapper);
     }
 
     @Override
@@ -109,7 +79,7 @@ public class CartServiceImpl implements CartService {
 
             cartItemMapper.updateQuantity(existingItem.getId(), newQuantity);
             existingItem.setQuantity(newQuantity);
-            return buildCartItemVO(existingItem);
+            return cartItemConverter.toVO(existingItem, productMapper);
         } else {
             // 新增购物车项
             CartItemDO cartItem = new CartItemDO();
@@ -119,7 +89,7 @@ public class CartServiceImpl implements CartService {
             cartItem.setChecked(1); // 默认选中
 
             cartItemMapper.insert(cartItem);
-            return buildCartItemVO(cartItem);
+            return cartItemConverter.toVO(cartItem, productMapper);
         }
     }
 
@@ -149,7 +119,7 @@ public class CartServiceImpl implements CartService {
         cartItemMapper.updateQuantity(id, quantity);
         cartItem.setQuantity(quantity);
 
-        return buildCartItemVO(cartItem);
+        return cartItemConverter.toVO(cartItem, productMapper);
     }
 
     @Override
