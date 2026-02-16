@@ -3,6 +3,7 @@ package site.geekie.shop.shoppingmall.service.impl;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,6 +19,7 @@ import site.geekie.shop.shoppingmall.exception.BusinessException;
 import site.geekie.shop.shoppingmall.mapper.*;
 import site.geekie.shop.shoppingmall.security.SecurityUser;
 import site.geekie.shop.shoppingmall.service.OrderService;
+import site.geekie.shop.shoppingmall.service.PaymentService;
 import site.geekie.shop.shoppingmall.util.OrderNoGenerator;
 
 import java.math.BigDecimal;
@@ -28,6 +30,7 @@ import java.util.stream.Collectors;
 /**
  * 订单服务实现类
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class OrderServiceImpl implements OrderService {
@@ -39,6 +42,7 @@ public class OrderServiceImpl implements OrderService {
     private final AddressMapper addressMapper;
     private final OrderConverter orderConverter;
     private final OrderItemConverter orderItemConverter;
+    private final PaymentService paymentService;
 
 
     @Override
@@ -192,6 +196,16 @@ public class OrderServiceImpl implements OrderService {
             throw new BusinessException(ResultCode.ORDER_CANNOT_BE_CANCELLED);
         }
 
+        // 如果订单已支付，先退款
+        if (OrderStatus.PAID.getCode().equals(order.getStatus())) {
+            try {
+                paymentService.refundOrder(orderNo, "用户取消订单");
+            } catch (Exception e) {
+                log.error("订单退款失败 - 订单号: {}", orderNo, e);
+                throw new BusinessException(ResultCode.REFUND_FAILED);
+            }
+        }
+
         // 恢复库存
         List<OrderItemDO> items = orderItemMapper.findByOrderId(order.getId());
         for (OrderItemDO item : items) {
@@ -292,6 +306,16 @@ public class OrderServiceImpl implements OrderService {
         if (!OrderStatus.UNPAID.getCode().equals(order.getStatus())
             && !OrderStatus.PAID.getCode().equals(order.getStatus())) {
             throw new BusinessException(ResultCode.ORDER_CANNOT_BE_CANCELLED);
+        }
+
+        // 如果订单已支付，先退款
+        if (OrderStatus.PAID.getCode().equals(order.getStatus())) {
+            try {
+                paymentService.refundOrder(orderNo, "管理员取消订单");
+            } catch (Exception e) {
+                log.error("订单退款失败 - 订单号: {}", orderNo, e);
+                throw new BusinessException(ResultCode.REFUND_FAILED);
+            }
         }
 
         // 恢复库存

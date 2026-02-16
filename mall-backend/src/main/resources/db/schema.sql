@@ -110,6 +110,7 @@ CREATE TABLE `mall_order` (
     `pay_amount` DECIMAL(10,2) NOT NULL COMMENT '实付金额',
     `freight` DECIMAL(10,2) NOT NULL DEFAULT 0.00 COMMENT '运费',
     `status` VARCHAR(20) NOT NULL DEFAULT 'UNPAID' COMMENT '订单状态',
+    `payment_method` VARCHAR(20) DEFAULT NULL COMMENT '支付方式：ALIPAY/WECHAT',
     `payment_time` DATETIME DEFAULT NULL COMMENT '支付时间',
     `ship_time` DATETIME DEFAULT NULL COMMENT '发货时间',
     `complete_time` DATETIME DEFAULT NULL COMMENT '完成时间',
@@ -143,6 +144,28 @@ CREATE TABLE `mall_order_item` (
     KEY `idx_order_id` (`order_id`),
     KEY `idx_product_id` (`product_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='订单明细表';
+
+-- ----------------------------------------
+-- 8. 支付记录表
+-- ----------------------------------------
+CREATE TABLE `mall_payment` (
+    `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '支付ID',
+    `payment_no` VARCHAR(50) NOT NULL COMMENT '支付流水号（唯一）',
+    `order_no` VARCHAR(50) NOT NULL COMMENT '关联订单号',
+    `user_id` BIGINT NOT NULL COMMENT '用户ID',
+    `amount` DECIMAL(10,2) NOT NULL COMMENT '支付金额',
+    `payment_method` VARCHAR(20) NOT NULL COMMENT '支付方式：ALIPAY/WECHAT',
+    `payment_status` VARCHAR(20) NOT NULL DEFAULT 'PENDING' COMMENT '支付状态：PENDING-待支付/SUCCESS-成功/FAILED-失败/CLOSED-已关闭',
+    `trade_no` VARCHAR(100) DEFAULT NULL COMMENT '第三方交易号',
+    `notify_time` DATETIME DEFAULT NULL COMMENT '异步通知时间',
+    `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_payment_no` (`payment_no`),
+    KEY `idx_order_no` (`order_no`),
+    KEY `idx_user_id` (`user_id`),
+    KEY `idx_payment_status` (`payment_status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='支付记录表';
 
 -- ----------------------------------------
 -- 审计日志表

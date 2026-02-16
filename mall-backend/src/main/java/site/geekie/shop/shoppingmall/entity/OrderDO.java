@@ -49,6 +49,11 @@ public class OrderDO {
     private String status;
 
     /**
+     * 支付方式（ALIPAY/WECHAT）
+     */
+    private String paymentMethod;
+
+    /**
      * 支付时间
      */
     private LocalDateTime paymentTime;

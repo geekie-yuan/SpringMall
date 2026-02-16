@@ -1,5 +1,7 @@
 # Spring Mall BACK-END方案
 
+> 最后更新时间：2026-02-16
+
 ## 一、项目概述
 
 ### 1.1 项目名称
@@ -693,23 +695,144 @@ mall-backend/
 
 ---
 
-## 七、开发计划
+## 七、已完成功能
 
-### 7.1 阶段划分
+### 7.1 支付功能模块（2026-02-15 ~ 2026-02-16）
 
-| 阶段 | 内容 | 预估时间 |
-|------|------|----------|
-| **阶段1** | 项目初始化 + 数据库 + 基础架构 | 1天 |
-| **阶段2** | 认证模块（注册/登录/JWT） | 1天 |
-| **阶段3** | 用户模块 + 地址模块 | 0.5天 |
-| **阶段4** | 分类模块 + 商品模块 | 1天 |
-| **阶段5** | 购物车模块 | 0.5天 |
-| **阶段6** | 订单模块 + 库存管理 | 1.5天 |
-| **阶段7** | 支付模拟 | 0.5天 |
-| **阶段8** | 后台管理接口 | 1天 |
-| **阶段9** | 测试 + 文档完善 | 1天 |
+#### 1. 支付宝支付集成
+- ✅ 支付宝沙箱环境配置（`AlipayConfig`）
+- ✅ PC 网页支付接口（`alipay.trade.page.pay`）
+- ✅ 支付结果查询（`GET /api/v1/payment/{paymentNo}`）
+- ✅ 异步通知处理（签名验证 + 订单状态更新）
+- ✅ 同步返回处理（重定向到前端结果页）
+- ✅ 支付记录管理（`mall_payment` 表）
+- ✅ 支付流水号生成（`PY` + 时间戳 + 随机数）
 
-**总计：约 8 天**
+**技术实现**：
+- SDK：`alipay-sdk-java:4.40.658.ALL`（v2 协议）
+- 配置：Spring Boot + `@Value` 环境变量注入
+- 安全：签名验证（RSA2）+ 金额校验 + 幂等性保证
+
+**API 接口**：
+- `POST /api/v1/payment/alipay/create` - 创建支付宝支付
+- `GET /api/v1/payment/{paymentNo}` - 查询支付状态
+- `POST /api/v1/payment/alipay/notify` - 支付宝异步通知回调
+- `GET /api/v1/payment/alipay/return` - 支付宝同步返回
+
+---
+
+#### 2. 订单退款功能
+- ✅ 支付宝退款接口封装（`alipay.trade.refund`）
+- ✅ 退款业务逻辑（`PaymentService.refundOrder()`）
+- ✅ 订单取消自动退款（取消已支付订单时自动调用）
+- ✅ 退款记录管理（`mall_refund` 表）
+- ✅ 退款流水号生成（`RF` + 时间戳 + 随机数）
+
+**安全特性**：
+- 三重幂等性保护（支付状态 + 退款记录 + 支付宝去重）
+- 事务一致性（退款失败时整个取消操作回滚）
+- 金额验证（退款金额从支付记录获取，防篡改）
+
+**业务流程**：
+```
+取消已支付订单 → 查询支付记录 → 幂等性检查
+→ 调用支付宝退款接口 → 创建退款记录
+→ 更新支付状态（REFUNDED）→ 恢复库存 → 订单状态变为 CANCELLED
+```
+
+---
+
+#### 3. 支付商品显示优化
+- ✅ 支付标题优化（显示商品名称而非"商城订单"）
+- ✅ 支付描述优化（显示商品明细和总金额）
+- ✅ 单/多商品智能显示
+- ✅ 超长商品名自动截断（subject ≤ 256字符，body ≤ 128字符）
+
+**优化效果**：
+- **优化前**：`"商城订单-20260215165735740624"`
+- **优化后**：
+  - 单商品：`"Redmi K50 Pro x1 - 订单20260215165735740624"`
+  - 多商品：`"Redmi K50 Pro等2件商品 - 订单20260215165735740624"`
+
+---
+
+#### 4. 数据库设计
+- ✅ `mall_payment` 表 - 支付记录表
+- ✅ `mall_refund` 表 - 退款记录表
+- ✅ 支付状态枚举（PENDING / SUCCESS / FAILED / CLOSED / REFUNDED）
+- ✅ 支付方式枚举（MOCK / ALIPAY）
+
+**表结构**：
+```sql
+-- 支付记录表
+CREATE TABLE `mall_payment` (
+    `id` BIGINT PRIMARY KEY AUTO_INCREMENT,
+    `payment_no` VARCHAR(50) UNIQUE NOT NULL,
+    `order_no` VARCHAR(50) NOT NULL,
+    `user_id` BIGINT NOT NULL,
+    `amount` DECIMAL(10,2) NOT NULL,
+    `payment_method` VARCHAR(20) NOT NULL,
+    `payment_status` VARCHAR(20) NOT NULL,
+    `trade_no` VARCHAR(100),
+    `notify_time` DATETIME,
+    `created_at` DATETIME NOT NULL,
+    `updated_at` DATETIME NOT NULL
+);
+
+-- 退款记录表
+CREATE TABLE `mall_refund` (
+    `id` BIGINT PRIMARY KEY AUTO_INCREMENT,
+    `refund_no` VARCHAR(50) UNIQUE NOT NULL,
+    `payment_no` VARCHAR(50) NOT NULL,
+    `order_no` VARCHAR(50) NOT NULL,
+    `amount` DECIMAL(10,2) NOT NULL,
+    `refund_status` VARCHAR(20) NOT NULL,
+    `refund_time` DATETIME,
+    `created_at` DATETIME NOT NULL,
+    `updated_at` DATETIME NOT NULL
+);
+```
+
+---
+
+#### 5. 错误码新增
+- ✅ `40601` - 支付失败
+- ✅ `40602` - 支付记录不存在
+- ✅ `40603` - 支付关闭失败
+- ✅ `40604` - 退款失败
+- ✅ `40605` - 退款记录不存在
+- ✅ `40606` - 支付已退款
+- ✅ `40504` - 订单商品明细不存在
+
+---
+
+#### 6. 开发文档
+- ✅ `PAYMENT_API.md` - 支付功能 API 文档
+- ✅ `ALIPAY_DEPLOYMENT_CHECKLIST.md` - 支付宝部署检查清单
+- ✅ `DEPLOYMENT_CONFIG_SUMMARY.md` - 部署配置总结
+- ✅ 数据库迁移脚本（`apply_payment_schema.sql`）
+
+文档位置：项目根目录
+
+---
+
+## 八、开发计划
+
+### 8.1 阶段划分
+
+| 阶段 | 内容 | 预估时间 | 状态 |
+|------|------|----------|------|
+| **阶段1** | 项目初始化 + 数据库 + 基础架构 | 1天 | ✅ 已完成 |
+| **阶段2** | 认证模块（注册/登录/JWT） | 1天 | ✅ 已完成 |
+| **阶段3** | 用户模块 + 地址模块 | 0.5天 | ✅ 已完成 |
+| **阶段4** | 分类模块 + 商品模块 | 1天 | ✅ 已完成 |
+| **阶段5** | 购物车模块 | 0.5天 | ✅ 已完成 |
+| **阶段6** | 订单模块 + 库存管理 | 1.5天 | ✅ 已完成 |
+| **阶段7** | 支付模拟 + 支付宝集成 | 1.5天 | ✅ 已完成 |
+| **阶段8** | 后台管理接口 | 1天 | ✅ 已完成 |
+| **阶段9** | 测试 + 文档完善 | 1天 | 🔄 进行中 |
+
+**总计：约 9 天**
 
 ### 7.2 阶段1详细任务
 

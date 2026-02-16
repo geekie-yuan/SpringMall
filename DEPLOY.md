@@ -110,6 +110,14 @@ DB_PASSWORD=123456                # 本机数据库密码
 # JWT 配置
 JWT_SECRET=your-secret-key        # JWT 签名密钥（生产环境必须修改）
 JWT_EXPIRATION=86400000           # Token 过期时间（毫秒，默认24小时）
+
+# 支付宝配置（仅在启用支付功能时需要）
+ALIPAY_APP_ID=your-sandbox-app-id        # 支付宝应用ID
+ALIPAY_PRIVATE_KEY=your-private-key      # 商户私钥 (RSA2)
+ALIPAY_PUBLIC_KEY=alipay-public-key      # 支付宝公钥
+ALIPAY_NOTIFY_URL=http://...             # 异步通知地址（需外网可访问）
+ALIPAY_RETURN_URL=http://...             # 同步返回地址
+FRONTEND_URL=http://...                  # 前端 URL
 ```
 
 ### 端口映射
@@ -220,6 +228,215 @@ docker exec mall-mysql mysqldump -u root -p mall > backup_$(date +%Y%m%d).sql
 
 # 恢复 MySQL 数据
 docker exec -i mall-mysql mysql -u root -p mall < backup.sql
+```
+
+---
+
+## 支付宝支付功能部署
+
+### 概述
+
+springMall 支持支付宝 PC 网站支付功能。此部分说明如何配置支付宝集成。
+
+### 沙箱环境配置
+
+#### 第一步：获取支付宝沙箱账号
+
+1. 访问 [支付宝开放平台](https://openhome.alipay.com/)
+2. 登录或注册开发者账号
+3. 进入 [开发者中心](https://openhome.alipay.com/platform/home.htm)
+4. 点击 "应用" > "我的应用" > "创建应用"
+5. 选择 "PC 网站支付" 应用类型
+6. 完成应用信息填写并提交（沙箱环境无需审核）
+
+#### 第二步：获取应用密钥
+
+1. 在应用管理页面选择你的应用
+2. 点击 "开发设置" 标签
+3. 在 "接口加签方式" 部分，点击 "生成密钥"
+4. 选择 RSA2（推荐）加签方式
+5. **重要**: 妥善保管以下三个信息：
+   - **应用 ID** (ALIPAY_APP_ID)
+   - **商户应用私钥** (ALIPAY_PRIVATE_KEY) - 需复制包含 `-----BEGIN RSA PRIVATE KEY-----` 的完整内容
+   - **支付宝公钥** (ALIPAY_PUBLIC_KEY) - 从支付宝公钥证书中提取
+
+#### 第三步：上传公钥到支付宝后台
+
+1. 在 "开发设置" 页面的 "接口加签方式" 中
+2. 上传你的 **商户应用公钥**（与私钥对应）
+3. 点击保存
+
+#### 第四步：配置 URL
+
+在支付宝应用设置中配置以下 URL：
+
+| 参数 | 值 | 说明 |
+|-----|---|-----|
+| 授权回调地址 | `http://localhost:26115/payment/result` | 支付成功后用户跳转地址 |
+| 消息接收地址 | `http://localhost:25116/api/v1/payment/alipay/notify` | 支付宝异步通知地址（本地需内网穿透） |
+
+### 本地开发配置
+
+#### 配置环境变量
+
+1. 复制 `.env.example` 为 `.env`：
+   ```bash
+   cp .env.example .env
+   ```
+
+2. 填写支付宝配置（从沙箱环境获取）：
+   ```bash
+   ALIPAY_APP_ID=2021000121677669
+   ALIPAY_PRIVATE_KEY=MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDI...（完整的私钥）
+   ALIPAY_PUBLIC_KEY=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA...（完整的公钥）
+   ALIPAY_NOTIFY_URL=http://localhost:25116/api/v1/payment/alipay/notify
+   ALIPAY_RETURN_URL=http://localhost:26115/payment/result
+   FRONTEND_URL=http://localhost:26115
+   ```
+
+#### 使用内网穿透工具（ngrok）处理异步通知
+
+由于本地开发环境无法从外网直接访问，需要使用内网穿透工具：
+
+1. **安装 ngrok**
+   ```bash
+   # 从 https://ngrok.com/download 下载
+   # 或使用 Homebrew (macOS)
+   brew install ngrok
+   ```
+
+2. **启动本地后端**
+   ```bash
+   docker compose up -d backend
+   ```
+
+3. **运行 ngrok 转发**
+   ```bash
+   # 将 ngrok 转发到本地后端
+   ngrok http 25116
+   ```
+
+4. **更新 .env 文件**
+   ```bash
+   # ngrok 会输出类似: https://xxxx.ngrok.io
+   # 更新异步通知地址
+   ALIPAY_NOTIFY_URL=https://xxxx.ngrok.io/api/v1/payment/alipay/notify
+   ```
+
+5. **重启后端容器**
+   ```bash
+   docker compose restart backend
+   ```
+
+### 生产环境配置
+
+#### 关键要点
+
+1. **HTTPS 支持**: 所有支付宝相关 URL 必须使用 HTTPS 协议
+2. **异步通知地址**: 必须是外网可访问的地址（公网 IP 或域名）
+3. **密钥安全**:
+   - 生产环境私钥通过 CI/CD 管道或密钥管理系统安全注入
+   - 绝不在代码库中硬编码私钥
+   - 定期轮换密钥
+   - 使用环境变量或密钥管理工具（如 HashiCorp Vault）
+
+#### 部署步骤
+
+1. **配置生产环境变量**
+   ```bash
+   # 在服务器上创建 .env 文件或使用系统环境变量
+   export ALIPAY_APP_ID="production-app-id"
+   export ALIPAY_PRIVATE_KEY="production-private-key"
+   # ... 其他配置
+   ```
+
+2. **启动容器**
+   ```bash
+   docker compose up -d --build
+   ```
+
+3. **验证支付功能**
+   ```bash
+   # 查看后端日志是否有支付宝配置加载
+   docker compose logs backend | grep -i alipay
+   ```
+
+### 数据库表说明
+
+支付宝支付功能依赖以下数据库表：
+
+#### mall_payment 表（支付记录）
+
+存储每笔支付的记录，用于追踪支付状态：
+
+| 字段 | 类型 | 说明 |
+|-----|------|------|
+| id | BIGINT | 主键 |
+| payment_no | VARCHAR(50) | 系统支付流水号（唯一） |
+| order_no | VARCHAR(50) | 关联的订单号 |
+| user_id | BIGINT | 支付用户 |
+| amount | DECIMAL(10,2) | 支付金额 |
+| payment_method | VARCHAR(20) | 支付方式（ALIPAY/WECHAT） |
+| payment_status | VARCHAR(20) | 支付状态（PENDING/SUCCESS/FAILED/CLOSED） |
+| trade_no | VARCHAR(100) | 支付宝交易号 |
+| notify_time | DATETIME | 异步通知时间 |
+| created_at | DATETIME | 创建时间 |
+| updated_at | DATETIME | 更新时间 |
+
+#### mall_order 表（新增字段）
+
+| 字段 | 类型 | 说明 |
+|-----|------|------|
+| payment_method | VARCHAR(20) | 支付方式（ALIPAY/WECHAT） |
+| payment_time | DATETIME | 支付完成时间 |
+
+### 支付流程
+
+1. **用户创建订单** → 订单状态：UNPAID
+2. **用户点击支付** → 系统生成支付记录 (payment_status: PENDING)
+3. **用户在支付宝完成支付** → 支付宝发送异步通知
+4. **后端处理异步通知** → 更新订单和支付记录状态
+5. **用户重定向到结果页** → 显示支付结果
+
+### 常见问题排查
+
+#### 异步通知无法接收
+
+**症状**: 支付完成后，订单状态仍为 UNPAID
+
+**原因**:
+1. ALIPAY_NOTIFY_URL 配置错误
+2. 防火墙阻止支付宝 IP
+3. 本地开发未使用内网穿透
+
+**解决**:
+```bash
+# 查看后端日志
+docker compose logs backend | tail -50
+
+# 确认异步通知地址配置
+docker compose exec backend cat /proc/1/environ | grep ALIPAY_NOTIFY_URL
+```
+
+#### 支付页面打不开
+
+**症状**: 点击支付按钮，页面无反应
+
+**原因**:
+1. ALIPAY_APP_ID 配置错误
+2. 私钥格式不正确
+3. 后端服务未启动
+
+**解决**:
+```bash
+# 检查后端是否正常运行
+docker compose ps backend
+
+# 查看后端错误日志
+docker compose logs backend | grep -i error
+
+# 测试后端健康检查
+curl http://localhost:25116/api/v1/categories
 ```
 
 ---

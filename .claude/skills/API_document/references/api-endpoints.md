@@ -1,5 +1,7 @@
 # API 接口详细文档
 
+> 最后更新时间：2026-02-16
+
 ## 1. 认证模块 `/auth`
 
 ### 用户注册
@@ -492,11 +494,42 @@ Authorization: Bearer <token>
 PUT /api/v1/orders/{orderNo}/cancel
 Authorization: Bearer <token>
 ```
+**路径参数**：`orderNo` - 订单号
+
+**响应**:
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": null
+}
+```
+
+**业务逻辑**：
+1. 订单状态为 `UNPAID`（未支付）：
+   - 恢复库存
+   - 订单状态变为 `CANCELLED`
+2. 订单状态为 `PAID`（已支付）：
+   - **自动调用支付宝退款接口**
+   - 创建退款记录
+   - 更新支付状态为 `REFUNDED`
+   - 恢复库存
+   - 订单状态变为 `CANCELLED`
+
 **限制**:
-- 用户可以取消待支付（UNPAID）和待发货（PAID）状态的订单
+- 可取消待支付（UNPAID）和待发货（PAID）状态的订单
 - 取消后订单状态变更为 CANCELLED
 - 自动恢复所有商品库存
 - 已发货（SHIPPED）和已完成（COMPLETED）订单无法取消
+
+**错误响应**：
+- `40501` - 订单不存在
+- `40301` - 无权限访问该订单
+- `40503` - 订单无法取消
+- `40604` - 退款失败
+- `40606` - 支付已退款
+
+**注意**：退款为全额退款，金额等于订单实际支付金额，实时到账
 
 ### 确认收货
 ```http
@@ -509,7 +542,7 @@ Authorization: Bearer <token>
 
 ## 8. 支付模块 `/payment` 🔒 USER
 
-### 发起支付
+### 发起支付（模拟）
 ```http
 POST /api/v1/payment/pay
 Authorization: Bearer <token>
@@ -536,6 +569,97 @@ Authorization: Bearer <token>
   }
 }
 ```
+
+---
+
+### 创建支付宝支付
+```http
+POST /api/v1/payment/alipay/create
+Authorization: Bearer <token>
+```
+**请求体**:
+```json
+{
+  "orderNo": "20260108123456789"
+}
+```
+**响应**:
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": {
+    "paymentNo": "PY20260215165739181457",
+    "orderNo": "20260108123456789",
+    "amount": 15998.00,
+    "paymentMethod": "ALIPAY",
+    "paymentStatus": "PENDING",
+    "paymentUrl": "<!DOCTYPE html>..."
+  }
+}
+```
+**说明**：
+- `paymentUrl` 字段包含支付宝表单 HTML
+- 前端将 HTML 写入页面并自动提交，跳转到支付宝收银台
+
+---
+
+### 查询支付状态
+```http
+GET /api/v1/payment/{paymentNo}
+Authorization: Bearer <token>
+```
+**路径参数**：`paymentNo` - 支付流水号
+
+**响应**:
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": {
+    "paymentNo": "PY20260215165739181457",
+    "orderNo": "20260108123456789",
+    "amount": 15998.00,
+    "paymentMethod": "ALIPAY",
+    "paymentStatus": "SUCCESS",
+    "tradeNo": "2026021522001449950507527811",
+    "createdAt": "2026-02-15T16:57:39"
+  }
+}
+```
+**字段说明**：
+- `paymentStatus`：支付状态
+  - `PENDING`：待支付
+  - `SUCCESS`：支付成功
+  - `FAILED`：支付失败
+  - `CLOSED`：已关闭
+  - `REFUNDED`：已退款
+- `tradeNo`：支付宝交易号（仅支付宝支付）
+
+**使用场景**：用户从支付宝返回后，前端轮询查询支付结果（建议轮询间隔2秒，最大30次）
+
+---
+
+### 支付宝异步通知（回调）
+```http
+POST /api/v1/payment/alipay/notify
+```
+**说明**：
+- 公开接口，由支付宝服务器调用
+- 接收 `application/x-www-form-urlencoded` 格式
+- 自动验证签名并更新订单状态
+
+**响应**：`"success"` 或 `"failure"` 字符串
+
+---
+
+### 支付宝同步返回
+```http
+GET /api/v1/payment/alipay/return
+```
+**说明**：
+- 公开接口，支付完成后跳转回商户网站
+- 自动重定向到前端结果页：`/payment/result?paymentNo={paymentNo}`
 
 ---
 
@@ -675,7 +799,20 @@ Authorization: Bearer <admin-token>
 PUT /api/v1/admin/orders/{orderNo}/cancel
 Authorization: Bearer <admin-token>
 ```
+**路径参数**：`orderNo` - 订单号
+
 **说明**: 管理员可取消待支付和待发货状态的订单，取消后自动恢复库存
+
+**业务逻辑**：
+1. 订单状态为 `UNPAID`（未支付）：
+   - 恢复库存
+   - 订单状态变为 `CANCELLED`
+2. 订单状态为 `PAID`（已支付）：
+   - **自动调用支付宝退款接口**
+   - 创建退款记录
+   - 更新支付状态为 `REFUNDED`
+   - 恢复库存
+   - 订单状态变为 `CANCELLED`
 
 **限制**:
 - 只能取消 UNPAID（待支付）或 PAID（待发货）状态的订单
@@ -690,6 +827,12 @@ Authorization: Bearer <admin-token>
   "data": null
 }
 ```
+
+**错误响应**：
+- `40501` - 订单不存在
+- `40503` - 订单无法取消
+- `40604` - 退款失败
+- `40606` - 支付已退款
 
 ---
 

@@ -95,6 +95,8 @@ public class SecurityConfig {
                                 "/api/v1/categories/**",// 分类接口（查询公开，管理需ADMIN）
                                 "/api/v1/products/**",  // 商品接口（查询公开，管理需ADMIN）
                                 "/api/v1/payment/notify", // 支付回调接口（模拟第三方回调）
+                                "/api/v1/payment/alipay/notify", // 支付宝异步通知
+                                "/api/v1/payment/alipay/return", // 支付宝同步返回
                                 "/api-docs/**",         // API文档
                                 "/swagger-ui/**",       // Swagger UI
                                 "/swagger-ui.html",

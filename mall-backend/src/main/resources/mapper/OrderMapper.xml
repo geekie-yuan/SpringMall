@@ -12,6 +12,7 @@
         <result column="pay_amount" property="payAmount"/>
         <result column="freight" property="freight"/>
         <result column="status" property="status"/>
+        <result column="payment_method" property="paymentMethod"/>
         <result column="payment_time" property="paymentTime"/>
         <result column="ship_time" property="shipTime"/>
         <result column="complete_time" property="completeTime"/>
@@ -26,7 +27,7 @@
     <!-- 基础字段列表 -->
     <sql id="Base_Column_List">
         id, order_no, user_id, total_amount, pay_amount, freight, status,
-        payment_time, ship_time, complete_time,
+        payment_method, payment_time, ship_time, complete_time,
         receiver_name, receiver_phone, receiver_address, remark,
         created_at, updated_at
     </sql>
@@ -84,6 +85,14 @@
     <update id="updateStatus">
         UPDATE mall_order
         SET status = #{status},
+            updated_at = CURRENT_TIMESTAMP
+        WHERE order_no = #{orderNo}
+    </update>
+
+    <!-- 更新支付方式 -->
+    <update id="updatePaymentMethod">
+        UPDATE mall_order
+        SET payment_method = #{paymentMethod},
             updated_at = CURRENT_TIMESTAMP
         WHERE order_no = #{orderNo}
     </update>

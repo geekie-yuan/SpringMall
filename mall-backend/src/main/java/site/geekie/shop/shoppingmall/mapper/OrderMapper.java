@@ -74,6 +74,15 @@ public interface OrderMapper {
     int updateStatus(@Param("orderNo") String orderNo, @Param("status") String status);
 
     /**
+     * 更新支付方式
+     *
+     * @param orderNo 订单号
+     * @param paymentMethod 支付方式
+     * @return 影响行数
+     */
+    int updatePaymentMethod(@Param("orderNo") String orderNo, @Param("paymentMethod") String paymentMethod);
+
+    /**
      * 更新支付时间
      *
      * @param orderNo 订单号

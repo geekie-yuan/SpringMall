@@ -116,9 +116,27 @@ public enum ResultCode {
     //订单无法取消
     ORDER_CANNOT_BE_CANCELLED(40503, "Order cannot be cancelled"),
 
+    //订单商品明细不存在
+    ORDER_ITEM_NOT_FOUND(40504, "Order item not found"),
+
     // ========== 支付相关错误码 (40601-40699) ==========
     //支付失败
     PAYMENT_FAILED(40601, "Payment failed"),
+
+    //支付记录不存在
+    PAYMENT_NOT_FOUND(40602, "Payment not found"),
+
+    //支付关闭失败
+    PAYMENT_CLOSE_FAILED(40603, "Payment close failed"),
+
+    //退款失败
+    REFUND_FAILED(40604, "Refund failed"),
+
+    //退款记录不存在
+    REFUND_NOT_FOUND(40605, "Refund record not found"),
+
+    //支付已退款
+    PAYMENT_ALREADY_REFUNDED(40606, "Payment already refunded"),
 
     // ========== 认证相关错误码 (40701-40799) ==========
     //无效的Token

@@ -19,3 +19,8 @@ logs/
 
 # Backend 的 git 目录
 mall-backend/.git/
+
+# 环境变量文件（包含敏感信息，绝不提交）
+.env
+.env.local
+.env.*.local

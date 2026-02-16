@@ -33,7 +33,7 @@ mybatis:
   type-aliases-package: site.geekie.shop.shoppingmall.entity
   configuration:
     map-underscore-to-camel-case: true
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
 
 jwt:
   secret: dGhpc2lzYXJhbmRvbWtleWZvcmhtYWMyNTZhbGdvcml0aG0xMjM0NTY3ODkw
@@ -50,6 +50,18 @@ springdoc:
 pagehelper:
   helper-dialect: mysql
   reasonable: true
+
+alipay:
+  app-id: ${ALIPAY_APP_ID:支付宝号}
+  private-key: ${ALIPAY_PRIVATE_KEY:支付宝私钥}
+  alipay-public-key: ${ALIPAY_PUBLIC_KEY:支付宝公钥}
+  server-url: https://openapi-sandbox.dl.alipaydev.com/gateway.do
+  format: json
+  charset: UTF-8
+  sign-type: RSA2
+  notify-url: ${ALIPAY_NOTIFY_URL:https://anders-unattractable-coinstantaneously.ngrok-free.dev/api/v1/payment/alipay/notify}
+  return-url: ${ALIPAY_RETURN_URL:http://localhost:3000/payment/result}
+  frontend-url: ${FRONTEND_URL:http://localhost:3000}
 
 logging:
   level:

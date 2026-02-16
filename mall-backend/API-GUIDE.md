@@ -1,5 +1,7 @@
 # Spring Mall API 接口文档
 
+> 最后更新时间：2026-02-16
+
 ## 项目概述
 
 Spring Mall 是一个完整的在线商城后端系统，基于 Spring Boot 3.3.6 + MyBatis 3.5.17 开发。
@@ -514,11 +516,46 @@ PUT /api/v1/orders/{orderNo}/cancel
 Authorization: Bearer <token>
 ```
 
+**路径参数**：
+- `orderNo`：订单号
+
+**响应**：
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": null
+}
+```
+
+**业务逻辑**：
+1. 如果订单状态为 `UNPAID`（未支付）：
+   - 恢复库存
+   - 订单状态变为 `CANCELLED`
+2. 如果订单状态为 `PAID`（已支付）：
+   - **自动调用支付宝退款接口**
+   - 创建退款记录
+   - 更新支付记录状态为 `REFUNDED`
+   - 恢复库存
+   - 订单状态变为 `CANCELLED`
+
 **限制**:
 - 用户可以取消待支付（UNPAID）和待发货（PAID）状态的订单
 - 取消后订单状态变更为 CANCELLED
 - 自动恢复所有商品库存
 - 已发货（SHIPPED）和已完成（COMPLETED）订单无法取消
+
+**错误响应**：
+- `40501` - 订单不存在
+- `40301` - 无权限访问该订单
+- `40503` - 订单无法取消（订单已发货）
+- `40604` - 退款失败（支付宝退款接口调用失败）
+- `40606` - 支付已退款（重复退款）
+
+**注意事项**：
+- 退款为全额退款，金额等于订单实际支付金额
+- 退款成功后，用户支付宝账户将收到退款
+- 退款处理时间：实时到账
 
 #### 7.6 确认收货
 ```http
@@ -532,7 +569,7 @@ Authorization: Bearer <token>
 
 ### 8. 支付模块 `/api/v1/payment`
 
-#### 8.1 发起支付
+#### 8.1 发起支付（模拟）
 ```http
 POST /api/v1/payment/pay
 Authorization: Bearer <token>
@@ -562,7 +599,132 @@ Authorization: Bearer <token>
 }
 ```
 
-#### 8.2 支付回调（内部）
+#### 8.2 创建支付宝支付
+```http
+POST /api/v1/payment/alipay/create
+Authorization: Bearer <token>
+```
+
+**请求体**:
+```json
+{
+  "orderNo": "20260108123456789"
+}
+```
+
+**响应**:
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": {
+    "paymentNo": "PY20260215165739181457",
+    "orderNo": "20260108123456789",
+    "amount": 15998.00,
+    "paymentMethod": "ALIPAY",
+    "paymentStatus": "PENDING",
+    "paymentUrl": "<!DOCTYPE html>\n<html>\n<head>\n    <meta charset=\"utf-8\">\n</head>\n<body>\n<form name=\"punchout_form\" method=\"post\" action=\"https://openapi-sandbox.dl.alipaydev.com/gateway.do\">\n    <input type=\"hidden\" name=\"biz_content\" value=\"...\">\n    <input type=\"hidden\" name=\"sign\" value=\"...\">\n    ...\n</form>\n<script>document.forms[0].submit();</script>\n</body>\n</html>"
+  }
+}
+```
+
+**说明**：
+- 返回的 `paymentUrl` 字段包含支付宝表单 HTML
+- 前端收到响应后，将 HTML 写入页面并自动提交
+- 用户浏览器将跳转到支付宝收银台
+
+**使用示例**：
+```javascript
+// 前端代码示例
+async function createPayment(orderNo) {
+  const response = await fetch('/api/v1/payment/alipay/create', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ orderNo })
+  });
+
+  const result = await response.json();
+  const html = result.data.paymentUrl;
+
+  // 将支付宝表单写入页面并自动提交
+  const div = document.createElement('div');
+  div.innerHTML = html;
+  document.body.appendChild(div);
+}
+```
+
+#### 8.3 查询支付状态
+```http
+GET /api/v1/payment/{paymentNo}
+Authorization: Bearer <token>
+```
+
+**路径参数**：
+- `paymentNo`：支付流水号
+
+**响应**:
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": {
+    "paymentNo": "PY20260215165739181457",
+    "orderNo": "20260108123456789",
+    "amount": 15998.00,
+    "paymentMethod": "ALIPAY",
+    "paymentStatus": "SUCCESS",
+    "tradeNo": "2026021522001449950507527811",
+    "createdAt": "2026-02-15T16:57:39"
+  }
+}
+```
+
+**字段说明**：
+- `paymentNo`：支付流水号
+- `orderNo`：订单号
+- `amount`：支付金额
+- `paymentMethod`：支付方式（`MOCK` / `ALIPAY`）
+- `paymentStatus`：支付状态
+  - `PENDING`：待支付
+  - `SUCCESS`：支付成功
+  - `FAILED`：支付失败
+  - `CLOSED`：已关闭
+  - `REFUNDED`：已退款
+- `tradeNo`：支付宝交易号（仅支付宝支付）
+- `createdAt`：支付创建时间
+
+**使用场景**：
+- 用户从支付宝收银台返回后，前端轮询查询支付结果
+- 建议轮询间隔：2 秒
+- 建议最大轮询次数：30 次（1 分钟）
+
+#### 8.4 支付宝异步通知（回调）
+```http
+POST /api/v1/payment/alipay/notify
+```
+
+**说明**：
+- 该接口为公开接口，由支付宝服务器调用
+- 接收 `application/x-www-form-urlencoded` 格式请求
+- 自动验证签名并更新订单状态
+
+**响应**：
+- 成功：`"success"` 字符串
+- 失败：`"failure"` 字符串
+
+#### 8.5 支付宝同步返回
+```http
+GET /api/v1/payment/alipay/return
+```
+
+**说明**：
+- 该接口为公开接口，支付宝支付完成后跳转回商户网站
+- 自动重定向到前端结果页：`/payment/result?paymentNo={paymentNo}`
+
+#### 8.6 支付回调（模拟）
 ```http
 POST /api/v1/payment/notify
 ```
@@ -821,6 +983,8 @@ Authorization: Bearer <admin-token>
 
 ## 常见错误码
 
+### 通用错误码
+
 | 错误码 | 说明 |
 |--------|------|
 | 200 | 成功 |
@@ -829,24 +993,70 @@ Authorization: Bearer <admin-token>
 | 403 | 禁止访问（无权限） |
 | 404 | 资源未找到 |
 | 500 | 服务器内部错误 |
+
+### 用户相关错误码
+
+| 错误码 | 说明 |
+|--------|------|
 | 40001 | 用户名已存在 |
 | 40002 | 邮箱已存在 |
 | 40003 | 手机号已存在 |
 | 40004 | 用户不存在 |
 | 40005 | 用户名或密码错误 |
 | 40006 | 账户已被禁用 |
+
+### 商品相关错误码
+
+| 错误码 | 说明 |
+|--------|------|
 | 40101 | 商品不存在 |
 | 40103 | 库存不足 |
 | 40104 | 商品已下架 |
+
+### 分类相关错误码
+
+| 错误码 | 说明 |
+|--------|------|
 | 40201 | 分类不存在 |
+
+### 购物车相关错误码
+
+| 错误码 | 说明 |
+|--------|------|
 | 40301 | 购物车项不存在 |
 | 40302 | 购物车为空 |
 | 40303 | 购物车中无已选中商品 |
+
+### 地址相关错误码
+
+| 错误码 | 说明 |
+|--------|------|
 | 40401 | 地址不存在 |
+
+### 订单相关错误码
+
+| 错误码 | 说明 |
+|--------|------|
 | 40501 | 订单不存在 |
 | 40502 | 无效的订单状态 |
 | 40503 | 订单无法取消 |
+| 40504 | 订单商品明细不存在 |
+
+### 支付相关错误码
+
+| 错误码 | 说明 |
+|--------|------|
 | 40601 | 支付失败 |
+| 40602 | 支付记录不存在 |
+| 40603 | 支付关闭失败 |
+| 40604 | 退款失败 |
+| 40605 | 退款记录不存在 |
+| 40606 | 支付已退款 |
+
+### Token相关错误码
+
+| 错误码 | 说明 |
+|--------|------|
 | 40701 | 无效的Token |
 | 40702 | Token已过期 |
 

@@ -4,6 +4,8 @@ import site.geekie.shop.shoppingmall.dto.PaymentDTO;
 import site.geekie.shop.shoppingmall.dto.PaymentNotifyDTO;
 import site.geekie.shop.shoppingmall.vo.PaymentVO;
 
+import java.util.Map;
+
 /**
  * 支付服务接口
  * 提供支付的业务逻辑方法
@@ -33,4 +35,37 @@ public interface PaymentService {
      * @param request 支付回调请求
      */
     void handlePaymentNotify(PaymentNotifyDTO request);
+
+    /**
+     * 创建支付宝支付
+     *
+     * @param orderNo 订单号
+     * @param userId 用户ID
+     * @return 支付信息（包含支付表单HTML）
+     */
+    PaymentVO createAlipayPayment(String orderNo, Long userId);
+
+    /**
+     * 处理支付宝异步通知
+     *
+     * @param params 通知参数
+     * @return 处理结果（success/failure）
+     */
+    String handleAlipayNotify(Map<String, String> params);
+
+    /**
+     * 查询支付状态
+     *
+     * @param paymentNo 支付流水号
+     * @return 支付信息
+     */
+    PaymentVO queryPayment(String paymentNo);
+
+    /**
+     * 处理订单退款
+     *
+     * @param orderNo 订单号
+     * @param refundReason 退款原因
+     */
+    void refundOrder(String orderNo, String refundReason);
 }

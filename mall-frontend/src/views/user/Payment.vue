@@ -27,23 +27,22 @@
           <h3 class="section-title">选择支付方式</h3>
 
           <div class="methods-grid">
-            <!-- 支付宝/微信 -->
+            <!-- 支付宝支付 -->
             <div
-              class="method-card disabled"
-              @click="handleMethodClick('ALIPAY_WECHAT')"
+              :class="['method-card', selectedMethod === 'ALIPAY' ? 'active' : '']"
+              @click="handleMethodClick('ALIPAY')"
             >
               <div class="method-icon">
                 <el-icon :size="40"><Wallet /></el-icon>
               </div>
               <div class="method-info">
-                <h4>支付宝/微信支付</h4>
-                <p class="method-desc">使用支付宝或微信扫码支付</p>
-                <el-tag type="info" size="small">暂未开通</el-tag>
+                <h4>支付宝支付</h4>
+                <p class="method-desc">使用支付宝扫码支付</p>
+                <el-tag type="success" size="small">推荐</el-tag>
               </div>
               <el-radio
-                :model-value="selectedMethod"
-                value="ALIPAY_WECHAT"
-                disabled
+                v-model="selectedMethod"
+                value="ALIPAY"
               />
             </div>
 
@@ -78,7 +77,7 @@
               <div class="method-info">
                 <h4>模拟支付</h4>
                 <p class="method-desc">测试环境模拟支付（立即成功）</p>
-                <el-tag type="success" size="small">可用</el-tag>
+                <el-tag type="warning" size="small">测试</el-tag>
               </div>
               <el-radio
                 v-model="selectedMethod"
@@ -129,7 +128,7 @@
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getOrderDetail } from '@/api/order'
-import { pay } from '@/api/payment'
+import { pay, createAlipayPayment } from '@/api/payment'
 import { formatPrice } from '@/utils/format'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Wallet, CreditCard, Tools } from '@element-plus/icons-vue'
@@ -142,7 +141,7 @@ const router = useRouter()
 const loading = ref(false)
 const paying = ref(false)
 const order = ref(null)
-const selectedMethod = ref('MOCK') // 默认选中 MOCK
+const selectedMethod = ref('ALIPAY') // 默认选中支付宝
 
 // 获取订单详情
 const fetchOrderDetail = async () => {
@@ -173,7 +172,7 @@ const fetchOrderDetail = async () => {
 
 // 支付方式点击处理
 const handleMethodClick = (method) => {
-  if (method === 'MOCK') {
+  if (method === 'ALIPAY' || method === 'MOCK') {
     selectedMethod.value = method
   } else {
     ElMessage.info('该支付方式暂未开通，敬请期待')
@@ -188,8 +187,9 @@ const handlePay = async () => {
   }
 
   try {
+    const paymentMethodText = selectedMethod.value === 'ALIPAY' ? '支付宝' : '模拟支付'
     await ElMessageBox.confirm(
-      `确认使用${selectedMethod.value === 'MOCK' ? '模拟支付' : ''}支付 ¥${formatPrice(order.value.totalAmount)} 吗？`,
+      `确认使用${paymentMethodText}支付 ¥${formatPrice(order.value.totalAmount)} 吗？`,
       '支付确认',
       {
         confirmButtonText: '确认支付',
@@ -200,10 +200,53 @@ const handlePay = async () => {
 
     paying.value = true
 
-    // 调用支付 API
+    if (selectedMethod.value === 'ALIPAY') {
+      // 支付宝支付
+      await handleAlipayPayment()
+    } else {
+      // 模拟支付
+      await handleMockPayment()
+    }
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('支付失败:', error)
+      ElMessage.error('支付失败，请重试')
+    }
+    paying.value = false
+  }
+}
+
+// 处理支付宝支付
+const handleAlipayPayment = async () => {
+  try {
+    // 调用支付宝支付接口
+    const result = await createAlipayPayment(order.value.orderNo)
+
+    // 创建隐藏的 div 用于插入表单
+    const formDiv = document.createElement('div')
+    formDiv.style.display = 'none'
+    formDiv.innerHTML = result.paymentUrl
+    document.body.appendChild(formDiv)
+
+    // 提交表单，跳转到支付宝
+    const form = formDiv.querySelector('form')
+    if (form) {
+      form.submit()
+    } else {
+      throw new Error('支付表单格式错误')
+    }
+  } catch (error) {
+    paying.value = false
+    throw error
+  }
+}
+
+// 处理模拟支付
+const handleMockPayment = async () => {
+  try {
     const result = await pay({
       orderNo: order.value.orderNo,
-      paymentMethod: selectedMethod.value
+      paymentMethod: 'MOCK'
     })
 
     if (result.paymentStatus === 'SUCCESS') {
@@ -218,11 +261,8 @@ const handlePay = async () => {
       paying.value = false
     }
   } catch (error) {
-    if (error !== 'cancel') {
-      console.error('支付失败:', error)
-      ElMessage.error('支付失败，请重试')
-    }
     paying.value = false
+    throw error
   }
 }
 

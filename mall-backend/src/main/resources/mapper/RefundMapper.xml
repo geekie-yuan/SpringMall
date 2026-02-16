@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="site.geekie.shop.shoppingmall.mapper.RefundMapper">
+
+    <!-- BaseResultMap -->
+    <resultMap id="BaseResultMap" type="site.geekie.shop.shoppingmall.entity.RefundDO">
+        <id column="id" property="id"/>
+        <result column="refund_no" property="refundNo"/>
+        <result column="order_no" property="orderNo"/>
+        <result column="payment_no" property="paymentNo"/>
+        <result column="trade_no" property="tradeNo"/>
+        <result column="refund_amount" property="refundAmount"/>
+        <result column="refund_reason" property="refundReason"/>
+        <result column="refund_status" property="refundStatus"/>
+        <result column="refund_time" property="refundTime"/>
+        <result column="created_at" property="createdAt"/>
+        <result column="updated_at" property="updatedAt"/>
+    </resultMap>
+
+    <!-- Base_Column_List -->
+    <sql id="Base_Column_List">
+        id, refund_no, order_no, payment_no, trade_no,
+        refund_amount, refund_reason, refund_status, refund_time,
+        created_at, updated_at
+    </sql>
+
+    <!-- 根据ID查询退款记录 -->
+    <select id="findById" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM mall_refund
+        WHERE id = #{id}
+    </select>
+
+    <!-- 根据退款流水号查询退款记录 -->
+    <select id="findByRefundNo" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM mall_refund
+        WHERE refund_no = #{refundNo}
+    </select>
+
+    <!-- 根据订单号查询退款记录 -->
+    <select id="findByOrderNo" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM mall_refund
+        WHERE order_no = #{orderNo}
+    </select>
+
+    <!-- 根据支付流水号查询退款记录 -->
+    <select id="findByPaymentNo" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM mall_refund
+        WHERE payment_no = #{paymentNo}
+    </select>
+
+    <!-- 插入退款记录 -->
+    <insert id="insert" parameterType="site.geekie.shop.shoppingmall.entity.RefundDO"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO mall_refund (
+            refund_no, order_no, payment_no, trade_no,
+            refund_amount, refund_reason, refund_status, refund_time
+        ) VALUES (
+            #{refundNo}, #{orderNo}, #{paymentNo}, #{tradeNo},
+            #{refundAmount}, #{refundReason}, #{refundStatus}, #{refundTime}
+        )
+    </insert>
+
+    <!-- 更新退款记录 -->
+    <update id="updateById">
+        UPDATE mall_refund
+        <set>
+            <if test="refundStatus != null">refund_status = #{refundStatus},</if>
+            <if test="refundTime != null">refund_time = #{refundTime},</if>
+            <if test="tradeNo != null">trade_no = #{tradeNo},</if>
+            updated_at = CURRENT_TIMESTAMP
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <!-- 更新退款状态 -->
+    <update id="updateStatus">
+        UPDATE mall_refund
+        SET refund_status = #{refundStatus},
+            refund_time = #{refundTime},
+            updated_at = CURRENT_TIMESTAMP
+        WHERE refund_no = #{refundNo}
+    </update>
+
+</mapper>

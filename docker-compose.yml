@@ -25,6 +25,13 @@ services:
       # JWT
       JWT_SECRET: ${JWT_SECRET:-dGhpc2lzYXJhbmRvbWtleWZvcmhtYWMyNTZhbGdvcml0aG0xMjM0NTY3ODkw}
       JWT_EXPIRATION: ${JWT_EXPIRATION:-86400000}
+      # Alipay Payment Configuration
+      ALIPAY_APP_ID: ${ALIPAY_APP_ID}
+      ALIPAY_PRIVATE_KEY: ${ALIPAY_PRIVATE_KEY}
+      ALIPAY_PUBLIC_KEY: ${ALIPAY_PUBLIC_KEY}
+      ALIPAY_NOTIFY_URL: ${ALIPAY_NOTIFY_URL}
+      ALIPAY_RETURN_URL: ${ALIPAY_RETURN_URL}
+      FRONTEND_URL: ${FRONTEND_URL}
       # JVM
       JAVA_OPTS: "-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
     ports:

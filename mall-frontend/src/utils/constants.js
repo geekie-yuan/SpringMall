@@ -88,6 +88,36 @@ export const PAYMENT_METHOD_TEXT = {
 }
 
 /**
+ * 支付状态
+ */
+export const PAYMENT_STATUS = {
+  PENDING: 'PENDING',
+  SUCCESS: 'SUCCESS',
+  FAILED: 'FAILED',
+  CANCELLED: 'CANCELLED'
+}
+
+/**
+ * 支付状态文本映射
+ */
+export const PAYMENT_STATUS_TEXT = {
+  PENDING: '待支付',
+  SUCCESS: '支付成功',
+  FAILED: '支付失败',
+  CANCELLED: '已取消'
+}
+
+/**
+ * 支付状态标签类型映射（Element Plus Tag）
+ */
+export const PAYMENT_STATUS_TAG_TYPE = {
+  PENDING: 'warning',
+  SUCCESS: 'success',
+  FAILED: 'danger',
+  CANCELLED: 'info'
+}
+
+/**
  * 每页显示数量选项
  */
 export const PAGE_SIZES = [10, 20, 50, 100]
