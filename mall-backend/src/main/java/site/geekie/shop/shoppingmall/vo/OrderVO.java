@@ -20,6 +20,8 @@ public class OrderVO {
     private BigDecimal freight;
     private String status;
     private String statusDesc;
+    private String paymentNo;
+    private String paymentMethod;
     private LocalDateTime paymentTime;
     private LocalDateTime shipTime;
     private LocalDateTime completeTime;

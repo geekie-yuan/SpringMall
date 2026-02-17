@@ -138,6 +138,9 @@ public enum ResultCode {
     //支付已退款
     PAYMENT_ALREADY_REFUNDED(40606, "Payment already refunded"),
 
+    //支付验证失败
+    PAYMENT_VERIFY_FAILED(40607, "Payment verification failed"),
+
     // ========== 认证相关错误码 (40701-40799) ==========
     //无效的Token
     INVALID_TOKEN(40701, "Invalid token"),

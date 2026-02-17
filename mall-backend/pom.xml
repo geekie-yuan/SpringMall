@@ -141,6 +141,13 @@
             <version>4.40.658.ALL</version>
         </dependency>
 
+        <!-- WeChat Pay SDK -->
+        <dependency>
+            <groupId>com.github.wechatpay-apiv3</groupId>
+            <artifactId>wechatpay-java</artifactId>
+            <version>0.2.17</version>
+        </dependency>
+
         <!-- Test Dependencies -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

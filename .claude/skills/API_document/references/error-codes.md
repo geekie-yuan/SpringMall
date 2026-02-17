@@ -1,6 +1,6 @@
 # Spring Mall 错误码参考
 
-> 最后更新时间：2026-02-16
+> 最后更新时间：2026-02-17
 
 ## 错误码列表
 
@@ -96,6 +96,27 @@ try {
   const div = document.createElement('div');
   div.innerHTML = html;
   document.body.appendChild(div);
+} catch (error) {
+  if (error.code === 40601) {
+    ElMessage.error('支付失败，请重试或更换支付方式');
+  } else if (error.code === 40501) {
+    ElMessage.error('订单不存在');
+  } else if (error.code === 40502) {
+    ElMessage.error('订单状态错误，不可支付');
+  } else {
+    ElMessage.error(error.message || '操作失败');
+  }
+}
+```
+
+#### 1.1 创建微信支付时的错误处理
+```javascript
+try {
+  const response = await createWxPayment(orderNo);
+  // 成功，生成二维码
+  const codeUrl = response.data.codeUrl;
+  const qrCodeDataUrl = await QRCode.toDataURL(codeUrl);
+  document.getElementById('qrcode').src = qrCodeDataUrl;
 } catch (error) {
   if (error.code === 40601) {
     ElMessage.error('支付失败，请重试或更换支付方式');

@@ -1,6 +1,6 @@
 # API 接口详细文档
 
-> 最后更新时间：2026-02-16
+> 最后更新时间：2026-02-17
 
 ## 1. 认证模块 `/auth`
 
@@ -628,13 +628,15 @@ Authorization: Bearer <token>
 }
 ```
 **字段说明**：
+- `paymentMethod`：支付方式（`MOCK` / `ALIPAY` / `WECHAT`）
 - `paymentStatus`：支付状态
   - `PENDING`：待支付
   - `SUCCESS`：支付成功
   - `FAILED`：支付失败
   - `CLOSED`：已关闭
   - `REFUNDED`：已退款
-- `tradeNo`：支付宝交易号（仅支付宝支付）
+- `tradeNo`：第三方交易号（支付宝/微信支付）
+- `codeUrl`：支付二维码链接（仅微信Native支付）
 
 **使用场景**：用户从支付宝返回后，前端轮询查询支付结果（建议轮询间隔2秒，最大30次）
 
@@ -660,6 +662,87 @@ GET /api/v1/payment/alipay/return
 **说明**：
 - 公开接口，支付完成后跳转回商户网站
 - 自动重定向到前端结果页：`/payment/result?paymentNo={paymentNo}`
+
+---
+
+### 创建微信支付 🔒 USER
+```http
+POST /api/v1/payment/wechat/native
+Authorization: Bearer <token>
+```
+**请求体**:
+```json
+{
+  "orderNo": "20260108123456789",
+  "description": "Spring Mall订单支付"
+}
+```
+**响应**:
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": {
+    "paymentNo": "PY20260217123456789012",
+    "orderNo": "20260108123456789",
+    "amount": 15998.00,
+    "paymentMethod": "WECHAT",
+    "paymentStatus": "PENDING",
+    "codeUrl": "weixin://wxpay/bizpayurl?pr=xxx"
+  }
+}
+```
+**说明**：
+- `codeUrl` 为微信支付二维码链接，前端需生成二维码供用户扫码
+- 微信支付没有沙箱环境，默认禁用（`wxpay.enabled=false`）
+- 启用需配置真实商户信息
+
+---
+
+### 微信支付异步通知
+```http
+POST /api/v1/payment/wechat/notify
+```
+**说明**：公开接口，由微信支付服务器调用，自动验证签名并更新订单状态
+
+---
+
+### 微信退款
+```http
+POST /api/v1/payment/wechat/refund
+Authorization: Bearer <token>
+```
+**请求体**:
+```json
+{
+  "paymentNo": "PY20260217123456789012",
+  "refundAmount": 15998.00,
+  "reason": "用户取消订单"
+}
+```
+**响应**:
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": {
+    "refundNo": "RF20260217123456789012",
+    "paymentNo": "PY20260217123456789012",
+    "orderNo": "20260108123456789",
+    "refundAmount": 15998.00,
+    "refundStatus": "SUCCESS",
+    "reason": "用户取消订单"
+  }
+}
+```
+
+---
+
+### 微信退款异步通知
+```http
+POST /api/v1/payment/wechat/refund/notify
+```
+**说明**：公开接口，由微信支付服务器调用，接收退款结果通知
 
 ---
 

@@ -63,6 +63,17 @@ alipay:
   return-url: ${ALIPAY_RETURN_URL:http://localhost:3000/payment/result}
   frontend-url: ${FRONTEND_URL:http://localhost:3000}
 
+wxpay:
+  enabled: ${WXPAY_ENABLED:false}  # 微信支付开关，默认禁用（需要真实商户信息才能启用）
+  app-id: ${WXPAY_APP_ID:wx1234567890abcdef}
+  mch-id: ${WXPAY_MCH_ID:1234567890}
+  api-v3-key: ${WXPAY_API_V3_KEY:ABCDEF1234567890ABCDEF1234567890}
+  serial-no: ${WXPAY_SERIAL_NO:1234567890ABCDEF1234567890ABCDEF12345678}
+  private-key-string: ${WXPAY_PRIVATE_KEY:}
+  private-key-path: ${WXPAY_PRIVATE_KEY_PATH:classpath:certs/wechatpay_private_key.pem}
+  notify-url: ${WXPAY_NOTIFY_URL:https://your-domain.ngrok-free.dev/api/v1/payment/wechat/notify}
+  refund-notify-url: ${WXPAY_REFUND_NOTIFY_URL:https://your-domain.ngrok-free.dev/api/v1/payment/wechat/refund/notify}
+
 logging:
   level:
     site.geekie.shop.shoppingmall: debug

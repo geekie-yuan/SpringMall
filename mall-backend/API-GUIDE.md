@@ -1,6 +1,6 @@
 # Spring Mall API 接口文档
 
-> 最后更新时间：2026-02-16
+> 最后更新时间：2026-02-17
 
 ## 项目概述
 
@@ -686,14 +686,15 @@ Authorization: Bearer <token>
 - `paymentNo`：支付流水号
 - `orderNo`：订单号
 - `amount`：支付金额
-- `paymentMethod`：支付方式（`MOCK` / `ALIPAY`）
+- `paymentMethod`：支付方式（`MOCK` / `ALIPAY` / `WECHAT`）
 - `paymentStatus`：支付状态
   - `PENDING`：待支付
   - `SUCCESS`：支付成功
   - `FAILED`：支付失败
   - `CLOSED`：已关闭
   - `REFUNDED`：已退款
-- `tradeNo`：支付宝交易号（仅支付宝支付）
+- `tradeNo`：第三方交易号（支付宝/微信支付）
+- `codeUrl`：支付二维码链接（仅微信Native支付）
 - `createdAt`：支付创建时间
 
 **使用场景**：
@@ -724,7 +725,130 @@ GET /api/v1/payment/alipay/return
 - 该接口为公开接口，支付宝支付完成后跳转回商户网站
 - 自动重定向到前端结果页：`/payment/result?paymentNo={paymentNo}`
 
-#### 8.6 支付回调（模拟）
+#### 8.6 创建微信支付 🔒 USER
+```http
+POST /api/v1/payment/wechat/native
+Authorization: Bearer <token>
+```
+
+**请求体**:
+```json
+{
+  "orderNo": "20260108123456789",
+  "description": "Spring Mall订单支付"
+}
+```
+
+**响应**:
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": {
+    "paymentNo": "PY20260217123456789012",
+    "orderNo": "20260108123456789",
+    "amount": 15998.00,
+    "paymentMethod": "WECHAT",
+    "paymentStatus": "PENDING",
+    "codeUrl": "weixin://wxpay/bizpayurl?pr=xxx"
+  }
+}
+```
+
+**说明**：
+- 返回的 `codeUrl` 字段为微信支付二维码链接
+- 前端需要将此链接生成二维码供用户扫码支付
+- 用户使用微信扫码后完成支付
+
+**使用示例**：
+```javascript
+// 前端代码示例（使用 qrcode 库）
+import QRCode from 'qrcode';
+
+async function createWxPayment(orderNo) {
+  const response = await fetch('/api/v1/payment/wechat/native', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      orderNo,
+      description: 'Spring Mall订单支付'
+    })
+  });
+
+  const result = await response.json();
+  const codeUrl = result.data.codeUrl;
+
+  // 生成二维码
+  const qrCodeDataUrl = await QRCode.toDataURL(codeUrl);
+
+  // 显示二维码供用户扫描
+  document.getElementById('qrcode').src = qrCodeDataUrl;
+}
+```
+
+**注意事项**：
+- 微信支付没有沙箱环境，需要真实商户号才能测试
+- 模块默认禁用（`wxpay.enabled=false`），需要在配置中启用
+- 启用方法：在 `.env` 文件中设置 `WXPAY_ENABLED=true` 并配置真实的商户信息
+
+#### 8.7 微信支付异步通知（回调）
+```http
+POST /api/v1/payment/wechat/notify
+```
+
+**说明**：
+- 该接口为公开接口，由微信支付服务器调用
+- 接收微信支付平台证书加密的通知数据
+- 自动验证签名并更新订单状态
+
+**响应**：
+- 成功：`{"code": "SUCCESS", "message": "成功"}`
+- 失败：`{"code": "FAIL", "message": "失败原因"}`
+
+#### 8.8 微信退款
+```http
+POST /api/v1/payment/wechat/refund
+Authorization: Bearer <token>
+```
+
+**请求体**:
+```json
+{
+  "paymentNo": "PY20260217123456789012",
+  "refundAmount": 15998.00,
+  "reason": "用户取消订单"
+}
+```
+
+**响应**:
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": {
+    "refundNo": "RF20260217123456789012",
+    "paymentNo": "PY20260217123456789012",
+    "orderNo": "20260108123456789",
+    "refundAmount": 15998.00,
+    "refundStatus": "SUCCESS",
+    "reason": "用户取消订单"
+  }
+}
+```
+
+#### 8.9 微信退款异步通知（回调）
+```http
+POST /api/v1/payment/wechat/refund/notify
+```
+
+**说明**：
+- 该接口为公开接口，由微信支付服务器调用
+- 接收退款结果通知并更新退款状态
+
+#### 8.10 支付回调（模拟）
 ```http
 POST /api/v1/payment/notify
 ```

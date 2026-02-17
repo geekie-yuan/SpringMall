@@ -49,6 +49,11 @@ public class OrderDO {
     private String status;
 
     /**
+     * 支付单号（来自mall_payment表，通过JOIN查询获取）
+     */
+    private String paymentNo;
+
+    /**
      * 支付方式（ALIPAY/WECHAT）
      */
     private String paymentMethod;

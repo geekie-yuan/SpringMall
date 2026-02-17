@@ -1,4 +1,4 @@
-package site.geekie.shop.shoppingmall.entity;
+package site.geekie.shop.shoppingmall.vo;
 
 import lombok.Data;
 
@@ -6,31 +6,25 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
- * 支付记录实体类
- * 对应数据库表：mall_payment
+ * 微信支付记录响应VO
  */
 @Data
-public class PaymentDO {
+public class WxPaymentVO {
 
     /**
-     * 支付ID（主键）
+     * 支付ID
      */
     private Long id;
 
     /**
-     * 支付流水号（唯一）
+     * 支付流水号
      */
     private String paymentNo;
 
     /**
-     * 关联订单号
+     * 订单号
      */
     private String orderNo;
-
-    /**
-     * 用户ID
-     */
-    private Long userId;
 
     /**
      * 支付金额
@@ -38,7 +32,7 @@ public class PaymentDO {
     private BigDecimal amount;
 
     /**
-     * 支付方式（ALIPAY/WECHAT）
+     * 支付方式
      */
     private String paymentMethod;
 
@@ -48,19 +42,14 @@ public class PaymentDO {
     private String paymentStatus;
 
     /**
-     * 第三方交易号
-     */
-    private String tradeNo;
-
-    /**
-     * 二维码链接（微信Native支付）
+     * 二维码链接（Native支付）
      */
     private String codeUrl;
 
     /**
-     * 异步通知时间
+     * 第三方交易号
      */
-    private LocalDateTime notifyTime;
+    private String tradeNo;
 
     /**
      * 创建时间
@@ -68,7 +57,7 @@ public class PaymentDO {
     private LocalDateTime createdAt;
 
     /**
-     * 更新时间
+     * 通知时间
      */
-    private LocalDateTime updatedAt;
+    private LocalDateTime notifyTime;
 }

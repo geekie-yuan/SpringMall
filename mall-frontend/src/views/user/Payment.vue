@@ -46,6 +46,25 @@
               />
             </div>
 
+            <!-- 微信支付 -->
+            <div
+              :class="['method-card', selectedMethod === 'WECHAT' ? 'active' : '']"
+              @click="handleMethodClick('WECHAT')"
+            >
+              <div class="method-icon wechat">
+                <el-icon :size="40"><ChatDotSquare /></el-icon>
+              </div>
+              <div class="method-info">
+                <h4>微信支付</h4>
+                <p class="method-desc">使用微信扫码支付</p>
+                <el-tag type="success" size="small">推荐</el-tag>
+              </div>
+              <el-radio
+                v-model="selectedMethod"
+                value="WECHAT"
+              />
+            </div>
+
             <!-- 信用卡/借记卡 -->
             <div
               class="method-card disabled"
@@ -131,7 +150,7 @@ import { getOrderDetail } from '@/api/order'
 import { pay, createAlipayPayment } from '@/api/payment'
 import { formatPrice } from '@/utils/format'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Wallet, CreditCard, Tools } from '@element-plus/icons-vue'
+import { Wallet, CreditCard, Tools, ChatDotSquare } from '@element-plus/icons-vue'
 import Loading from '@/components/common/Loading.vue'
 import Empty from '@/components/common/Empty.vue'
 
@@ -172,7 +191,7 @@ const fetchOrderDetail = async () => {
 
 // 支付方式点击处理
 const handleMethodClick = (method) => {
-  if (method === 'ALIPAY' || method === 'MOCK') {
+  if (method === 'ALIPAY' || method === 'WECHAT' || method === 'MOCK') {
     selectedMethod.value = method
   } else {
     ElMessage.info('该支付方式暂未开通，敬请期待')
@@ -183,6 +202,12 @@ const handleMethodClick = (method) => {
 const handlePay = async () => {
   if (!selectedMethod.value) {
     ElMessage.warning('请选择支付方式')
+    return
+  }
+
+  // 微信支付直接跳转到微信支付页面
+  if (selectedMethod.value === 'WECHAT') {
+    router.push(`/payment/wechat/${order.value.orderNo}`)
     return
   }
 
@@ -382,6 +407,10 @@ onMounted(() => {
     .method-icon {
       color: $primary-color;
       flex-shrink: 0;
+
+      &.wechat {
+        color: #07c160;
+      }
     }
 
     .method-info {

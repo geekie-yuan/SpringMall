@@ -1,6 +1,6 @@
 # Spring Mall BACK-END方案
 
-> 最后更新时间：2026-02-16
+> 最后更新时间：2026-02-17
 
 ## 一、项目概述
 
@@ -45,8 +45,8 @@ Mall Backend API - 小型在线商城后端
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐          │
 │  │  支付模块   │  │  库存管理   │  │  后台管理   │          │
 │  │  - 模拟支付 │  │  - 下单扣减 │  │  - 商品管理 │          │
-│  │  - 回调处理 │  │  - 取消恢复 │  │  - 订单管理 │          │
-│  │             │  │             │  │  - 用户管理 │          │
+│  │  - 支付宝   │  │  - 取消恢复 │  │  - 订单管理 │          │
+│  │  - 微信支付 │  │             │  │  - 用户管理 │          │
 │  └─────────────┘  └─────────────┘  └─────────────┘          │
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -529,6 +529,14 @@ INSERT INTO `mall_category` (`name`, `parent_id`, `level`, `sort_order`) VALUES
 |------|------|------|------|
 | POST | /pay | 发起支付（模拟） | USER |
 | POST | /notify | 支付回调（模拟） | 内部 |
+| POST | /alipay/create | 创建支付宝支付 | USER |
+| POST | /alipay/notify | 支付宝异步通知 | 公开 |
+| GET | /alipay/return | 支付宝同步返回 | 公开 |
+| POST | /wechat/native | 创建微信Native支付 | USER |
+| POST | /wechat/notify | 微信支付异步通知 | 公开 |
+| POST | /wechat/refund | 微信退款 | USER |
+| POST | /wechat/refund/notify | 微信退款异步通知 | 公开 |
+| GET | /{paymentNo} | 查询支付状态 | USER |
 
 #### 5.2.9 后台管理 - 商品 `/api/v1/admin/products`
 
@@ -721,6 +729,39 @@ mall-backend/
 
 ---
 
+#### 1.1 微信支付集成
+- ✅ 微信Native扫码支付集成（`WxPayConfig`）
+- ✅ 官方SDK使用（`wechatpay-java:0.2.17`）
+- ✅ 自动签名验签（RSAAutoCertificateConfig）
+- ✅ 支付二维码生成（Native支付模式）
+- ✅ 异步通知处理（自动解密 + 订单状态更新）
+- ✅ 退款功能（全额退款 + 异步通知）
+- ✅ 条件启用（`wxpay.enabled`开关控制）
+
+**技术实现**：
+- SDK：`wechatpay-java:0.2.17`（官方推荐，Service层抽象）
+- 配置：Spring Boot + `@ConditionalOnProperty` 条件加载
+- 签名：RSA 2048-bit，自动证书管理
+- 私钥：支持 classpath 资源和文件系统路径
+- 回调：NotificationParser 自动验签解密
+
+**配置说明**：
+- 微信支付无沙箱环境，默认禁用（`wxpay.enabled=false`）
+- 启用需配置真实商户号、APIv3密钥、证书序列号、私钥文件
+- 私钥文件路径：`classpath:certs/wechatpay_private_key.pem`
+
+**API 接口**：
+- `POST /api/v1/payment/wechat/native` - 创建微信Native支付
+- `POST /api/v1/payment/wechat/notify` - 微信支付异步通知
+- `POST /api/v1/payment/wechat/refund` - 微信退款
+- `POST /api/v1/payment/wechat/refund/notify` - 微信退款异步通知
+
+**数据库变更**：
+- `mall_payment` 表新增 `code_url` 字段（存储微信支付二维码链接）
+- 迁移脚本：`V1.2__add_wechat_payment_support.sql`
+
+---
+
 #### 2. 订单退款功能
 - ✅ 支付宝退款接口封装（`alipay.trade.refund`）
 - ✅ 退款业务逻辑（`PaymentService.refundOrder()`）
@@ -760,7 +801,7 @@ mall-backend/
 - ✅ `mall_payment` 表 - 支付记录表
 - ✅ `mall_refund` 表 - 退款记录表
 - ✅ 支付状态枚举（PENDING / SUCCESS / FAILED / CLOSED / REFUNDED）
-- ✅ 支付方式枚举（MOCK / ALIPAY）
+- ✅ 支付方式枚举（MOCK / ALIPAY / WECHAT）
 
 **表结构**：
 ```sql
@@ -774,6 +815,7 @@ CREATE TABLE `mall_payment` (
     `payment_method` VARCHAR(20) NOT NULL,
     `payment_status` VARCHAR(20) NOT NULL,
     `trade_no` VARCHAR(100),
+    `code_url` VARCHAR(500),  -- 微信支付二维码链接
     `notify_time` DATETIME,
     `created_at` DATETIME NOT NULL,
     `updated_at` DATETIME NOT NULL
@@ -828,7 +870,7 @@ CREATE TABLE `mall_refund` (
 | **阶段4** | 分类模块 + 商品模块 | 1天 | ✅ 已完成 |
 | **阶段5** | 购物车模块 | 0.5天 | ✅ 已完成 |
 | **阶段6** | 订单模块 + 库存管理 | 1.5天 | ✅ 已完成 |
-| **阶段7** | 支付模拟 + 支付宝集成 | 1.5天 | ✅ 已完成 |
+| **阶段7** | 支付模拟 + 支付宝 + 微信支付 | 2天 | ✅ 已完成 |
 | **阶段8** | 后台管理接口 | 1天 | ✅ 已完成 |
 | **阶段9** | 测试 + 文档完善 | 1天 | 🔄 进行中 |
 

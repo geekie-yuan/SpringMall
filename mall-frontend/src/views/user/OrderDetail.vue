@@ -24,6 +24,10 @@
               <span class="label">下单时间：</span>
               <span>{{ formatDate(order.createdAt) }}</span>
             </div>
+            <div v-if="order.paymentMethod" class="info-item">
+              <span class="label">支付方式：</span>
+              <span>{{ paymentMethodText[order.paymentMethod] || order.paymentMethod }}</span>
+            </div>
             <div v-if="order.paymentTime" class="info-item">
               <span class="label">支付时间：</span>
               <span>{{ formatDate(order.paymentTime) }}</span>
@@ -100,6 +104,14 @@
             取消订单
           </el-button>
           <el-button
+            v-if="canRefund"
+            type="warning"
+            size="large"
+            @click="handleRefund"
+          >
+            申请退款
+          </el-button>
+          <el-button
             v-if="order.status === 'SHIPPED'"
             type="primary"
             size="large"
@@ -123,9 +135,10 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getOrderDetail, cancelOrder, confirmOrder } from '@/api/order'
+import { applyWxRefund } from '@/api/payment'
 import { formatPrice, formatDate } from '@/utils/format'
 import { ORDER_STATUS_TEXT, ORDER_STATUS_TAG_TYPE } from '@/utils/constants'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -139,6 +152,20 @@ const loading = ref(false)
 
 const statusText = ORDER_STATUS_TEXT
 const statusTagType = ORDER_STATUS_TAG_TYPE
+
+// 支付方式文本映射
+const paymentMethodText = {
+  ALIPAY: '支付宝支付',
+  WECHAT: '微信支付',
+  MOCK: '模拟支付'
+}
+
+// 判断是否可以退款
+const canRefund = computed(() => {
+  if (!order.value) return false
+  // 仅当订单状态为已支付且支付方式为微信支付时显示退款按钮
+  return order.value.status === 'PAID' && order.value.paymentMethod === 'WECHAT'
+})
 
 // 获取订单详情
 const fetchOrderDetail = async () => {
@@ -200,6 +227,50 @@ const handleCancelShipped = () => {
     confirmButtonText: '我知道了',
     type: 'warning'
   })
+}
+
+// 申请退款
+const handleRefund = async () => {
+  try {
+    const { value: reason } = await ElMessageBox.prompt('请输入退款原因', '申请退款', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      inputPlaceholder: '请输入退款原因（必填）',
+      inputValidator: (value) => {
+        if (!value || value.trim() === '') {
+          return '退款原因不能为空'
+        }
+        if (value.trim().length < 5) {
+          return '退款原因至少5个字符'
+        }
+        return true
+      }
+    })
+
+    if (!order.value.paymentNo) {
+      ElMessage.error('未找到支付单号，无法申请退款')
+      return
+    }
+
+    loading.value = true
+    try {
+      await applyWxRefund(
+        order.value.paymentNo,
+        order.value.totalAmount,
+        reason.trim()
+      )
+      ElMessage.success('退款申请已提交，请等待审核')
+      // 刷新订单详情
+      await fetchOrderDetail()
+    } finally {
+      loading.value = false
+    }
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('申请退款失败:', error)
+      ElMessage.error('申请退款失败，请重试')
+    }
+  }
 }
 
 onMounted(() => {

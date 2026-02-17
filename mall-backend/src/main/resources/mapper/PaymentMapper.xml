@@ -13,6 +13,7 @@
         <result column="payment_method" property="paymentMethod"/>
         <result column="payment_status" property="paymentStatus"/>
         <result column="trade_no" property="tradeNo"/>
+        <result column="code_url" property="codeUrl"/>
         <result column="notify_time" property="notifyTime"/>
         <result column="created_at" property="createdAt"/>
         <result column="updated_at" property="updatedAt"/>
@@ -21,7 +22,7 @@
     <!-- Base_Column_List -->
     <sql id="Base_Column_List">
         id, payment_no, order_no, user_id, amount, payment_method,
-        payment_status, trade_no, notify_time, created_at, updated_at
+        payment_status, trade_no, code_url, notify_time, created_at, updated_at
     </sql>
 
     <!-- 根据ID查询 -->
@@ -52,10 +53,10 @@
     <insert id="insert" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO mall_payment (
             payment_no, order_no, user_id, amount,
-            payment_method, payment_status
+            payment_method, payment_status, code_url
         ) VALUES (
             #{paymentNo}, #{orderNo}, #{userId}, #{amount},
-            #{paymentMethod}, #{paymentStatus}
+            #{paymentMethod}, #{paymentStatus}, #{codeUrl}
         )
     </insert>
 
@@ -65,6 +66,7 @@
         <set>
             <if test="paymentStatus != null">payment_status = #{paymentStatus},</if>
             <if test="tradeNo != null">trade_no = #{tradeNo},</if>
+            <if test="codeUrl != null">code_url = #{codeUrl},</if>
             <if test="notifyTime != null">notify_time = #{notifyTime},</if>
         </set>
         WHERE id = #{id}

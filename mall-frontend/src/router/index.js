@@ -58,6 +58,12 @@ const routes = [
         meta: { title: '订单支付', requiresAuth: true }
       },
       {
+        path: '/payment/wechat/:orderNo',
+        name: 'WxPayment',
+        component: () => import('@/views/user/WxPaymentPage.vue'),
+        meta: { title: '微信支付', requiresAuth: true }
+      },
+      {
         path: '/payment/result',
         name: 'PaymentResult',
         component: () => import('@/views/user/PaymentResult.vue'),
