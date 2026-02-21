@@ -65,23 +65,22 @@
               />
             </div>
 
-            <!-- 信用卡/借记卡 -->
+            <!-- Stripe 支付 -->
             <div
-              class="method-card disabled"
-              @click="handleMethodClick('CARD')"
+              :class="['method-card', selectedMethod === 'STRIPE' ? 'active' : '']"
+              @click="handleMethodClick('STRIPE')"
             >
-              <div class="method-icon">
+              <div class="method-icon stripe">
                 <el-icon :size="40"><CreditCard /></el-icon>
               </div>
               <div class="method-info">
-                <h4>信用卡/借记卡</h4>
-                <p class="method-desc">使用银行卡在线支付</p>
-                <el-tag type="info" size="small">暂未开通</el-tag>
+                <h4>Stripe 支付</h4>
+                <p class="method-desc">支持国际信用卡、Apple Pay、Google Pay</p>
+                <el-tag type="primary" size="small">国际支付</el-tag>
               </div>
               <el-radio
-                :model-value="selectedMethod"
-                value="CARD"
-                disabled
+                v-model="selectedMethod"
+                value="STRIPE"
               />
             </div>
 
@@ -191,7 +190,7 @@ const fetchOrderDetail = async () => {
 
 // 支付方式点击处理
 const handleMethodClick = (method) => {
-  if (method === 'ALIPAY' || method === 'WECHAT' || method === 'MOCK') {
+  if (method === 'ALIPAY' || method === 'WECHAT' || method === 'STRIPE' || method === 'MOCK') {
     selectedMethod.value = method
   } else {
     ElMessage.info('该支付方式暂未开通，敬请期待')
@@ -208,6 +207,15 @@ const handlePay = async () => {
   // 微信支付直接跳转到微信支付页面
   if (selectedMethod.value === 'WECHAT') {
     router.push(`/payment/wechat/${order.value.orderNo}`)
+    return
+  }
+
+  // Stripe 支付直接跳转到 Stripe 支付页面
+  if (selectedMethod.value === 'STRIPE') {
+    router.push({
+      path: '/payment/stripe',
+      query: { orderNo: order.value.orderNo }
+    })
     return
   }
 
@@ -410,6 +418,10 @@ onMounted(() => {
 
       &.wechat {
         color: #07c160;
+      }
+
+      &.stripe {
+        color: #635bff;
       }
     }
 

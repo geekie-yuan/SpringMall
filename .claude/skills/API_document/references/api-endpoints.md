@@ -1,6 +1,6 @@
 # API 接口详细文档
 
-> 最后更新时间：2026-02-17
+> 最后更新时间：2026-02-20
 
 ## 1. 认证模块 `/auth`
 
@@ -743,6 +743,152 @@ Authorization: Bearer <token>
 POST /api/v1/payment/wechat/refund/notify
 ```
 **说明**：公开接口，由微信支付服务器调用，接收退款结果通知
+
+---
+
+### 创建 Stripe 支付 🔒 USER
+```http
+POST /api/v1/payment/stripe/create
+Authorization: Bearer <token>
+```
+**请求体**:
+```json
+{
+  "orderNo": "20260108123456789"
+}
+```
+**响应**:
+```json
+{
+  "code": 200,
+  "message": "创建支付成功",
+  "data": {
+    "paymentNo": "PY20260220123456789012",
+    "orderNo": "20260108123456789",
+    "amount": 15998.00,
+    "paymentMethod": "STRIPE",
+    "paymentStatus": "PENDING",
+    "clientSecret": "pi_3MtwBwLkdIwHu7ix28a3tqPa_secret_YrKJUKribcBjcG8HVhfZluoGH",
+    "publishableKey": "pk_test_51SoiqALMrSCu04rI..."
+  }
+}
+```
+**说明**：
+- `clientSecret`：用于前端 Stripe.js 确认支付
+- `publishableKey`：用于初始化 Stripe.js
+- 前端需要集成 `@stripe/stripe-js` 库处理支付流程
+
+---
+
+### 查询 Stripe 支付状态 🔒 USER
+```http
+GET /api/v1/payment/stripe/{paymentNo}
+Authorization: Bearer <token>
+```
+**路径参数**：`paymentNo` - 支付流水号
+
+**响应**:
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": {
+    "paymentNo": "PY20260220123456789012",
+    "orderNo": "20260108123456789",
+    "amount": 15998.00,
+    "paymentMethod": "STRIPE",
+    "paymentStatus": "SUCCESS",
+    "tradeNo": "pi_3MtwBwLkdIwHu7ix28a3tqPa",
+    "createdAt": "2026-02-20T10:30:45"
+  }
+}
+```
+**说明**：
+- `tradeNo`：Stripe Payment Intent ID（格式：`pi_xxx` 或 `cs_xxx`）
+- 用于用户从 Stripe 返回后查询支付结果
+- 建议轮询间隔：2 秒，最大轮询次数：30 次
+
+---
+
+### Stripe Webhook 回调
+```http
+POST /api/v1/payment/stripe/webhook
+Stripe-Signature: t=1492774577,v1=5257a...
+```
+**说明**：
+- 公开接口，由 Stripe 服务器调用
+- 自动验证 Webhook 签名并更新订单状态
+- 处理事件：`payment_intent.succeeded`、`payment_intent.payment_failed`、`payment_intent.canceled`
+
+**响应**：`"success"` 字符串
+
+**配置方法**：
+1. Stripe Dashboard → Developers → Webhooks 添加端点
+2. 设置端点 URL：`https://your-domain.com/api/v1/payment/stripe/webhook`
+3. 选择监听事件：`payment_intent.succeeded`、`payment_intent.payment_failed`
+4. 复制 Webhook 签名密钥到环境变量 `STRIPE_WEBHOOK_SECRET`
+
+---
+
+### 创建 Stripe 退款 🔒 ADMIN
+```http
+POST /api/v1/payment/stripe/refund
+Authorization: Bearer <admin-token>
+```
+**请求体**:
+```json
+{
+  "paymentNo": "PY20260220123456789012",
+  "refundAmount": 15998.00,
+  "reason": "用户取消订单"
+}
+```
+**响应**:
+```json
+{
+  "code": 200,
+  "message": "退款申请成功",
+  "data": {
+    "refundNo": "RF20260220123456789012",
+    "paymentNo": "PY20260220123456789012",
+    "orderNo": "20260108123456789",
+    "refundAmount": 15998.00,
+    "refundStatus": "PROCESSING",
+    "stripeRefundId": "re_3MtwBwLkdIwHu7ix28a3tqPa",
+    "reason": "用户取消订单"
+  }
+}
+```
+**说明**：
+- 支持全额退款和部分退款
+- 退款金额不能超过支付金额
+- 退款需要管理员权限（ADMIN 角色）
+- Stripe 退款通常在 5-10 个工作日内到账
+
+**退款状态**：
+- `PROCESSING`：退款处理中
+- `SUCCESS`：退款成功
+- `FAILED`：退款失败
+
+---
+
+### Stripe 退款 Webhook 回调
+```http
+POST /api/v1/payment/stripe/refund/webhook
+Stripe-Signature: t=1492774577,v1=5257a...
+```
+**说明**：
+- 公开接口，由 Stripe 服务器调用
+- 处理退款结果通知并更新退款状态
+- 处理事件：`charge.refunded`
+
+**响应**：`"success"` 字符串
+
+**配置方法**：
+1. Stripe Dashboard → Developers → Webhooks 添加退款端点
+2. 设置端点 URL：`https://your-domain.com/api/v1/payment/stripe/refund/webhook`
+3. 选择监听事件：`charge.refunded`
+4. 复制 Webhook 签名密钥到环境变量 `STRIPE_REFUND_WEBHOOK_SECRET`
 
 ---
 

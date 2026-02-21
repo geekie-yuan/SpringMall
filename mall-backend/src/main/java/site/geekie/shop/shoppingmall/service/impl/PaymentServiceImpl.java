@@ -24,6 +24,7 @@ import site.geekie.shop.shoppingmall.mapper.RefundMapper;
 import site.geekie.shop.shoppingmall.security.SecurityUser;
 import site.geekie.shop.shoppingmall.service.AlipayService;
 import site.geekie.shop.shoppingmall.service.PaymentService;
+import site.geekie.shop.shoppingmall.service.StripeService;
 import site.geekie.shop.shoppingmall.util.OrderNoGenerator;
 
 import java.math.BigDecimal;
@@ -47,6 +48,7 @@ public class PaymentServiceImpl implements PaymentService {
     private final PaymentMapper paymentMapper;
     private final RefundMapper refundMapper;
     private final AlipayService alipayService;
+    private final StripeService stripeService;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -389,6 +391,33 @@ public class PaymentServiceImpl implements PaymentService {
                     payment.getAmount(),
                     refundReason
             );
+        } else if (PaymentMethod.STRIPE.name().equals(payment.getPaymentMethod())) {
+            // Stripe 退款
+            if (payment.getTradeNo() == null || payment.getTradeNo().isEmpty()) {
+                log.error("退款失败 - Stripe Session ID 为空，订单号: {}", orderNo);
+                throw new BusinessException(ResultCode.REFUND_FAILED);
+            }
+
+            // 获取当前用户 ID
+            SecurityUser securityUser = (SecurityUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            Long userId = securityUser.getUser().getId();
+
+            try {
+                // 构建 Stripe 退款请求
+                site.geekie.shop.shoppingmall.dto.StripeRefundDTO refundRequest = new site.geekie.shop.shoppingmall.dto.StripeRefundDTO();
+                refundRequest.setPaymentNo(payment.getPaymentNo());
+                refundRequest.setRefundAmount(payment.getAmount());
+                refundRequest.setReason(refundReason != null ? refundReason : "订单取消");
+
+                // 调用 Stripe 退款服务（全额退款）
+                stripeService.createRefund(refundRequest, userId);
+                refundSuccess = true;
+                log.info("Stripe 退款请求已提交 - 订单号: {}, 退款流水号: {}, 金额: {}",
+                        orderNo, refundNo, payment.getAmount());
+            } catch (Exception e) {
+                log.error("Stripe 退款失败 - 订单号: {}, 错误: {}", orderNo, e.getMessage(), e);
+                refundSuccess = false;
+            }
         } else {
             // 未来可以扩展其他支付方式
             log.error("退款失败 - 不支持的支付方式: {}", payment.getPaymentMethod());

@@ -1,6 +1,6 @@
 # Spring Mall 错误码参考
 
-> 最后更新时间：2026-02-17
+> 最后更新时间：2026-02-20
 
 ## 错误码列表
 
@@ -126,6 +126,53 @@ try {
     ElMessage.error('订单状态错误，不可支付');
   } else {
     ElMessage.error(error.message || '操作失败');
+  }
+}
+```
+
+#### 1.2 创建 Stripe 支付时的错误处理
+```javascript
+import { loadStripe } from '@stripe/stripe-js';
+
+try {
+  // 创建支付
+  const response = await createStripePayment(orderNo);
+  const { clientSecret, publishableKey } = response.data;
+
+  // 初始化 Stripe
+  const stripe = await loadStripe(publishableKey);
+  const elements = stripe.elements({ clientSecret });
+  const paymentElement = elements.create('payment');
+  paymentElement.mount('#payment-element');
+
+  // 确认支付
+  const { error } = await stripe.confirmPayment({
+    elements,
+    confirmParams: {
+      return_url: 'https://your-domain.com/payment/result'
+    }
+  });
+
+  if (error) {
+    // Stripe 客户端错误
+    if (error.type === 'card_error') {
+      ElMessage.error(`银行卡错误: ${error.message}`);
+    } else if (error.type === 'validation_error') {
+      ElMessage.error(`验证失败: ${error.message}`);
+    } else {
+      ElMessage.error('支付失败，请重试');
+    }
+  }
+} catch (error) {
+  // 后端错误
+  if (error.code === 40601) {
+    ElMessage.error('支付失败，请重试或更换支付方式');
+  } else if (error.code === 40501) {
+    ElMessage.error('订单不存在');
+  } else if (error.code === 40502) {
+    ElMessage.error('订单状态错误，不可支付');
+  } else {
+    ElMessage.error(error.message || '创建支付失败');
   }
 }
 ```

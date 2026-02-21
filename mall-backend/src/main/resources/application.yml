@@ -74,6 +74,16 @@ wxpay:
   notify-url: ${WXPAY_NOTIFY_URL:https://your-domain.ngrok-free.dev/api/v1/payment/wechat/notify}
   refund-notify-url: ${WXPAY_REFUND_NOTIFY_URL:https://your-domain.ngrok-free.dev/api/v1/payment/wechat/refund/notify}
 
+stripe:
+  enabled: ${STRIPE_ENABLED:true}  # Stripe 支付开关
+  secret-key: ${STRIPE_SECRET_KEY:sk打头的密钥}
+  webhook-secret: ${STRIPE_WEBHOOK_SECRET:whsec打头的密钥}
+  refund-webhook-secret: ${STRIPE_REFUND_WEBHOOK_SECRET:whsec打头的密钥}
+  success-url: ${STRIPE_SUCCESS_URL:http://localhost:3000/payment/stripe/result}
+  cancel-url: ${STRIPE_CANCEL_URL:http://localhost:3000/payment/{ORDER_NO}}
+  test-mode: ${STRIPE_TEST_MODE:true}
+  product-image-base-url: ${PRODUCT_IMAGE_BASE_URL:http://localhost:3000}
+
 logging:
   level:
     site.geekie.shop.shoppingmall: debug

@@ -26,6 +26,14 @@ public interface PaymentMapper {
     PaymentDO findByOrderNo(@Param("orderNo") String orderNo);
 
     /**
+     * 根据第三方交易号查询支付记录
+     *
+     * @param tradeNo 第三方交易号
+     * @return 支付记录
+     */
+    PaymentDO findByTradeNo(@Param("tradeNo") String tradeNo);
+
+    /**
      * 插入支付记录
      */
     int insert(PaymentDO payment);

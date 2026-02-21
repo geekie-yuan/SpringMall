@@ -88,3 +88,29 @@ export const paymentCallback = (data) => {
     data
   })
 }
+
+/**
+ * 创建 Stripe 支付（Checkout Session）
+ * @param {string} orderNo - 订单编号
+ * @returns {Promise} 支付信息（包含 sessionUrl）
+ */
+export const createStripePayment = (orderNo) => {
+  return request({
+    url: '/payment/stripe/create',
+    method: 'POST',
+    data: { orderNo }
+  })
+}
+
+/**
+ * 查询 Stripe 支付状态
+ * @param {string} paymentNo - 支付编号
+ * @returns {Promise} 支付信息
+ */
+export const queryStripePayment = (paymentNo) => {
+  return request({
+    url: `/payment/stripe/${paymentNo}`,
+    method: 'GET'
+  })
+}
+

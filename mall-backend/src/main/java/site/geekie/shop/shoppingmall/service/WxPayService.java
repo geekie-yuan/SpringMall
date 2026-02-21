@@ -1,7 +1,7 @@
 package site.geekie.shop.shoppingmall.service;
 
-import site.geekie.shop.shoppingmall.dto.request.CreateWxPaymentDTO;
-import site.geekie.shop.shoppingmall.dto.request.WxRefundDTO;
+import site.geekie.shop.shoppingmall.dto.CreateWxPaymentDTO;
+import site.geekie.shop.shoppingmall.dto.WxRefundDTO;
 import site.geekie.shop.shoppingmall.vo.WxPaymentVO;
 import site.geekie.shop.shoppingmall.vo.WxRefundVO;
 

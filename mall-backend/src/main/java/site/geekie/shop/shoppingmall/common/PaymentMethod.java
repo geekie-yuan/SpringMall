@@ -13,7 +13,12 @@ public enum PaymentMethod {
     /**
      * 微信支付
      */
-    WECHAT("微信支付");
+    WECHAT("微信支付"),
+
+    /**
+     * Stripe支付
+     */
+    STRIPE("Stripe支付");
 
     private final String description;
 

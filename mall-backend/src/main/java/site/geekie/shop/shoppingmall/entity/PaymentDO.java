@@ -53,7 +53,9 @@ public class PaymentDO {
     private String tradeNo;
 
     /**
-     * 二维码链接（微信Native支付）
+     * 支付相关数据
+     * - 微信 Native 支付：二维码链接
+     * - Stripe 支付：client_secret
      */
     private String codeUrl;
 

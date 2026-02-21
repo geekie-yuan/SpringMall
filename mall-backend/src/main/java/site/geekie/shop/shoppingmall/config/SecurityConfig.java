@@ -99,6 +99,8 @@ public class SecurityConfig {
                                 "/api/v1/payment/alipay/return", // 支付宝同步返回
                                 "/api/v1/payment/wechat/notify", // 微信支付回调
                                 "/api/v1/payment/wechat/refund/notify", // 微信退款回调
+                                "/api/v1/payment/stripe/webhook", // Stripe 支付回调
+                                "/api/v1/payment/stripe/refund/webhook", // Stripe 退款回调
                                 "/api-docs/**",         // API文档
                                 "/swagger-ui/**",       // Swagger UI
                                 "/swagger-ui.html",

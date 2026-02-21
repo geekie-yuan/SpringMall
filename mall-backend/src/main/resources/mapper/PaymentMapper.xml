@@ -49,6 +49,15 @@
         WHERE order_no = #{orderNo}
     </select>
 
+    <!-- 根据第三方交易号查询 -->
+    <select id="findByTradeNo" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM mall_payment
+        WHERE trade_no = #{tradeNo}
+        LIMIT 1
+    </select>
+
     <!-- 插入支付记录 -->
     <insert id="insert" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO mall_payment (

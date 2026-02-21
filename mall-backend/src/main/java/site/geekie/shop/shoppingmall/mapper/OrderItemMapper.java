@@ -22,6 +22,14 @@ public interface OrderItemMapper {
     List<OrderItemDO> findByOrderId(@Param("orderId") Long orderId);
 
     /**
+     * 根据订单号查询所有订单明细
+     *
+     * @param orderNo 订单号
+     * @return 订单明细列表
+     */
+    List<OrderItemDO> findByOrderNo(@Param("orderNo") String orderNo);
+
+    /**
      * 批量插入订单明细
      *
      * @param items 订单明细列表

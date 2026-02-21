@@ -154,10 +154,10 @@ CREATE TABLE `mall_payment` (
     `order_no` VARCHAR(50) NOT NULL COMMENT '关联订单号',
     `user_id` BIGINT NOT NULL COMMENT '用户ID',
     `amount` DECIMAL(10,2) NOT NULL COMMENT '支付金额',
-    `payment_method` VARCHAR(20) NOT NULL COMMENT '支付方式：ALIPAY/WECHAT',
-    `payment_status` VARCHAR(20) NOT NULL DEFAULT 'PENDING' COMMENT '支付状态：PENDING-待支付/SUCCESS-成功/FAILED-失败/CLOSED-已关闭',
-    `trade_no` VARCHAR(100) DEFAULT NULL COMMENT '第三方交易号',
-    `code_url` VARCHAR(500) DEFAULT NULL COMMENT '支付二维码链接（微信Native支付）',
+    `payment_method` VARCHAR(20) NOT NULL COMMENT '支付方式：ALIPAY/WECHAT/STRIPE',
+    `payment_status` VARCHAR(20) NOT NULL DEFAULT 'PENDING' COMMENT '支付状态：PENDING-待支付/SUCCESS-成功/FAILED-失败/CLOSED-已关闭/REFUNDED-已退款',
+    `trade_no` VARCHAR(200) DEFAULT NULL COMMENT '第三方交易号（Stripe Session ID 可能较长）',
+    `code_url` VARCHAR(500) DEFAULT NULL COMMENT '支付二维码链接或 Stripe Checkout URL',
     `notify_time` DATETIME DEFAULT NULL COMMENT '异步通知时间',
     `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
@@ -167,6 +167,28 @@ CREATE TABLE `mall_payment` (
     KEY `idx_user_id` (`user_id`),
     KEY `idx_payment_status` (`payment_status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='支付记录表';
+
+-- ----------------------------------------
+-- 9. 退款记录表
+-- ----------------------------------------
+CREATE TABLE `mall_refund` (
+    `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '退款ID',
+    `refund_no` VARCHAR(50) NOT NULL COMMENT '退款流水号（唯一）',
+    `order_no` VARCHAR(50) NOT NULL COMMENT '关联订单号',
+    `payment_no` VARCHAR(50) NOT NULL COMMENT '关联支付流水号',
+    `trade_no` VARCHAR(200) DEFAULT NULL COMMENT '第三方交易号（Stripe Session ID 长度可达 100+ 字符）',
+    `refund_amount` DECIMAL(10,2) NOT NULL COMMENT '退款金额',
+    `refund_reason` VARCHAR(500) DEFAULT NULL COMMENT '退款原因',
+    `refund_status` VARCHAR(20) NOT NULL DEFAULT 'PENDING' COMMENT '退款状态：PENDING-处理中/PROCESSING-处理中/SUCCESS-成功/FAILED-失败',
+    `refund_time` DATETIME DEFAULT NULL COMMENT '退款成功时间',
+    `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_refund_no` (`refund_no`),
+    KEY `idx_order_no` (`order_no`),
+    KEY `idx_payment_no` (`payment_no`),
+    KEY `idx_refund_status` (`refund_status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='退款记录表';
 
 -- ----------------------------------------
 -- 审计日志表

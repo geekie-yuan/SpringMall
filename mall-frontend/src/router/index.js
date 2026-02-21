@@ -64,6 +64,18 @@ const routes = [
         meta: { title: '微信支付', requiresAuth: true }
       },
       {
+        path: '/payment/stripe',
+        name: 'StripePaymentPage',
+        component: () => import('@/views/user/StripePaymentPage.vue'),
+        meta: { requiresAuth: true, title: 'Stripe 支付' }
+      },
+      {
+        path: '/payment/stripe/result',
+        name: 'StripePaymentResult',
+        component: () => import('@/views/user/StripePaymentResult.vue'),
+        meta: { requiresAuth: true, title: '支付结果' }
+      },
+      {
         path: '/payment/result',
         name: 'PaymentResult',
         component: () => import('@/views/user/PaymentResult.vue'),

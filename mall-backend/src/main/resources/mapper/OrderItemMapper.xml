@@ -29,6 +29,16 @@
         WHERE order_id = #{orderId}
     </select>
 
+    <!-- 根据订单号查询所有订单明细 -->
+    <select id="findByOrderNo" resultMap="BaseResultMap">
+        SELECT oi.id, oi.order_id, oi.product_id, oi.product_name, oi.product_image,
+               oi.unit_price, oi.quantity, oi.total_price, oi.created_at
+        FROM mall_order_item oi
+        INNER JOIN mall_order o ON oi.order_id = o.id
+        WHERE o.order_no = #{orderNo}
+        ORDER BY oi.id ASC
+    </select>
+
     <!-- 批量插入订单明细 -->
     <insert id="batchInsert">
         INSERT INTO mall_order_item (
