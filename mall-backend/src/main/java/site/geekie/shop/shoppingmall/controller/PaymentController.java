@@ -14,7 +14,7 @@ import site.geekie.shop.shoppingmall.annotation.CurrentUserId;
 import site.geekie.shop.shoppingmall.common.Result;
 import site.geekie.shop.shoppingmall.dto.PaymentDTO;
 import site.geekie.shop.shoppingmall.dto.PaymentNotifyDTO;
-import site.geekie.shop.shoppingmall.dto.request.CreatePaymentRequest;
+import site.geekie.shop.shoppingmall.dto.CreatePaymentDTO;
 import site.geekie.shop.shoppingmall.vo.PaymentVO;
 import site.geekie.shop.shoppingmall.service.PaymentService;
 
@@ -86,7 +86,7 @@ public class PaymentController {
     @SecurityRequirement(name = "Bearer Authentication")
     @PostMapping("/alipay/create")
     @PreAuthorize("hasRole('USER')")
-    public Result<PaymentVO> createAlipayPayment(@Valid @RequestBody CreatePaymentRequest request, @Parameter(hidden = true) @CurrentUserId Long userId) {
+    public Result<PaymentVO> createAlipayPayment(@Valid @RequestBody CreatePaymentDTO request, @Parameter(hidden = true) @CurrentUserId Long userId) {
         PaymentVO payment = paymentService.createAlipayPayment(request.getOrderNo(), userId);
         return Result.success(payment);
     }

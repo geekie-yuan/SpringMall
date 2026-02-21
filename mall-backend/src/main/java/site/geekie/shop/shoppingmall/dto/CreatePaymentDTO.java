@@ -1,13 +1,13 @@
-package site.geekie.shop.shoppingmall.dto.request;
+package site.geekie.shop.shoppingmall.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 /**
- * 创建支付请求DTO
+ * 创建支付请求 DTO
  */
 @Data
-public class CreatePaymentRequest {
+public class CreatePaymentDTO {
 
     /**
      * 订单号

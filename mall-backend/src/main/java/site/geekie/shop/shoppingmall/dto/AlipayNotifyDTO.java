@@ -1,12 +1,12 @@
-package site.geekie.shop.shoppingmall.dto.request;
+package site.geekie.shop.shoppingmall.dto;
 
 import lombok.Data;
 
 /**
- * 支付宝异步通知参数DTO
+ * 支付宝异步通知参数 DTO
  */
 @Data
-public class AlipayNotifyRequest {
+public class AlipayNotifyDTO {
 
     /**
      * 通知时间
