@@ -1,5 +1,6 @@
 package site.geekie.shop.shoppingmall.vo;
 
+import lombok.Builder;
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -9,6 +10,7 @@ import java.time.LocalDateTime;
  * 支付信息响应VO
  */
 @Data
+@Builder
 public class PaymentVO {
 
     /**

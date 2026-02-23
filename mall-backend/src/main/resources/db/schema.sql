@@ -191,29 +191,6 @@ CREATE TABLE `mall_refund` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='退款记录表';
 
 -- ----------------------------------------
--- 审计日志表
--- ----------------------------------------
-CREATE TABLE IF NOT EXISTS `mall_audit_log` (
-    `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键ID',
-    `user_id` BIGINT COMMENT '操作用户ID（未登录时为NULL）',
-    `username` VARCHAR(50) COMMENT '操作用户名',
-    `operation` VARCHAR(200) NOT NULL COMMENT '操作描述',
-    `type` VARCHAR(20) NOT NULL COMMENT '操作类型：CREATE/UPDATE/DELETE/READ/LOGIN/PAYMENT',
-    `method` VARCHAR(200) NOT NULL COMMENT '方法签名',
-    `params` TEXT COMMENT '请求参数（JSON格式）',
-    `result` VARCHAR(20) NOT NULL COMMENT '执行结果：SUCCESS/FAILURE',
-    `error_msg` TEXT COMMENT '错误信息（失败时记录）',
-    `duration` INT COMMENT '执行耗时（毫秒）',
-    `ip` VARCHAR(50) COMMENT '操作IP地址',
-    `user_agent` VARCHAR(500) COMMENT '用户代理',
-    `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '操作时间',
-    PRIMARY KEY (`id`),
-    INDEX `idx_user_id` (`user_id`),
-    INDEX `idx_type` (`type`),
-    INDEX `idx_created_at` (`created_at`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='审计日志表';
-
--- ----------------------------------------
 -- 初始数据
 -- ----------------------------------------
 

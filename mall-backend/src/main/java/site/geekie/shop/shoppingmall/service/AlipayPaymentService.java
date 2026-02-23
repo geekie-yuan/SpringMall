@@ -1,6 +1,6 @@
 package site.geekie.shop.shoppingmall.service;
 
-import site.geekie.shop.shoppingmall.vo.PaymentVO;
+import site.geekie.shop.shoppingmall.vo.AlipayPaymentVO;
 
 import java.math.BigDecimal;
 import java.util.Map;
@@ -8,19 +8,16 @@ import java.util.Map;
 /**
  * 支付宝支付服务接口
  */
-public interface AlipayService {
+public interface AlipayPaymentService {
 
     /**
      * 创建支付宝支付
      *
-     * @param paymentNo 支付流水号
      * @param orderNo 订单号
-     * @param subject 支付标题（商品名称等）
-     * @param body 支付描述（商品明细等）
-     * @param totalAmount 支付金额
-     * @return 支付表单HTML
+     * @param userId 用户ID
+     * @return 支付信息（包含支付表单HTML）
      */
-    String createPayment(String paymentNo, String orderNo, String subject, String body, String totalAmount);
+    AlipayPaymentVO createPayment(String orderNo, Long userId);
 
     /**
      * 处理支付宝异步通知
@@ -31,19 +28,13 @@ public interface AlipayService {
     String handleNotify(Map<String, String> params);
 
     /**
-     * 查询支付宝支付状态
+     * 查询支付状态
      *
      * @param paymentNo 支付流水号
-     * @return 支付状态
+     * @param userId 用户ID
+     * @return 支付信息
      */
-    String queryPaymentStatus(String paymentNo);
-
-    /**
-     * 关闭支付宝支付
-     *
-     * @param paymentNo 支付流水号
-     */
-    void closePayment(String paymentNo);
+    AlipayPaymentVO queryPayment(String paymentNo, Long userId);
 
     /**
      * 申请支付宝退款
