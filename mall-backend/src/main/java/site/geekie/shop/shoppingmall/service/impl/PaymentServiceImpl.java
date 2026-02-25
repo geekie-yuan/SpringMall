@@ -2,7 +2,6 @@ package site.geekie.shop.shoppingmall.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import site.geekie.shop.shoppingmall.common.PaymentMethod;
@@ -13,7 +12,6 @@ import site.geekie.shop.shoppingmall.entity.RefundDO;
 import site.geekie.shop.shoppingmall.exception.BusinessException;
 import site.geekie.shop.shoppingmall.mapper.PaymentMapper;
 import site.geekie.shop.shoppingmall.mapper.RefundMapper;
-import site.geekie.shop.shoppingmall.security.SecurityUser;
 import site.geekie.shop.shoppingmall.service.AlipayPaymentService;
 import site.geekie.shop.shoppingmall.service.PaymentService;
 import site.geekie.shop.shoppingmall.service.StripeService;
@@ -38,24 +36,16 @@ public class PaymentServiceImpl implements PaymentService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void refundOrder(String orderNo, String refundReason) {
-        // 1. 查询订单的支付记录
-        PaymentDO payment = paymentMapper.findByOrderNo(orderNo);
+        // 1. 查询订单的 SUCCESS 支付记录（退款只能对已成功支付的记录操作）
+        PaymentDO payment = paymentMapper.findSuccessByOrderNo(orderNo);
         if (payment == null) {
-            log.error("退款失败 - 支付记录不存在，订单号: {}", orderNo);
+            log.error("退款失败 - 未找到已成功支付的记录，订单号: {}", orderNo);
             throw new BusinessException(ResultCode.PAYMENT_NOT_FOUND);
         }
 
-        // 2. 验证支付状态
-        if (!PaymentStatus.SUCCESS.name().equals(payment.getPaymentStatus())) {
-            log.error("退款失败 - 支付状态异常，订单号: {}, 支付状态: {}", orderNo, payment.getPaymentStatus());
-            throw new BusinessException(ResultCode.INVALID_PARAMETER);
-        }
-
-        // 3. 检查是否已退款
-        if (PaymentStatus.REFUNDED.name().equals(payment.getPaymentStatus())) {
-            log.warn("退款失败 - 订单已退款，订单号: {}", orderNo);
-            throw new BusinessException(ResultCode.PAYMENT_ALREADY_REFUNDED);
-        }
+        // 2. 校验支付状态转换合法性（SUCCESS->REFUNDED）
+        PaymentStatus currentStatus = PaymentStatus.valueOf(payment.getPaymentStatus());
+        currentStatus.transitTo(PaymentStatus.REFUNDED);
 
         // 4. 检查是否已有退款记录
         RefundDO existingRefund = refundMapper.findByOrderNo(orderNo);
@@ -89,9 +79,8 @@ public class PaymentServiceImpl implements PaymentService {
                 throw new BusinessException(ResultCode.REFUND_FAILED);
             }
 
-            // 获取当前用户 ID
-            SecurityUser securityUser = (SecurityUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-            Long userId = securityUser.getUser().getId();
+            // 从支付记录获取 userId，避免依赖 SecurityContextHolder（在 MQ 消费者线程中会 NPE）
+            Long userId = payment.getUserId();
 
             try {
                 // 构建 Stripe 退款请求
@@ -143,6 +132,92 @@ public class PaymentServiceImpl implements PaymentService {
             refundMapper.insert(refund);
 
             log.error("退款失败 - 订单号: {}, 退款流水号: {}", orderNo, refundNo);
+            throw new BusinessException(ResultCode.REFUND_FAILED);
+        }
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void refundByPaymentNo(String paymentNo, String refundReason) {
+        // 1. 根据支付流水号精确查找支付记录
+        PaymentDO payment = paymentMapper.findByPaymentNo(paymentNo);
+        if (payment == null) {
+            log.error("退款失败 - 支付记录不存在，支付流水号: {}", paymentNo);
+            throw new BusinessException(ResultCode.PAYMENT_NOT_FOUND);
+        }
+
+        // 2. 校验支付状态（只能对 SUCCESS 记录退款）
+        if (!PaymentStatus.SUCCESS.name().equals(payment.getPaymentStatus())) {
+            log.warn("退款跳过 - 支付状态非 SUCCESS，支付流水号: {}, 当前状态: {}",
+                    paymentNo, payment.getPaymentStatus());
+            return;
+        }
+
+        // 3. 校验支付状态转换合法性（SUCCESS->REFUNDED）
+        PaymentStatus currentStatus = PaymentStatus.valueOf(payment.getPaymentStatus());
+        currentStatus.transitTo(PaymentStatus.REFUNDED);
+
+        // 4. 检查是否已有退款记录（按 paymentNo 查）
+        RefundDO existingRefund = refundMapper.findByPaymentNo(paymentNo);
+        if (existingRefund != null && "SUCCESS".equals(existingRefund.getRefundStatus())) {
+            log.warn("退款跳过 - 该支付记录已退款，支付流水号: {}", paymentNo);
+            return;
+        }
+
+        // 5. 生成退款流水号
+        String refundNo = generateRefundNo();
+
+        // 6. 根据支付方式调用对应的退款接口
+        boolean refundSuccess = false;
+        if (PaymentMethod.ALIPAY.name().equals(payment.getPaymentMethod())) {
+            if (payment.getTradeNo() == null || payment.getTradeNo().isEmpty()) {
+                log.error("退款失败 - 支付宝交易号为空，支付流水号: {}", paymentNo);
+                throw new BusinessException(ResultCode.REFUND_FAILED);
+            }
+            refundSuccess = alipayPaymentService.refund(
+                    refundNo, payment.getTradeNo(), payment.getAmount(), refundReason);
+        } else if (PaymentMethod.STRIPE.name().equals(payment.getPaymentMethod())) {
+            if (payment.getTradeNo() == null || payment.getTradeNo().isEmpty()) {
+                log.error("退款失败 - Stripe PaymentIntent ID 为空，支付流水号: {}", paymentNo);
+                throw new BusinessException(ResultCode.REFUND_FAILED);
+            }
+            try {
+                site.geekie.shop.shoppingmall.dto.StripeRefundDTO refundRequest = new site.geekie.shop.shoppingmall.dto.StripeRefundDTO();
+                refundRequest.setPaymentNo(payment.getPaymentNo());
+                refundRequest.setRefundAmount(payment.getAmount());
+                refundRequest.setReason(refundReason != null ? refundReason : "多重支付自动退款");
+                stripeService.createRefund(refundRequest, payment.getUserId());
+                refundSuccess = true;
+            } catch (Exception e) {
+                log.error("Stripe 退款失败 - 支付流水号: {}, 错误: {}", paymentNo, e.getMessage(), e);
+                refundSuccess = false;
+            }
+        } else {
+            log.error("退款失败 - 不支持的支付方式: {}", payment.getPaymentMethod());
+            throw new BusinessException(ResultCode.REFUND_FAILED);
+        }
+
+        // 7. 创建退款记录
+        RefundDO refund = new RefundDO();
+        refund.setRefundNo(refundNo);
+        refund.setOrderNo(payment.getOrderNo());
+        refund.setPaymentNo(paymentNo);
+        refund.setTradeNo(payment.getTradeNo());
+        refund.setRefundAmount(payment.getAmount());
+        refund.setRefundReason(refundReason);
+
+        if (refundSuccess) {
+            refund.setRefundStatus("SUCCESS");
+            refund.setRefundTime(LocalDateTime.now());
+            refundMapper.insert(refund);
+            payment.setPaymentStatus(PaymentStatus.REFUNDED.name());
+            paymentMapper.updateById(payment);
+            log.info("多重支付退款成功 - 支付流水号: {}, 退款流水号: {}, 金额: {}",
+                    paymentNo, refundNo, payment.getAmount());
+        } else {
+            refund.setRefundStatus("FAILED");
+            refundMapper.insert(refund);
+            log.error("多重支付退款失败 - 支付流水号: {}, 退款流水号: {}", paymentNo, refundNo);
             throw new BusinessException(ResultCode.REFUND_FAILED);
         }
     }

@@ -36,7 +36,7 @@ public class StripePaymentController {
     public Result<StripePaymentVO> createPayment(
             @Valid @RequestBody CreateStripePaymentDTO request,
             @Parameter(hidden = true) @CurrentUserId Long userId) {
-        StripePaymentVO payment = stripeService.createPaymentIntent(request, userId);
+        StripePaymentVO payment = stripeService.createStripe(request, userId);
         return Result.success("创建支付成功", payment);
     }
 

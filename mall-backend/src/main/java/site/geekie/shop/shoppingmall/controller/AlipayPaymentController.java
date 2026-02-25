@@ -11,7 +11,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import site.geekie.shop.shoppingmall.annotation.CurrentUserId;
+import site.geekie.shop.shoppingmall.annotation
+        .CurrentUserId;
 import site.geekie.shop.shoppingmall.common.Result;
 import site.geekie.shop.shoppingmall.dto.CreateAlipayPaymentDTO;
 import site.geekie.shop.shoppingmall.service.AlipayPaymentService;
@@ -45,7 +46,7 @@ public class AlipayPaymentController {
     public Result<AlipayPaymentVO> createPayment(
             @Valid @RequestBody CreateAlipayPaymentDTO request,
             @Parameter(hidden = true) @CurrentUserId Long userId) {
-        AlipayPaymentVO payment = alipayPaymentService.createPayment(request.getOrderNo(), userId);
+        AlipayPaymentVO payment = alipayPaymentService.createAlipay(request.getOrderNo(), userId);
         return Result.success("创建支付成功", payment);
     }
 

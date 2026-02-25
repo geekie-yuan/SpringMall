@@ -46,7 +46,7 @@
     <select id="findByOrderNo" resultMap="BaseResultMap">
         SELECT <include refid="Full_Column_List"/>
         FROM mall_order o
-        LEFT JOIN mall_payment p ON o.order_no = p.order_no
+        LEFT JOIN mall_payment p ON o.order_no = p.order_no AND p.payment_status = 'SUCCESS'
         WHERE o.order_no = #{orderNo}
     </select>
 
@@ -54,7 +54,7 @@
     <select id="findByUserId" resultMap="BaseResultMap">
         SELECT <include refid="Full_Column_List"/>
         FROM mall_order o
-        LEFT JOIN mall_payment p ON o.order_no = p.order_no
+        LEFT JOIN mall_payment p ON o.order_no = p.order_no AND p.payment_status = 'SUCCESS'
         WHERE o.user_id = #{userId}
         ORDER BY o.created_at DESC
     </select>
@@ -63,7 +63,7 @@
     <select id="findByUserIdAndStatus" resultMap="BaseResultMap">
         SELECT <include refid="Full_Column_List"/>
         FROM mall_order o
-        LEFT JOIN mall_payment p ON o.order_no = p.order_no
+        LEFT JOIN mall_payment p ON o.order_no = p.order_no AND p.payment_status = 'SUCCESS'
         WHERE o.user_id = #{userId} AND o.status = #{status}
         ORDER BY o.created_at DESC
     </select>
@@ -72,7 +72,7 @@
     <select id="findAll" resultMap="BaseResultMap">
         SELECT <include refid="Full_Column_List"/>
         FROM mall_order o
-        LEFT JOIN mall_payment p ON o.order_no = p.order_no
+        LEFT JOIN mall_payment p ON o.order_no = p.order_no AND p.payment_status = 'SUCCESS'
         ORDER BY o.created_at DESC
     </select>
 
@@ -80,7 +80,7 @@
     <select id="findAllByStatus" resultMap="BaseResultMap">
         SELECT <include refid="Full_Column_List"/>
         FROM mall_order o
-        LEFT JOIN mall_payment p ON o.order_no = p.order_no
+        LEFT JOIN mall_payment p ON o.order_no = p.order_no AND p.payment_status = 'SUCCESS'
         WHERE o.status = #{status}
         ORDER BY o.created_at DESC
     </select>

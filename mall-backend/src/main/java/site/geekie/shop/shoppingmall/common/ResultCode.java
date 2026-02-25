@@ -141,6 +141,15 @@ public enum ResultCode {
     //支付验证失败
     PAYMENT_VERIFY_FAILED(40607, "Payment verification failed"),
 
+    //无效的支付状态（非法状态转换）
+    INVALID_PAYMENT_STATUS(40608, "Invalid payment status transition"),
+
+    //支付创建锁获取失败（并发冲突）
+    PAYMENT_LOCK_FAILED(40609, "Failed to acquire payment lock, please try again later"),
+
+    //该订单已通过其他方式支付成功
+    PAYMENT_ALREADY_PAID_BY_OTHER_METHOD(40610, "Order has already been paid via another payment method"),
+
     // ========== 认证相关错误码 (40701-40799) ==========
     //无效的Token
     INVALID_TOKEN(40701, "Invalid token"),

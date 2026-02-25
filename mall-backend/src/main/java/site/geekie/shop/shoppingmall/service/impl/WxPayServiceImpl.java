@@ -83,9 +83,9 @@ public class WxPayServiceImpl implements WxPayService {
             throw new BusinessException(ResultCode.INVALID_ORDER_STATUS, "订单状态不是待支付，无法创建支付");
         }
 
-        // 4. 检查是否已存在支付记录
-        PaymentDO existingPayment = paymentMapper.findByOrderNo(dto.getOrderNo());
-        if (existingPayment != null && "SUCCESS".equals(existingPayment.getPaymentStatus())) {
+        // 4. 检查是否已存在 SUCCESS 支付记录
+        PaymentDO existingPayment = paymentMapper.findSuccessByOrderNo(dto.getOrderNo());
+        if (existingPayment != null) {
             throw new BusinessException(ResultCode.PAYMENT_FAILED, "订单已支付");
         }
 

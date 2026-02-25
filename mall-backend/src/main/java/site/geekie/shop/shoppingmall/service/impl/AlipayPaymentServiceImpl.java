@@ -19,6 +19,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import site.geekie.shop.shoppingmall.common.OrderStatus;
 import site.geekie.shop.shoppingmall.common.PaymentMethod;
 import site.geekie.shop.shoppingmall.common.PaymentStatus;
@@ -31,14 +33,18 @@ import site.geekie.shop.shoppingmall.exception.BusinessException;
 import site.geekie.shop.shoppingmall.mapper.OrderItemMapper;
 import site.geekie.shop.shoppingmall.mapper.OrderMapper;
 import site.geekie.shop.shoppingmall.mapper.PaymentMapper;
+import site.geekie.shop.shoppingmall.mq.producer.PaymentMessageProducer;
 import site.geekie.shop.shoppingmall.service.AlipayPaymentService;
+import site.geekie.shop.shoppingmall.service.PaymentCloseService;
 import site.geekie.shop.shoppingmall.util.OrderNoGenerator;
+import site.geekie.shop.shoppingmall.util.RedisDistributedLock;
 import site.geekie.shop.shoppingmall.vo.AlipayPaymentVO;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 /**
  * 支付宝支付服务实现类
@@ -53,10 +59,30 @@ public class AlipayPaymentServiceImpl implements AlipayPaymentService {
     private final PaymentMapper paymentMapper;
     private final AlipayClient alipayClient;
     private final AlipayConfig alipayConfig;
+    private final RedisDistributedLock redisDistributedLock;
+    private final PaymentCloseService paymentCloseService;
+    private final PaymentMessageProducer paymentMessageProducer;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public AlipayPaymentVO createPayment(String orderNo, Long userId) {
+    public AlipayPaymentVO createAlipay(String orderNo, Long userId) {
+        String lockKey = "lock:Alipay:create:" + orderNo;
+        String lockValue = redisDistributedLock.tryLock(lockKey, 60, TimeUnit.SECONDS);
+        if (lockValue == null) {
+            throw new BusinessException(ResultCode.PAYMENT_LOCK_FAILED);
+        }
+
+        try {
+            return doCreateAlipayInternal(orderNo, userId);
+        } finally {
+            redisDistributedLock.unlock(lockKey, lockValue);
+        }
+    }
+
+    /**
+     * createPayment 内部实现，由分布式锁保护
+     */
+    private AlipayPaymentVO doCreateAlipayInternal(String orderNo, Long userId) {
         // 1. 查询订单
         OrderDO order = orderMapper.findByOrderNo(orderNo);
         if (order == null) {
@@ -69,11 +95,13 @@ public class AlipayPaymentServiceImpl implements AlipayPaymentService {
         }
 
         // 3. 验证订单状态
+        //TODO: 增加订单状态检查的细粒度，区分订单不存在、订单已取消、订单已支付等不同场景
         if (!OrderStatus.UNPAID.getCode().equals(order.getStatus())) {
             throw new BusinessException(ResultCode.INVALID_ORDER_STATUS);
         }
 
         // 4. 查询订单商品明细
+        //TODO: 优化一下Exception 的类型，区分订单不存在、订单无商品等不同错误场景
         List<OrderItemDO> orderItems = orderItemMapper.findByOrderId(order.getId());
         if (orderItems == null || orderItems.isEmpty()) {
             throw new BusinessException(ResultCode.ORDER_ITEM_NOT_FOUND);
@@ -83,9 +111,15 @@ public class AlipayPaymentServiceImpl implements AlipayPaymentService {
         String subject = buildPaymentSubject(orderItems, orderNo);
         String body = buildPaymentBody(orderItems, order.getPayAmount());
 
-        // 6. 检查是否已有支付记录
-        PaymentDO existingPayment = paymentMapper.findByOrderNo(orderNo);
-        if (existingPayment != null && PaymentStatus.PENDING.name().equals(existingPayment.getPaymentStatus())) {
+        // 6. 关闭其他支付方式的 PENDING 记录（支付方式互斥）
+        paymentCloseService.closeAllPendingPayments(orderNo);
+
+        // 7. 检查是否已有支付记录（关闭其他方式后，查看是否还有同方式的 PENDING 记录可复用）
+        PaymentDO existingPayment = paymentMapper.findPendingByOrderNo(orderNo).stream()
+                .filter(p -> PaymentMethod.ALIPAY.name().equals(p.getPaymentMethod()))
+                .findFirst()
+                .orElse(null);
+        if (existingPayment != null) {
             // 已有待支付记录，返回已有支付信息
             log.info("订单已有待支付记录 - 订单号: {}, 支付流水号: {}", orderNo, existingPayment.getPaymentNo());
 
@@ -108,10 +142,10 @@ public class AlipayPaymentServiceImpl implements AlipayPaymentService {
                     .build();
         }
 
-        // 7. 生成支付流水号
+        // 8. 生成支付流水号
         String paymentNo = OrderNoGenerator.generateOrderNo();
 
-        // 8. 创建支付记录
+        // 9. 创建支付记录
         PaymentDO payment = new PaymentDO();
         payment.setPaymentNo(paymentNo);
         payment.setOrderNo(orderNo);
@@ -125,7 +159,16 @@ public class AlipayPaymentServiceImpl implements AlipayPaymentService {
         log.info("创建支付记录 - 支付流水号: {}, 订单号: {}, 金额: {}, 商品: {}",
                 paymentNo, orderNo, order.getPayAmount(), subject);
 
-        // 9. 调用支付宝API生成支付表单
+        // 事务提交后再发送掉单检查延迟消息，避免事务回滚后消息已发出但支付记录不存在
+        final Long paymentId = payment.getId();
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                paymentMessageProducer.sendPaymentCheckDelayMessage(orderNo, paymentId);
+            }
+        });
+
+        // 10. 调用支付宝API生成支付表单
         String paymentUrl = doCreatePayment(
                 paymentNo,
                 orderNo,
@@ -134,10 +177,10 @@ public class AlipayPaymentServiceImpl implements AlipayPaymentService {
                 order.getPayAmount().toString()
         );
 
-        // 10. 更新订单支付方式
+        // 11. 更新订单支付方式
         orderMapper.updatePaymentMethod(orderNo, PaymentMethod.ALIPAY.name());
 
-        // 11. 返回支付信息
+        // 12. 返回支付信息
         return AlipayPaymentVO.builder()
                 .paymentNo(paymentNo)
                 .orderNo(orderNo)
@@ -203,25 +246,58 @@ public class AlipayPaymentServiceImpl implements AlipayPaymentService {
             return "success";
         }
 
+        // 5a. CLOSED 状态收到 SUCCESS 通知 → 支付单已被关闭但用户仍完成了支付（竞态），需自动退款
+        if (PaymentStatus.CLOSED.name().equals(payment.getPaymentStatus())
+                && ("TRADE_SUCCESS".equals(tradeStatus) || "TRADE_FINISHED".equals(tradeStatus))) {
+            log.warn("已关闭的支付单收到支付成功通知，将自动退款 - 支付流水号: {}, 交易号: {}", outTradeNo, tradeNo);
+            // 更新 trade_no 以便退款 API 使用
+            payment.setTradeNo(tradeNo);
+            payment.setNotifyTime(LocalDateTime.now());
+            paymentMapper.updateById(payment);
+            // 调用支付宝退款
+            String refundNo = OrderNoGenerator.generateOrderNo();
+            boolean refundSuccess = refund(refundNo, tradeNo, payment.getAmount(), "支付单已关闭，自动退款");
+            if (refundSuccess) {
+                payment.setPaymentStatus(PaymentStatus.REFUNDED.name());
+                paymentMapper.updateById(payment);
+                log.info("已关闭支付单自动退款成功 - 支付流水号: {}, 退款流水号: {}", outTradeNo, refundNo);
+            } else {
+                log.error("已关闭支付单自动退款失败，需人工介入 - 支付流水号: {}, 交易号: {}", outTradeNo, tradeNo);
+            }
+            return "success";
+        }
+
         // 6. 更新支付记录
+        PaymentStatus currentPaymentStatus = PaymentStatus.valueOf(payment.getPaymentStatus());
         if ("TRADE_SUCCESS".equals(tradeStatus) || "TRADE_FINISHED".equals(tradeStatus)) {
+            // 校验支付状态转换合法性（PENDING->SUCCESS）
+            currentPaymentStatus.transitTo(PaymentStatus.SUCCESS);
+
             payment.setPaymentStatus(PaymentStatus.SUCCESS.name());
             payment.setTradeNo(tradeNo);
             payment.setNotifyTime(LocalDateTime.now());
             paymentMapper.updateById(payment);
 
-            // 7. 更新订单状态
+            // 7. 更新订单状态（UNPAID->PAID）
             OrderDO order = orderMapper.findByOrderNo(payment.getOrderNo());
-            if (order != null && OrderStatus.UNPAID.getCode().equals(order.getStatus())) {
-                orderMapper.updateStatus(payment.getOrderNo(), OrderStatus.PAID.getCode());
-                orderMapper.updatePaymentTime(payment.getOrderNo());
-                log.info("订单支付成功 - 订单号: {}, 支付流水号: {}, 交易号: {}",
-                        payment.getOrderNo(), outTradeNo, tradeNo);
+            if (order != null) {
+                OrderStatus currentOrderStatus = OrderStatus.fromCode(order.getStatus());
+                if (currentOrderStatus.canTransitTo(OrderStatus.PAID)) {
+                    orderMapper.updateStatus(payment.getOrderNo(), OrderStatus.PAID.getCode());
+                    orderMapper.updatePaymentTime(payment.getOrderNo());
+                    log.info("订单支付成功 - 订单号: {}, 支付流水号: {}, 交易号: {}",
+                            payment.getOrderNo(), outTradeNo, tradeNo);
+                } else {
+                    log.warn("订单状态无法转换为 PAID - 当前状态: {}, 订单号: {}",
+                            order.getStatus(), payment.getOrderNo());
+                }
             }
 
             return "success";
         } else if ("TRADE_CLOSED".equals(tradeStatus)) {
-            // 交易关闭
+            // 校验支付状态转换合法性（PENDING->CLOSED）
+            currentPaymentStatus.transitTo(PaymentStatus.CLOSED);
+
             payment.setPaymentStatus(PaymentStatus.CLOSED.name());
             payment.setTradeNo(tradeNo);
             payment.setNotifyTime(LocalDateTime.now());
@@ -388,6 +464,18 @@ public class AlipayPaymentServiceImpl implements AlipayPaymentService {
      *
      * @param paymentNo 支付流水号
      */
+    /**
+     * 关单时可视为"已关闭"的支付宝子错误码：
+     * - ACQ.TRADE_NOT_EXIST：交易在支付宝端从未创建（用户生成了支付链接但未跳转）
+     * - ACQ.TRADE_HAS_CLOSE：交易已经被关闭过
+     * - ACQ.REASON_TRADE_STATUS_INVALID：交易状态不允许关闭（已退款等终态）
+     */
+    private static final java.util.Set<String> CLOSE_IGNORABLE_SUB_CODES = java.util.Set.of(
+            "ACQ.TRADE_NOT_EXIST",
+            "ACQ.TRADE_HAS_CLOSE",
+            "ACQ.REASON_TRADE_STATUS_INVALID"
+    );
+
     private void doClosePayment(String paymentNo) {
         try {
             AlipayTradeCloseRequest request = new AlipayTradeCloseRequest();
@@ -402,9 +490,14 @@ public class AlipayPaymentServiceImpl implements AlipayPaymentService {
             if (response.isSuccess()) {
                 log.info("支付宝支付关闭成功 - 支付流水号: {}", paymentNo);
             } else {
-                log.error("支付宝支付关闭失败 - 错误码: {}, 错误信息: {}",
-                        response.getCode(), response.getMsg());
-                throw new BusinessException(ResultCode.PAYMENT_CLOSE_FAILED);
+                String subCode = response.getSubCode();
+                if (subCode != null && CLOSE_IGNORABLE_SUB_CODES.contains(subCode)) {
+                    log.info("支付宝支付无需关闭（{}） - 支付流水号: {}", subCode, paymentNo);
+                } else {
+                    log.error("支付宝支付关闭失败 - 错误码: {}, 子错误码: {}, 错误信息: {}",
+                            response.getCode(), subCode, response.getSubMsg());
+                    throw new BusinessException(ResultCode.PAYMENT_CLOSE_FAILED);
+                }
             }
 
         } catch (AlipayApiException e) {
@@ -495,5 +588,54 @@ public class AlipayPaymentServiceImpl implements AlipayPaymentService {
         }
 
         return result;
+    }
+
+    @Override
+    public void closePayment(PaymentDO payment) {
+        // 如果 trade_no 为空，说明用户从未在支付宝端发起支付，无需调用支付宝关单 API
+        if (payment.getTradeNo() != null && !payment.getTradeNo().isBlank()) {
+            doClosePayment(payment.getPaymentNo());
+        } else {
+            log.info("支付宝支付单无 trade_no（用户未发起支付），跳过远程关单 - 支付流水号: {}", payment.getPaymentNo());
+        }
+        // 更新本地支付状态为 CLOSED
+        payment.setPaymentStatus(PaymentStatus.CLOSED.name());
+        payment.setNotifyTime(LocalDateTime.now());
+        paymentMapper.updateById(payment);
+        log.info("支付宝支付单已关闭并更新本地状态 - 支付流水号: {}", payment.getPaymentNo());
+    }
+
+    @Override
+    public boolean queryPaymentStatus(PaymentDO payment) {
+        try {
+            AlipayTradeQueryRequest request = new AlipayTradeQueryRequest();
+
+            AlipayTradeQueryModel model = new AlipayTradeQueryModel();
+            // 使用支付流水号（out_trade_no）查询
+            model.setOutTradeNo(payment.getPaymentNo());
+
+            request.setBizModel(model);
+
+            AlipayTradeQueryResponse response = alipayClient.execute(request);
+
+            if (response.isSuccess()) {
+                String tradeStatus = response.getTradeStatus();
+                log.info("掉单补偿查询支付宝支付状态 - 支付流水号: {}, 状态: {}",
+                        payment.getPaymentNo(), tradeStatus);
+                return "TRADE_SUCCESS".equals(tradeStatus) || "TRADE_FINISHED".equals(tradeStatus);
+            } else {
+                String subCode = response.getSubCode();
+                if ("ACQ.TRADE_NOT_EXIST".equals(subCode)) {
+                    log.info("支付宝交易不存在（可能用户未完成支付页面跳转） - 支付流水号: {}", payment.getPaymentNo());
+                } else {
+                    log.warn("掉单补偿查询支付宝支付状态失败 - 支付流水号: {}, 错误码: {}, 子错误码: {}, 错误信息: {}",
+                            payment.getPaymentNo(), response.getCode(), subCode, response.getSubMsg());
+                }
+                return false;
+            }
+        } catch (AlipayApiException e) {
+            log.error("掉单补偿查询支付宝支付状态异常 - 支付流水号: {}", payment.getPaymentNo(), e);
+            return false;
+        }
     }
 }

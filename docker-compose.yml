@@ -32,6 +32,15 @@ services:
       ALIPAY_NOTIFY_URL: ${ALIPAY_NOTIFY_URL}
       ALIPAY_RETURN_URL: ${ALIPAY_RETURN_URL}
       FRONTEND_URL: ${FRONTEND_URL}
+      # RabbitMQ - 连接 rabbitmq 容器
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_PASS: ${RABBITMQ_PASS:-guest}
+      # Redis - 连接宿主机 Redis
+      REDIS_HOST: ${REDIS_HOST:-host.docker.internal}
+      REDIS_PORT: ${REDIS_PORT:-6379}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-123456}
       # JVM
       JAVA_OPTS: "-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
     ports:
@@ -44,6 +53,27 @@ services:
       timeout: 10s
       retries: 3
       start_period: 60s
+    depends_on:
+      rabbitmq:
+        condition: service_started
+    networks:
+      - mall-network
+
+  # ===========================================
+  # RabbitMQ
+  # ===========================================
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    container_name: mall-rabbitmq
+    restart: unless-stopped
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS:-guest}
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
     networks:
       - mall-network
 
@@ -71,3 +101,9 @@ networks:
   mall-network:
     name: mall-network
     driver: bridge
+
+# ===========================================
+# Volumes
+# ===========================================
+volumes:
+  rabbitmq_data:

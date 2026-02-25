@@ -10,7 +10,7 @@ import { getToken, removeToken, clearStorage } from '@/utils/storage'
 // 创建 axios 实例
 const request = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL,
-  timeout: 10000,
+  timeout: import.meta.env.DEV ? 6000000000000 : 10000, // 开发模式 60s，生产模式 10s
   headers: {
     'Content-Type': 'application/json'
   }

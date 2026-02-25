@@ -41,12 +41,14 @@
         WHERE payment_no = #{paymentNo}
     </select>
 
-    <!-- 根据订单号查询 -->
-    <select id="findByOrderNo" resultMap="BaseResultMap">
+    <!-- 查询订单下 SUCCESS 状态的支付记录（用于退款、已支付校验） -->
+    <select id="findSuccessByOrderNo" resultMap="BaseResultMap">
         SELECT
         <include refid="Base_Column_List"/>
         FROM mall_payment
         WHERE order_no = #{orderNo}
+          AND payment_status = 'SUCCESS'
+        LIMIT 1
     </select>
 
     <!-- 根据第三方交易号查询 -->
@@ -58,14 +60,33 @@
         LIMIT 1
     </select>
 
+    <!-- 查询订单下所有 PENDING 状态的支付记录 -->
+    <select id="findPendingByOrderNo" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM mall_payment
+        WHERE order_no = #{orderNo}
+          AND payment_status = 'PENDING'
+    </select>
+
+    <!-- 查询订单下所有 SUCCESS 状态的支付记录（按创建时间升序） -->
+    <select id="findSuccessListByOrderNo" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM mall_payment
+        WHERE order_no = #{orderNo}
+          AND payment_status = 'SUCCESS'
+        ORDER BY created_at ASC
+    </select>
+
     <!-- 插入支付记录 -->
     <insert id="insert" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO mall_payment (
             payment_no, order_no, user_id, amount,
-            payment_method, payment_status, code_url
+            payment_method, payment_status, trade_no, code_url
         ) VALUES (
             #{paymentNo}, #{orderNo}, #{userId}, #{amount},
-            #{paymentMethod}, #{paymentStatus}, #{codeUrl}
+            #{paymentMethod}, #{paymentStatus}, #{tradeNo}, #{codeUrl}
         )
     </insert>
 

@@ -1,6 +1,6 @@
 ---
 name: backend-dev
-description: springMall 的 Spring Boot 后端开发 Agent。负责所有服务端代码： Controller、Service、Mapper（Java 接口 + XML）、Entity、DTO、 配置类和安全组件。遵循项目已有的 Result<T> 统一响应和 MyBatis XML Mapper 规范。凡涉及服务端变更——新增接口、业务逻辑、数据库查询、安全配置—— 均委托给此 Agent.
+description: "springMall 的 Spring Boot 后端开发 Agent。负责所有服务端代码： Controller、Service、Mapper（Java 接口 + XML）、Entity、DTO、 配置类和安全组件。遵循项目已有的 Result<T> 统一响应和 MyBatis XML Mapper 规范。凡涉及服务端变更——新增接口、业务逻辑、数据库查询、安全配置—— 均委托给此 Agent."
 model: sonnet
 color: green
 ---

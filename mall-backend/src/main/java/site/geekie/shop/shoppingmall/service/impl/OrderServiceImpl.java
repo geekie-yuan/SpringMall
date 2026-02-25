@@ -7,6 +7,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import site.geekie.shop.shoppingmall.common.PageResult;
 import site.geekie.shop.shoppingmall.common.OrderStatus;
 import site.geekie.shop.shoppingmall.common.ResultCode;
@@ -18,6 +20,7 @@ import site.geekie.shop.shoppingmall.entity.*;
 import site.geekie.shop.shoppingmall.exception.BusinessException;
 import site.geekie.shop.shoppingmall.mapper.*;
 import site.geekie.shop.shoppingmall.security.SecurityUser;
+import site.geekie.shop.shoppingmall.mq.producer.OrderMessageProducer;
 import site.geekie.shop.shoppingmall.service.OrderService;
 import site.geekie.shop.shoppingmall.service.PaymentService;
 import site.geekie.shop.shoppingmall.util.OrderNoGenerator;
@@ -43,6 +46,7 @@ public class OrderServiceImpl implements OrderService {
     private final OrderConverter orderConverter;
     private final OrderItemConverter orderItemConverter;
     private final PaymentService paymentService;
+    private final OrderMessageProducer orderMessageProducer;
 
 
     @Override
@@ -134,7 +138,16 @@ public class OrderServiceImpl implements OrderService {
                 .collect(Collectors.toList());
         cartItemMapper.deleteByIds(cartItemIds);
 
-        // 9. 返回订单信息
+        // 9. 事务提交后发送订单超时关闭延迟消息（15 分钟后自动取消未支付订单）
+        final String finalOrderNo = orderNo;
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                orderMessageProducer.sendOrderCloseDelayMessage(finalOrderNo);
+            }
+        });
+
+        // 10. 返回订单信息
         return orderConverter.toVOWithItems(order, orderItemMapper, orderItemConverter);
     }
 
@@ -190,11 +203,9 @@ public class OrderServiceImpl implements OrderService {
             throw new BusinessException(ResultCode.FORBIDDEN);
         }
 
-        // 用户可以取消待支付和待发货状态的订单（未发货订单）
-        if (!OrderStatus.UNPAID.getCode().equals(order.getStatus())
-            && !OrderStatus.PAID.getCode().equals(order.getStatus())) {
-            throw new BusinessException(ResultCode.ORDER_CANNOT_BE_CANCELLED);
-        }
+        // 校验状态转换合法性（UNPAID->CANCELLED 或 PAID->CANCELLED）
+        OrderStatus currentStatus = OrderStatus.fromCode(order.getStatus());
+        currentStatus.transitTo(OrderStatus.CANCELLED);
 
         // 如果订单已支付，先退款
         if (OrderStatus.PAID.getCode().equals(order.getStatus())) {
@@ -228,10 +239,8 @@ public class OrderServiceImpl implements OrderService {
             throw new BusinessException(ResultCode.FORBIDDEN);
         }
 
-        // 只有已发货状态可以确认收货
-        if (!OrderStatus.SHIPPED.getCode().equals(order.getStatus())) {
-            throw new BusinessException(ResultCode.INVALID_ORDER_STATUS);
-        }
+        // 校验状态转换合法性（SHIPPED->COMPLETED）
+        OrderStatus.fromCode(order.getStatus()).transitTo(OrderStatus.COMPLETED);
 
         // 更新订单状态为已完成
         orderMapper.updateStatus(orderNo, OrderStatus.COMPLETED.getCode());
@@ -284,10 +293,8 @@ public class OrderServiceImpl implements OrderService {
             throw new BusinessException(ResultCode.ORDER_NOT_FOUND);
         }
 
-        // 只有已支付状态可以发货
-        if (!OrderStatus.PAID.getCode().equals(order.getStatus())) {
-            throw new BusinessException(ResultCode.INVALID_ORDER_STATUS);
-        }
+        // 校验状态转换合法性（PAID->SHIPPED）
+        OrderStatus.fromCode(order.getStatus()).transitTo(OrderStatus.SHIPPED);
 
         // 更新订单状态为已发货
         orderMapper.updateStatus(orderNo, OrderStatus.SHIPPED.getCode());
@@ -302,11 +309,9 @@ public class OrderServiceImpl implements OrderService {
             throw new BusinessException(ResultCode.ORDER_NOT_FOUND);
         }
 
-        // 管理员可以取消待支付和待发货状态的订单
-        if (!OrderStatus.UNPAID.getCode().equals(order.getStatus())
-            && !OrderStatus.PAID.getCode().equals(order.getStatus())) {
-            throw new BusinessException(ResultCode.ORDER_CANNOT_BE_CANCELLED);
-        }
+        // 校验状态转换合法性（UNPAID->CANCELLED 或 PAID->CANCELLED）
+        OrderStatus currentStatusAdmin = OrderStatus.fromCode(order.getStatus());
+        currentStatusAdmin.transitTo(OrderStatus.CANCELLED);
 
         // 如果订单已支付，先退款
         if (OrderStatus.PAID.getCode().equals(order.getStatus())) {
