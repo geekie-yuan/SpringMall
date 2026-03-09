@@ -11,8 +11,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import site.geekie.shop.shoppingmall.annotation
-        .CurrentUserId;
+import site.geekie.shop.shoppingmall.annotation.CurrentUserId;
+import site.geekie.shop.shoppingmall.annotation.RateLimiter;
 import site.geekie.shop.shoppingmall.common.Result;
 import site.geekie.shop.shoppingmall.dto.CreateAlipayPaymentDTO;
 import site.geekie.shop.shoppingmall.service.AlipayPaymentService;
@@ -43,6 +43,7 @@ public class AlipayPaymentController {
     @Operation(summary = "创建支付宝支付", description = "创建支付宝支付，返回支付表单 HTML")
     @SecurityRequirement(name = "Bearer Authentication")
     @PreAuthorize("hasRole('USER')")
+    @RateLimiter(count = 10, period = 60)
     public Result<AlipayPaymentVO> createPayment(
             @Valid @RequestBody CreateAlipayPaymentDTO request,
             @Parameter(hidden = true) @CurrentUserId Long userId) {
@@ -52,6 +53,7 @@ public class AlipayPaymentController {
 
     @PostMapping("/notify")
     @Operation(summary = "支付宝异步通知", description = "处理支付宝异步通知回调")
+    @RateLimiter(count = 10, period = 60, key = "alipay_notify")
     public String handleNotify(HttpServletRequest request) {
         // 必须在首次调用 getParameter() 之前设置编码，否则 body 等中文字段会被错误解析导致验签失败
         try {

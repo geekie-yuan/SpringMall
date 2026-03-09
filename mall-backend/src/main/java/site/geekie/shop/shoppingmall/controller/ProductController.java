@@ -12,6 +12,7 @@ import site.geekie.shop.shoppingmall.common.PageResult;
 import site.geekie.shop.shoppingmall.common.Result;
 import site.geekie.shop.shoppingmall.dto.ProductDTO;
 import site.geekie.shop.shoppingmall.vo.ProductVO;
+import site.geekie.shop.shoppingmall.annotation.RateLimiter;
 import site.geekie.shop.shoppingmall.service.ProductService;
 
 import java.util.List;
@@ -68,6 +69,7 @@ public class ProductController {
      * @return 商品列表
      */
     @Operation(summary = "搜索商品")
+    @RateLimiter(count = 30, period = 60)
     @GetMapping("/search")
     public Result<PageResult<ProductVO>> searchProducts(
             @RequestParam String keyword,

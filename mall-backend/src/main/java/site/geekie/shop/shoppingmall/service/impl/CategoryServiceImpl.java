@@ -1,9 +1,16 @@
 package site.geekie.shop.shoppingmall.service.impl;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import site.geekie.shop.shoppingmall.common.ResultCode;
+import site.geekie.shop.shoppingmall.converter.CategoryConverter;
 import site.geekie.shop.shoppingmall.dto.CategoryDTO;
 import site.geekie.shop.shoppingmall.entity.CategoryDO;
 import site.geekie.shop.shoppingmall.vo.CategoryVO;
@@ -13,46 +20,97 @@ import site.geekie.shop.shoppingmall.service.CategoryService;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.concurrent.TimeUnit;
 
 /**
  * 分类服务实现类
  * 实现商品分类的CRUD操作和树形结构构建
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class CategoryServiceImpl implements CategoryService {
 
+    private static final String CACHE_TREE_KEY = "cache:category:tree";
+    private static final String CACHE_ALL_KEY = "cache:category:all";
+    private static final long CACHE_TTL_HOURS = 1;
+
     private final CategoryMapper categoryMapper;
+    private final CategoryConverter categoryConverter;
+    private final StringRedisTemplate stringRedisTemplate;
+
+    /**
+     * 支持 Java 8 时间类型（LocalDateTime）的 ObjectMapper。
+     * 不注入 Spring 容器中的全局 ObjectMapper，避免影响其他组件的序列化配置。
+     */
+    private final ObjectMapper objectMapper = buildObjectMapper();
+
+    private static ObjectMapper buildObjectMapper() {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.registerModule(new JavaTimeModule());
+        mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        return mapper;
+    }
 
     @Override
     public List<CategoryVO> getAllCategories() {
+        // 1. 尝试读取缓存
+        try {
+            String cached = stringRedisTemplate.opsForValue().get(CACHE_ALL_KEY);
+            if (cached != null) {
+                return objectMapper.readValue(cached, new TypeReference<List<CategoryVO>>() {});
+            }
+        } catch (Exception e) {
+            log.warn("读取分类全量缓存失败，降级查询数据库: {}", e.getMessage());
+        }
+
+        // 2. 缓存未命中，查询数据库
         List<CategoryDO> categories = categoryMapper.findAll();
-        return categories.stream()
-                .map(this::convertToResponse)
-                .collect(Collectors.toList());
+        List<CategoryVO> result = categoryConverter.toVOList(categories);
+
+        // 3. 写入缓存
+        try {
+            String json = objectMapper.writeValueAsString(result);
+            stringRedisTemplate.opsForValue().set(CACHE_ALL_KEY, json, CACHE_TTL_HOURS, TimeUnit.HOURS);
+        } catch (Exception e) {
+            log.warn("写入分类全量缓存失败: {}", e.getMessage());
+        }
+
+        return result;
     }
 
     @Override
     public List<CategoryVO> getCategoryTree() {
-        // 获取所有分类
+        // 1. 尝试读取缓存
+        try {
+            String cached = stringRedisTemplate.opsForValue().get(CACHE_TREE_KEY);
+            if (cached != null) {
+                return objectMapper.readValue(cached, new TypeReference<List<CategoryVO>>() {});
+            }
+        } catch (Exception e) {
+            log.warn("读取分类树缓存失败，降级查询数据库: {}", e.getMessage());
+        }
+
+        // 2. 缓存未命中，查询数据库并构建树
         List<CategoryDO> allCategories = categoryMapper.findAll();
+        List<CategoryVO> allResponses = categoryConverter.toVOList(allCategories);
+        List<CategoryVO> tree = buildTree(allResponses, 0L);
 
-        // 转换为Response对象
-        List<CategoryVO> allResponses = allCategories.stream()
-                .map(this::convertToResponse)
-                .collect(Collectors.toList());
+        // 3. 写入缓存
+        try {
+            String json = objectMapper.writeValueAsString(tree);
+            stringRedisTemplate.opsForValue().set(CACHE_TREE_KEY, json, CACHE_TTL_HOURS, TimeUnit.HOURS);
+        } catch (Exception e) {
+            log.warn("写入分类树缓存失败: {}", e.getMessage());
+        }
 
-        // 构建树形结构：只返回一级分类，children包含子分类
-        return buildTree(allResponses, 0L);
+        return tree;
     }
 
     @Override
     public List<CategoryVO> getCategoriesByParentId(Long parentId) {
         List<CategoryDO> categories = categoryMapper.findByParentId(parentId);
-        return categories.stream()
-                .map(this::convertToResponse)
-                .collect(Collectors.toList());
+        return categoryConverter.toVOList(categories);
     }
 
     @Override
@@ -61,7 +119,7 @@ public class CategoryServiceImpl implements CategoryService {
         if (category == null) {
             throw new BusinessException(ResultCode.CATEGORY_NOT_FOUND);
         }
-        return convertToResponse(category);
+        return categoryConverter.toVO(category);
     }
 
     @Override
@@ -98,17 +156,13 @@ public class CategoryServiceImpl implements CategoryService {
         }
 
         // 3. 创建分类
-        CategoryDO category = new CategoryDO();
-        category.setName(request.getName());
-        category.setParentId(request.getParentId());
-        category.setLevel(request.getLevel());
-        category.setSortOrder(request.getSortOrder());
-        category.setIcon(request.getIcon());
-        category.setStatus(request.getStatus());
+        CategoryDO category = categoryConverter.toDO(request);
 
         categoryMapper.insert(category);
 
-        return convertToResponse(category);
+        evictCategoryCache();
+
+        return categoryConverter.toVO(category);
     }
 
     @Override
@@ -128,14 +182,13 @@ public class CategoryServiceImpl implements CategoryService {
         }
 
         // 3. 更新分类信息（不允许修改parentId和level）
-        category.setName(request.getName());
-        category.setSortOrder(request.getSortOrder());
-        category.setIcon(request.getIcon());
-        category.setStatus(request.getStatus());
+        categoryConverter.updateDOFromDTO(request, category);
 
         categoryMapper.updateById(category);
 
-        return convertToResponse(category);
+        evictCategoryCache();
+
+        return categoryConverter.toVO(category);
     }
 
     @Override
@@ -158,6 +211,21 @@ public class CategoryServiceImpl implements CategoryService {
 
         // 4. 删除分类
         categoryMapper.deleteById(id);
+
+        evictCategoryCache();
+    }
+
+    /**
+     * 清除分类相关的全部缓存 key。
+     * Redis 异常不影响业务流程。
+     */
+    private void evictCategoryCache() {
+        try {
+            stringRedisTemplate.delete(CACHE_TREE_KEY);
+            stringRedisTemplate.delete(CACHE_ALL_KEY);
+        } catch (Exception e) {
+            log.warn("清除分类缓存失败: {}", e.getMessage());
+        }
     }
 
     /**
@@ -184,22 +252,4 @@ public class CategoryServiceImpl implements CategoryService {
         return tree;
     }
 
-    /**
-     * 将实体转换为响应DTO
-     *
-     * @param category 分类实体
-     * @return 分类响应DTO
-     */
-    private CategoryVO convertToResponse(CategoryDO category) {
-        return new CategoryVO(
-                category.getId(),
-                category.getName(),
-                category.getParentId(),
-                category.getLevel(),
-                category.getSortOrder(),
-                category.getIcon(),
-                category.getStatus(),
-                category.getCreatedAt()
-        );
-    }
 }

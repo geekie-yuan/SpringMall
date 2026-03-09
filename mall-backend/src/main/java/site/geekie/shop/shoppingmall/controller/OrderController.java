@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import site.geekie.shop.shoppingmall.annotation.CurrentUserId;
+import site.geekie.shop.shoppingmall.annotation.RateLimiter;
 import site.geekie.shop.shoppingmall.common.Result;
 import site.geekie.shop.shoppingmall.dto.OrderDTO;
 import site.geekie.shop.shoppingmall.vo.OrderVO;
@@ -40,6 +41,7 @@ public class OrderController {
      * @return 订单信息
      */
     @Operation(summary = "创建订单（结算购物车）")
+    @RateLimiter(count = 5, period = 60)
     @PostMapping
     public Result<OrderVO> createOrder(@Valid @RequestBody OrderDTO request, @Parameter(hidden = true) @CurrentUserId Long userId) {
         OrderVO order = orderService.createOrder(request, userId);

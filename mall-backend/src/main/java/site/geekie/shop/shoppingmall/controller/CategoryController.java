@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+import site.geekie.shop.shoppingmall.annotation.RateLimiter;
 import site.geekie.shop.shoppingmall.common.Result;
 import site.geekie.shop.shoppingmall.dto.CategoryDTO;
 import site.geekie.shop.shoppingmall.vo.CategoryVO;
@@ -50,6 +51,7 @@ public class CategoryController {
      */
     @Operation(summary = "获取分类树")
     @GetMapping("/tree")
+    @RateLimiter(count = 60, period = 60)
     public Result<List<CategoryVO>> getCategoryTree() {
         List<CategoryVO> tree = categoryService.getCategoryTree();
         return Result.success(tree);
@@ -64,6 +66,7 @@ public class CategoryController {
      */
     @Operation(summary = "获取子分类列表")
     @GetMapping("/parent/{parentId}")
+    @RateLimiter(count = 60, period = 60)
     public Result<List<CategoryVO>> getCategoriesByParentId(@PathVariable Long parentId) {
         List<CategoryVO> categories = categoryService.getCategoriesByParentId(parentId);
         return Result.success(categories);
@@ -78,6 +81,7 @@ public class CategoryController {
      */
     @Operation(summary = "获取分类详情")
     @GetMapping("/{id}")
+    @RateLimiter(count = 60, period = 60)
     public Result<CategoryVO> getCategoryById(@PathVariable Long id) {
         CategoryVO category = categoryService.getCategoryById(id);
         return Result.success(category);

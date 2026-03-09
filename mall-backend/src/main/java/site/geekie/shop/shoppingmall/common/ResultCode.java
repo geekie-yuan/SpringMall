@@ -119,6 +119,9 @@ public enum ResultCode {
     //订单商品明细不存在
     ORDER_ITEM_NOT_FOUND(40504, "Order item not found"),
 
+    //下单操作过于频繁
+    ORDER_CREATE_TOO_FREQUENT(40505, "Order creation too frequent, please try again later"),
+
     // ========== 支付相关错误码 (40601-40699) ==========
     //支付失败
     PAYMENT_FAILED(40601, "Payment failed"),
@@ -149,6 +152,10 @@ public enum ResultCode {
 
     //该订单已通过其他方式支付成功
     PAYMENT_ALREADY_PAID_BY_OTHER_METHOD(40610, "Order has already been paid via another payment method"),
+
+    // ========== 限流相关错误码 ==========
+    //请求过于频繁
+    RATE_LIMIT_EXCEEDED(42900, "Too many requests, please try again later"),
 
     // ========== 认证相关错误码 (40701-40799) ==========
     //无效的Token

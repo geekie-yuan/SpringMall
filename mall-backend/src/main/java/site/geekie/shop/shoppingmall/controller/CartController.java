@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import site.geekie.shop.shoppingmall.annotation.CurrentUserId;
+import site.geekie.shop.shoppingmall.annotation.RateLimiter;
 import site.geekie.shop.shoppingmall.common.Result;
 import site.geekie.shop.shoppingmall.dto.CartItemDTO;
 import site.geekie.shop.shoppingmall.vo.CartItemVO;
@@ -72,6 +73,7 @@ public class CartController {
      */
     @Operation(summary = "更新购物车项数量")
     @PutMapping("/{id}/quantity")
+    @RateLimiter(count = 60, period = 60)
     public Result<CartItemVO> updateQuantity(
             @PathVariable Long id,
             @RequestParam Integer quantity,
@@ -91,6 +93,7 @@ public class CartController {
      */
     @Operation(summary = "更新购物车项选中状态")
     @PutMapping("/{id}/checked")
+    @RateLimiter(count = 60, period = 60)
     public Result<Void> updateChecked(
             @PathVariable Long id,
             @RequestParam Integer checked,
@@ -109,6 +112,7 @@ public class CartController {
      */
     @Operation(summary = "批量更新购物车选中状态（全选/取消全选）")
     @PutMapping("/checked")
+    @RateLimiter(count = 60, period = 60)
     public Result<Void> updateAllChecked(@RequestParam Integer checked, @Parameter(hidden = true) @CurrentUserId Long userId) {
         cartService.updateAllChecked(checked, userId);
         return Result.success();
@@ -124,6 +128,7 @@ public class CartController {
      */
     @Operation(summary = "删除购物车项")
     @DeleteMapping("/{id}")
+    @RateLimiter(count = 60, period = 60)
     public Result<Void> deleteCartItem(@PathVariable Long id, @Parameter(hidden = true) @CurrentUserId Long userId) {
         cartService.deleteCartItem(id, userId);
         return Result.success();
@@ -139,6 +144,7 @@ public class CartController {
      */
     @Operation(summary = "批量删除购物车项")
     @DeleteMapping("/batch")
+    @RateLimiter(count = 60, period = 60)
     public Result<Void> deleteCartItems(@RequestParam List<Long> ids, @Parameter(hidden = true) @CurrentUserId Long userId) {
         cartService.deleteCartItems(ids, userId);
         return Result.success();
@@ -153,6 +159,7 @@ public class CartController {
      */
     @Operation(summary = "清空购物车")
     @DeleteMapping
+    @RateLimiter(count = 10, period = 60)
     public Result<Void> clearCart(@Parameter(hidden = true) @CurrentUserId Long userId) {
         cartService.clearCart(userId);
         return Result.success();
@@ -167,6 +174,7 @@ public class CartController {
      */
     @Operation(summary = "获取已选中商品的总价")
     @GetMapping("/total")
+    @RateLimiter(count = 60, period = 60)
     public Result<BigDecimal> getCartTotal(@Parameter(hidden = true) @CurrentUserId Long userId) {
         BigDecimal total = cartService.getCartTotal(userId);
         return Result.success(total);
@@ -181,6 +189,7 @@ public class CartController {
      */
     @Operation(summary = "获取购物车商品种类数")
     @GetMapping("/count")
+    @RateLimiter(count = 60, period = 60)
     public Result<Integer> getCartCount(@Parameter(hidden = true) @CurrentUserId Long userId) {
         int count = cartService.getCartCount(userId);
         return Result.success(count);

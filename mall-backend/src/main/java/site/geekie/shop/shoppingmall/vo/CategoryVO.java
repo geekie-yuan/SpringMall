@@ -21,15 +21,4 @@ public class CategoryVO {
     private LocalDateTime createdAt;
     private List<CategoryVO> children;
 
-    public CategoryVO(Long id, String name, Long parentId, Integer level,
-                      Integer sortOrder, String icon, Integer status, LocalDateTime createdAt) {
-        this.id = id;
-        this.name = name;
-        this.parentId = parentId;
-        this.level = level;
-        this.sortOrder = sortOrder;
-        this.icon = icon;
-        this.status = status;
-        this.createdAt = createdAt;
-    }
 }

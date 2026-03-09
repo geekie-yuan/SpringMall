@@ -8,6 +8,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import site.geekie.shop.shoppingmall.annotation.CurrentUserId;
+import site.geekie.shop.shoppingmall.annotation.RateLimiter;
 import site.geekie.shop.shoppingmall.common.Result;
 import site.geekie.shop.shoppingmall.dto.AddressDTO;
 import site.geekie.shop.shoppingmall.vo.AddressVO;
@@ -61,6 +62,7 @@ public class AddressController {
      */
     @Operation(summary = "获取默认地址")
     @GetMapping("/default")
+    @RateLimiter(count = 10, period = 60)
     public Result<AddressVO> getDefaultAddress(@Parameter(hidden = true) @CurrentUserId Long userId) {
         AddressVO address = addressService.getDefaultAddress(userId);
         return Result.success(address);
@@ -78,6 +80,7 @@ public class AddressController {
      */
     @Operation(summary = "获取地址详情")
     @GetMapping("/{id}")
+    @RateLimiter(count = 10, period = 60)
     public Result<AddressVO> getAddressById(@PathVariable Long id, @Parameter(hidden = true) @CurrentUserId Long userId) {
         AddressVO address = addressService.getAddressById(id, userId);
         return Result.success(address);
@@ -111,6 +114,7 @@ public class AddressController {
      */
     @Operation(summary = "修改地址")
     @PutMapping("/{id}")
+    @RateLimiter(count = 10, period = 60)
     public Result<AddressVO> updateAddress(@PathVariable Long id, @Valid @RequestBody AddressDTO request, @Parameter(hidden = true) @CurrentUserId Long userId) {
         AddressVO address = addressService.updateAddress(id, request, userId);
         return Result.success("地址修改成功", address);
@@ -129,6 +133,7 @@ public class AddressController {
      */
     @Operation(summary = "删除地址")
     @DeleteMapping("/{id}")
+    @RateLimiter(count = 10, period = 60)
     public Result<Void> deleteAddress(@PathVariable Long id, @Parameter(hidden = true) @CurrentUserId Long userId) {
         addressService.deleteAddress(id, userId);
         return Result.success("地址删除成功", null);
@@ -146,6 +151,7 @@ public class AddressController {
      */
     @Operation(summary = "设置默认地址")
     @PutMapping("/{id}/default")
+    @RateLimiter(count = 10, period = 60)
     public Result<Void> setDefaultAddress(@PathVariable Long id, @Parameter(hidden = true) @CurrentUserId Long userId) {
         addressService.setDefaultAddress(id, userId);
         return Result.success("默认地址设置成功", null);

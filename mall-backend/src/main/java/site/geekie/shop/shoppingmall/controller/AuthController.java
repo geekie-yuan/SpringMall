@@ -9,6 +9,7 @@ import site.geekie.shop.shoppingmall.common.Result;
 import site.geekie.shop.shoppingmall.dto.LoginDTO;
 import site.geekie.shop.shoppingmall.dto.RegisterDTO;
 import site.geekie.shop.shoppingmall.vo.LoginVO;
+import site.geekie.shop.shoppingmall.annotation.RateLimiter;
 import site.geekie.shop.shoppingmall.service.AuthService;
 
 /**
@@ -48,6 +49,7 @@ public class AuthController {
      *         当用户名、邮箱或手机号已存在时抛出
      */
     @Operation(summary = "用户注册")
+    @RateLimiter(count = 5, period = 60)
     @PostMapping("/register")
     public Result<Void> register(@Valid @RequestBody RegisterDTO request) {
         authService.register(request);
@@ -70,6 +72,7 @@ public class AuthController {
      *         当用户名或密码错误时抛出
      */
     @Operation(summary = "用户登录")
+    @RateLimiter(count = 5, period = 60)
     @PostMapping("/login")
     public Result<LoginVO> login(@Valid @RequestBody LoginDTO request) {
         LoginVO response = authService.login(request);
@@ -89,6 +92,7 @@ public class AuthController {
      * @return 统一响应对象，返回登出成功消息
      */
     @Operation(summary = "用户登出")
+    @RateLimiter(count = 5, period = 60)
     @PostMapping("/logout")
     public Result<Void> logout() {
         // 删除token

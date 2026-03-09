@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.web.bind.annotation.*;
 import site.geekie.shop.shoppingmall.annotation.CurrentUserId;
+import site.geekie.shop.shoppingmall.annotation.RateLimiter;
 import site.geekie.shop.shoppingmall.common.Result;
 import site.geekie.shop.shoppingmall.dto.CreateWxPaymentDTO;
 import site.geekie.shop.shoppingmall.dto.WxRefundDTO;
@@ -47,6 +48,7 @@ public class WxPayController {
      */
     @Operation(summary = "创建微信Native支付订单", description = "为指定订单创建微信Native支付，返回二维码链接")
     @SecurityRequirement(name = "Bearer Authentication")
+    @RateLimiter(count = 10, period = 60)
     @PostMapping("/native")
     public Result<WxPaymentVO> createNativePayment(
             @Valid @RequestBody CreateWxPaymentDTO request,
@@ -87,6 +89,7 @@ public class WxPayController {
      */
     @Hidden
     @PostMapping("/notify")
+    @RateLimiter(count = 50, period = 60, key = "wx_notify")
     public Map<String, String> handlePaymentNotify(
             @RequestBody String requestBody,
             @RequestHeader("Wechatpay-Serial") String serial,
@@ -128,6 +131,7 @@ public class WxPayController {
      */
     @Operation(summary = "申请退款", description = "为已支付的订单申请退款")
     @SecurityRequirement(name = "Bearer Authentication")
+    @RateLimiter(count = 20, period = 60)
     @PostMapping("/refund")
     public Result<WxRefundVO> createRefund(
             @Valid @RequestBody WxRefundDTO request,
@@ -150,6 +154,7 @@ public class WxPayController {
      */
     @Hidden
     @PostMapping("/refund/notify")
+    @RateLimiter(count = 50, period = 60, key = "wx_refund_notify")
     public Map<String, String> handleRefundNotify(
             @RequestBody String requestBody,
             @RequestHeader("Wechatpay-Serial") String serial,

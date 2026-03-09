@@ -17,6 +17,7 @@ import site.geekie.shop.shoppingmall.mapper.OrderItemMapper;
 import site.geekie.shop.shoppingmall.mapper.OrderMapper;
 import site.geekie.shop.shoppingmall.mapper.PaymentMapper;
 import site.geekie.shop.shoppingmall.mapper.ProductMapper;
+import site.geekie.shop.shoppingmall.util.StockRedisService;
 
 import java.io.IOException;
 import java.util.List;
@@ -45,6 +46,7 @@ public class OrderCloseConsumer {
     private final ProductMapper productMapper;
     private final PaymentMapper paymentMapper;
     private final TransactionTemplate transactionTemplate;
+    private final StockRedisService stockRedisService;
 
     @RabbitListener(queues = RabbitMQConfig.ORDER_CLOSE_QUEUE)
     public void handleOrderClose(String orderNo,
@@ -82,6 +84,13 @@ public class OrderCloseConsumer {
                 for (OrderItemDO item : items) {
                     productMapper.increaseStock(item.getProductId(), item.getQuantity());
                     log.debug("恢复库存 - 商品ID: {}, 数量: {}", item.getProductId(), item.getQuantity());
+                }
+
+                // 恢复 Redis 库存
+                try {
+                    stockRedisService.batchRestoreStock(items);
+                } catch (Exception e) {
+                    log.warn("订单超时关单恢复 Redis 库存异常 - 订单号: {}", orderNo, e);
                 }
 
                 // 5. 更新订单状态为已取消

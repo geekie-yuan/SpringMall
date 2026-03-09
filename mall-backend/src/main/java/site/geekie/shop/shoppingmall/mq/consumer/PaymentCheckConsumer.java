@@ -21,6 +21,7 @@ import site.geekie.shop.shoppingmall.mapper.OrderMapper;
 import site.geekie.shop.shoppingmall.mapper.PaymentMapper;
 import site.geekie.shop.shoppingmall.mapper.ProductMapper;
 import site.geekie.shop.shoppingmall.service.AlipayPaymentService;
+import site.geekie.shop.shoppingmall.util.StockRedisService;
 import site.geekie.shop.shoppingmall.service.PaymentCloseService;
 import site.geekie.shop.shoppingmall.service.PaymentService;
 import site.geekie.shop.shoppingmall.service.StripeService;
@@ -60,6 +61,7 @@ public class PaymentCheckConsumer {
     private final PaymentService paymentService;
     private final ObjectMapper objectMapper;
     private final TransactionTemplate transactionTemplate;
+    private final StockRedisService stockRedisService;
 
     @RabbitListener(queues = RabbitMQConfig.PAYMENT_CHECK_QUEUE)
     public void handlePaymentCheck(String message, Channel channel, @Header(AmqpHeaders.DELIVERY_TAG) long deliveryTag) throws IOException {
@@ -163,6 +165,13 @@ public class PaymentCheckConsumer {
                             for (OrderItemDO item : orderItems) {
                                 productMapper.increaseStock(item.getProductId(), item.getQuantity());
                                 log.debug("掉单补偿恢复库存 - 商品ID: {}, 数量: {}", item.getProductId(), item.getQuantity());
+                            }
+
+                            // 恢复 Redis 库存
+                            try {
+                                stockRedisService.batchRestoreStock(orderItems);
+                            } catch (Exception e) {
+                                log.warn("掉单补偿恢复 Redis 库存异常 - 订单号: {}", finalOrderNo, e);
                             }
 
                             // 更新订单状态 → CANCELLED

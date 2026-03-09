@@ -10,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import site.geekie.shop.shoppingmall.annotation.CurrentUserId;
+import site.geekie.shop.shoppingmall.annotation.RateLimiter;
 import site.geekie.shop.shoppingmall.common.Result;
 import site.geekie.shop.shoppingmall.dto.CreateStripePaymentDTO;
 import site.geekie.shop.shoppingmall.dto.StripeRefundDTO;
@@ -33,6 +34,7 @@ public class StripePaymentController {
     @Operation(summary = "创建 Stripe 支付", description = "创建 Stripe 支付意图，返回 client_secret 用于前端确认支付")
     @SecurityRequirement(name = "Bearer Authentication")
     @PreAuthorize("hasRole('USER')")
+    @RateLimiter(count = 10, period = 60)
     public Result<StripePaymentVO> createPayment(
             @Valid @RequestBody CreateStripePaymentDTO request,
             @Parameter(hidden = true) @CurrentUserId Long userId) {
@@ -53,6 +55,7 @@ public class StripePaymentController {
 
     @PostMapping("/webhook")
     @Operation(summary = "Stripe Webhook 回调", description = "处理 Stripe 支付事件回调（payment_intent.succeeded 等）")
+    @RateLimiter(count = 50, period = 60, key = "stripe_webhook")
     public String handleWebhook(
             @RequestBody String payload,
             @RequestHeader("Stripe-Signature") String signature) {
@@ -70,6 +73,7 @@ public class StripePaymentController {
     @Operation(summary = "创建 Stripe 退款", description = "管理员创建退款（全额/部分退款）")
     @SecurityRequirement(name = "Bearer Authentication")
     @PreAuthorize("hasRole('ADMIN')")
+    @RateLimiter(count = 20, period = 60)
     public Result<StripeRefundVO> createRefund(
             @Valid @RequestBody StripeRefundDTO request,
             @Parameter(hidden = true) @CurrentUserId Long userId) {
@@ -79,6 +83,7 @@ public class StripePaymentController {
 
     @PostMapping("/refund/webhook")
     @Operation(summary = "Stripe 退款 Webhook 回调", description = "处理 Stripe 退款事件回调（charge.refunded）")
+    @RateLimiter(count = 50, period = 60, key = "stripe_refund_webhook")
     public String handleRefundWebhook(
             @RequestBody String payload,
             @RequestHeader("Stripe-Signature") String signature) {

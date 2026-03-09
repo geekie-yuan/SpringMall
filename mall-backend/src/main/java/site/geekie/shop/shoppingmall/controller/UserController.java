@@ -10,6 +10,7 @@ import site.geekie.shop.shoppingmall.common.Result;
 import site.geekie.shop.shoppingmall.dto.UpdatePasswordDTO;
 import site.geekie.shop.shoppingmall.vo.UserVO;
 import site.geekie.shop.shoppingmall.entity.UserDO;
+import site.geekie.shop.shoppingmall.annotation.RateLimiter;
 import site.geekie.shop.shoppingmall.service.UserService;
 
 /**
@@ -109,6 +110,7 @@ public class UserController {
      *         当旧密码错误时抛出
      */
     @Operation(summary = "修改密码")
+    @RateLimiter(count = 5, period = 60)
     @PutMapping("/password")
     public Result<Void> updatePassword(@Valid @RequestBody UpdatePasswordDTO request) {
         userService.updatePassword(request);

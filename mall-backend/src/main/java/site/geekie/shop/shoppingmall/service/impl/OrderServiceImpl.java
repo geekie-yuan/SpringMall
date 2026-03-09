@@ -24,10 +24,13 @@ import site.geekie.shop.shoppingmall.mq.producer.OrderMessageProducer;
 import site.geekie.shop.shoppingmall.service.OrderService;
 import site.geekie.shop.shoppingmall.service.PaymentService;
 import site.geekie.shop.shoppingmall.util.OrderNoGenerator;
+import site.geekie.shop.shoppingmall.util.RedisDistributedLock;
+import site.geekie.shop.shoppingmall.util.StockRedisService;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -47,11 +50,47 @@ public class OrderServiceImpl implements OrderService {
     private final OrderItemConverter orderItemConverter;
     private final PaymentService paymentService;
     private final OrderMessageProducer orderMessageProducer;
+    private final StockRedisService stockRedisService;
+    private final RedisDistributedLock redisDistributedLock;
 
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public OrderVO createOrder(OrderDTO request, Long userId) {
+        // 防重复下单锁：同一用户在锁有效期内只允许一个下单请求执行
+        String lockKey = "lock:order:create:" + userId;
+        String lockValue = null;
+        boolean redisAvailable = true;
+
+        try {
+            lockValue = redisDistributedLock.tryLock(lockKey, 10, TimeUnit.SECONDS);
+        } catch (Exception e) {
+            log.warn("获取下单锁时 Redis 异常，降级放行 - userId: {}", userId, e);
+            redisAvailable = false;
+        }
+
+        if (lockValue == null && redisAvailable) {
+            // tryLock 正常返回 null：锁被占用，说明存在并发重复下单
+            throw new BusinessException(ResultCode.ORDER_CREATE_TOO_FREQUENT);
+        }
+
+        try {
+            return doCreateOrder(request, userId);
+        } finally {
+            if (lockValue != null) {
+                redisDistributedLock.unlock(lockKey, lockValue);
+            }
+        }
+    }
+
+    /**
+     * 创建订单核心逻辑
+     *
+     * 由 createOrder 在事务内调用，不单独标注 @Transactional（复用外层事务）。
+     * 流程：查购物车 → 验证地址 → 验证商品状态/计算总价 → Redis 预扣库存 → DB 乐观锁扣减 →
+     * 注册事务回滚回调（自动恢复 Redis 库存）→ 生成订单 → 清购物车 → 发延迟消息
+     */
+    private OrderVO doCreateOrder(OrderDTO request, Long userId) {
         // 1. 查询购物车中已选中的商品
         List<CartItemDO> checkedItems = cartItemMapper.findCheckedByUserId(userId);
         if (checkedItems == null || checkedItems.isEmpty()) {
@@ -67,7 +106,7 @@ public class OrderServiceImpl implements OrderService {
             throw new BusinessException(ResultCode.FORBIDDEN);
         }
 
-        // 3. 验证库存并计算总价
+        // 3. 验证商品状态并计算总价（快速失败：DB 库存不足也在此提前拦截）
         BigDecimal totalAmount = BigDecimal.ZERO;
         List<OrderItemDO> orderItems = new ArrayList<>();
 
@@ -98,19 +137,66 @@ public class OrderServiceImpl implements OrderService {
             orderItems.add(orderItem);
         }
 
-        // 4. 扣减库存（使用乐观锁）
+        // 4. Redis 批量预扣库存（降级安全：异常时跳过，由 DB 乐观锁兜底）
+        boolean redisDeducted = false;
+        try {
+            Long result = stockRedisService.batchDeductStock(orderItems);
+            if (Long.valueOf(-1L).equals(result)) {
+                // 缓存未加载，懒加载后重试一次
+                stockRedisService.loadStocksIfAbsent(orderItems);
+                result = stockRedisService.batchDeductStock(orderItems);
+            }
+            if (Long.valueOf(-2L).equals(result)) {
+                throw new BusinessException(ResultCode.INSUFFICIENT_STOCK);
+            }
+            if (Long.valueOf(1L).equals(result)) {
+                redisDeducted = true;
+            }
+        } catch (BusinessException e) {
+            // 库存不足，直接抛出，不降级
+            throw e;
+        } catch (Exception e) {
+            log.warn("Redis 库存预扣异常，降级为纯 DB 模式", e);
+        }
+
+        // 5. DB 乐观锁扣减库存（兜底保证）
         for (OrderItemDO orderItem : orderItems) {
-            int result = productMapper.decreaseStock(orderItem.getProductId(), orderItem.getQuantity());
-            if (result == 0) {
-                // 库存不足或商品不存在
+            int dbResult = productMapper.decreaseStock(orderItem.getProductId(), orderItem.getQuantity());
+            if (dbResult == 0) {
+                // DB 扣减失败（库存不足或商品不存在），立即恢复 Redis 预扣的库存
+                if (redisDeducted) {
+                    try {
+                        stockRedisService.batchRestoreStock(orderItems);
+                    } catch (Exception ex) {
+                        log.error("DB 扣减失败后恢复 Redis 库存异常", ex);
+                    }
+                }
                 throw new BusinessException(ResultCode.INSUFFICIENT_STOCK);
             }
         }
 
-        // 5. 生成订单号
+        // 6. 注册事务回滚回调：事务异常回滚时自动恢复 Redis 库存
+        if (redisDeducted) {
+            final List<OrderItemDO> finalOrderItems = new ArrayList<>(orderItems);
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCompletion(int status) {
+                    if (status == STATUS_ROLLED_BACK) {
+                        try {
+                            stockRedisService.batchRestoreStock(finalOrderItems);
+                            log.info("事务回滚后已恢复 Redis 库存，共 {} 个商品", finalOrderItems.size());
+                        } catch (Exception e) {
+                            log.error("事务回滚后恢复 Redis 库存异常", e);
+                        }
+                    }
+                }
+            });
+        }
+
+        // 7. 生成订单号
         String orderNo = OrderNoGenerator.generateOrderNo();
 
-        // 6. 创建订单主表
+        // 8. 创建订单主表
         OrderDO order = new OrderDO();
         order.setOrderNo(orderNo);
         order.setUserId(userId);
@@ -126,19 +212,19 @@ public class OrderServiceImpl implements OrderService {
 
         orderMapper.insert(order);
 
-        // 7. 创建订单明细
+        // 9. 创建订单明细
         for (OrderItemDO item : orderItems) {
             item.setOrderId(order.getId());
         }
         orderItemMapper.batchInsert(orderItems);
 
-        // 8. 清空已购买的购物车商品
+        // 10. 清空已购买的购物车商品
         List<Long> cartItemIds = checkedItems.stream()
                 .map(CartItemDO::getId)
                 .collect(Collectors.toList());
         cartItemMapper.deleteByIds(cartItemIds);
 
-        // 9. 事务提交后发送订单超时关闭延迟消息（15 分钟后自动取消未支付订单）
+        // 11. 事务提交后发送订单超时关闭延迟消息（15 分钟后自动取消未支付订单）
         final String finalOrderNo = orderNo;
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override
@@ -147,7 +233,7 @@ public class OrderServiceImpl implements OrderService {
             }
         });
 
-        // 10. 返回订单信息
+        // 12. 返回订单信息
         return orderConverter.toVOWithItems(order, orderItemMapper, orderItemConverter);
     }
 
@@ -221,6 +307,12 @@ public class OrderServiceImpl implements OrderService {
         List<OrderItemDO> items = orderItemMapper.findByOrderId(order.getId());
         for (OrderItemDO item : items) {
             productMapper.increaseStock(item.getProductId(), item.getQuantity());
+        }
+        // 恢复 Redis 库存
+        try {
+            stockRedisService.batchRestoreStock(items);
+        } catch (Exception e) {
+            log.warn("取消订单时恢复 Redis 库存异常 - 订单号: {}", orderNo, e);
         }
 
         // 更新订单状态为已取消
@@ -327,6 +419,12 @@ public class OrderServiceImpl implements OrderService {
         List<OrderItemDO> items = orderItemMapper.findByOrderId(order.getId());
         for (OrderItemDO item : items) {
             productMapper.increaseStock(item.getProductId(), item.getQuantity());
+        }
+        // 恢复 Redis 库存
+        try {
+            stockRedisService.batchRestoreStock(items);
+        } catch (Exception e) {
+            log.warn("管理员取消订单时恢复 Redis 库存异常 - 订单号: {}", orderNo, e);
         }
 
         // 更新订单状态为已取消
