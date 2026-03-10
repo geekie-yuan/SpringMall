@@ -90,4 +90,17 @@ public class Result<T> {
     public static <T> Result<T> error(int code, String message) {
         return new Result<>(code, message, null);
     }
+
+    /**
+     * 错误响应（使用预定义错误码、自定义消息和数据）
+     *
+     * @param resultCode 错误码枚举
+     * @param message 自定义错误消息
+     * @param data 响应数据
+     * @param <T> 响应数据的泛型类型
+     * @return 错误的响应结果
+     */
+    public static <T> Result<T> error(ResultCode resultCode, String message, T data) {
+        return new Result<>(resultCode.getCode(), message, data);
+    }
 }

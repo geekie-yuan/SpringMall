@@ -1,5 +1,6 @@
 package site.geekie.shop.shoppingmall.controller;
 
+import site.geekie.shop.shoppingmall.annotation.IgnoreLog;
 import site.geekie.shop.shoppingmall.common.Result;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -38,6 +39,7 @@ public class HealthController {
  *
      * @return 包含健康状态信息的统一响应对象
      */
+    @IgnoreLog
     @Operation(summary = "Health check")
     @GetMapping("/health")
     public Result<Map<String, Object>> health() {

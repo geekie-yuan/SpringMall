@@ -7,6 +7,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import site.geekie.shop.shoppingmall.annotation.LogOperation;
 import site.geekie.shop.shoppingmall.common.PageResult;
 import site.geekie.shop.shoppingmall.common.ResultCode;
 import site.geekie.shop.shoppingmall.converter.UserConverter;
@@ -96,6 +97,7 @@ public class UserServiceImpl implements UserService {
      */
     @Override
     @Transactional
+    @LogOperation(value = "修改密码", module = "用户")
     public void updatePassword(UpdatePasswordDTO request) {
         UserDO currentUser = getCurrentUserEntity();
 

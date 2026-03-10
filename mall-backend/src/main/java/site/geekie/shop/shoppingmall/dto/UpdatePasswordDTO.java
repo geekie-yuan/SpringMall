@@ -3,6 +3,8 @@ package site.geekie.shop.shoppingmall.dto;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
+import site.geekie.shop.shoppingmall.annotation.SensitiveField;
+import site.geekie.shop.shoppingmall.annotation.SensitiveType;
 
 /**
  * 修改密码请求DTO
@@ -17,6 +19,7 @@ public class UpdatePasswordDTO {
      * 验证规则：不能为空
      */
     @NotBlank(message = "旧密码不能为空")
+    @SensitiveField(SensitiveType.PASSWORD)
     private String oldPassword;
 
     /**
@@ -27,5 +30,6 @@ public class UpdatePasswordDTO {
      */
     @NotBlank(message = "新密码不能为空")
     @Size(min = 6, max = 20, message = "新密码长度必须在6-20个字符之间")
+    @SensitiveField(SensitiveType.PASSWORD)
     private String newPassword;
 }

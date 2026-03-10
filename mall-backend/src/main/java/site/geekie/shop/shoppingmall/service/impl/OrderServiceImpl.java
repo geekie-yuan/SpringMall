@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
+import site.geekie.shop.shoppingmall.annotation.LogOperation;
 import site.geekie.shop.shoppingmall.common.PageResult;
 import site.geekie.shop.shoppingmall.common.OrderStatus;
 import site.geekie.shop.shoppingmall.common.ResultCode;
@@ -56,6 +57,7 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
+    @LogOperation(value = "创建订单", module = "订单")
     public OrderVO createOrder(OrderDTO request, Long userId) {
         // 防重复下单锁：同一用户在锁有效期内只允许一个下单请求执行
         String lockKey = "lock:order:create:" + userId;
@@ -279,6 +281,7 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
+    @LogOperation(value = "取消订单", module = "订单")
     public void cancelOrder(String orderNo, Long userId) {
         OrderDO order = orderMapper.findByOrderNo(orderNo);
         if (order == null) {

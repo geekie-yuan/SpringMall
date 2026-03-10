@@ -84,6 +84,7 @@ import { useAuthStore } from '@/store/auth'
 import { updatePassword } from '@/api/user'
 import { formatDate } from '@/utils/format'
 import { ElMessage } from 'element-plus'
+import { ValidationError } from '@/api/request'
 
 const authStore = useAuthStore()
 const passwordFormRef = ref(null)
@@ -129,9 +130,30 @@ const passwordRules = {
   ]
 }
 
+// 将服务端字段错误应用到密码表单
+const applyServerErrors = (fields) => {
+  if (!passwordFormRef.value) return
+  const unmatchedErrors = []
+  Object.entries(fields).forEach(([field, message]) => {
+    const formItem = passwordFormRef.value.fields?.find((item) => item.prop === field)
+    if (formItem) {
+      formItem.validateState = 'error'
+      formItem.validateMessage = message
+    } else {
+      unmatchedErrors.push(message)
+    }
+  })
+  if (unmatchedErrors.length > 0) {
+    ElMessage.error(unmatchedErrors.join('；'))
+  }
+}
+
 // 修改密码
 const handleUpdatePassword = async () => {
   if (!passwordFormRef.value) return
+
+  // 重置之前的服务端错误状态
+  passwordFormRef.value.clearValidate()
 
   try {
     await passwordFormRef.value.validate()
@@ -156,7 +178,9 @@ const handleUpdatePassword = async () => {
       authStore.logout()
     }, 1500)
   } catch (error) {
-    if (error !== false) {
+    if (error instanceof ValidationError && error.fields) {
+      applyServerErrors(error.fields)
+    } else if (error !== false) {
       console.error('修改密码失败:', error)
     }
   } finally {

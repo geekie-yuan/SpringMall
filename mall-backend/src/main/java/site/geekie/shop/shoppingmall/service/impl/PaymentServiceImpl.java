@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import site.geekie.shop.shoppingmall.annotation.LogOperation;
 import site.geekie.shop.shoppingmall.common.PaymentMethod;
 import site.geekie.shop.shoppingmall.common.PaymentStatus;
 import site.geekie.shop.shoppingmall.common.ResultCode;
@@ -35,6 +36,7 @@ public class PaymentServiceImpl implements PaymentService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
+    @LogOperation(value = "创建支付退款", module = "支付")
     public void refundOrder(String orderNo, String refundReason) {
         // 1. 查询订单的 SUCCESS 支付记录（退款只能对已成功支付的记录操作）
         PaymentDO payment = paymentMapper.findSuccessByOrderNo(orderNo);

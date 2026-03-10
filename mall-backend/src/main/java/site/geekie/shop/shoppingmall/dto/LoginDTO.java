@@ -2,6 +2,8 @@ package site.geekie.shop.shoppingmall.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
+import site.geekie.shop.shoppingmall.annotation.SensitiveField;
+import site.geekie.shop.shoppingmall.annotation.SensitiveType;
 
 /**
  * 用户登录请求DTO
@@ -23,5 +25,6 @@ public class LoginDTO {
      * 验证规则：不能为空
      */
     @NotBlank(message = "密码不能为空")
+    @SensitiveField(SensitiveType.PASSWORD)
     private String password;
 }

@@ -5,6 +5,8 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
+import site.geekie.shop.shoppingmall.annotation.SensitiveField;
+import site.geekie.shop.shoppingmall.annotation.SensitiveType;
 
 /**
  * 用户注册请求DTO
@@ -34,6 +36,7 @@ public class RegisterDTO {
      */
     @NotBlank(message = "密码不能为空")
     @Size(min = 6, max = 20, message = "密码长度必须在6-20个字符之间")
+    @SensitiveField(SensitiveType.PASSWORD)
     private String password;
 
     /**
@@ -44,6 +47,7 @@ public class RegisterDTO {
      */
     @NotBlank(message = "邮箱不能为空")
     @Email(message = "邮箱格式不正确")
+    @SensitiveField(SensitiveType.EMAIL)
     private String email;
 
     /**
@@ -52,5 +56,6 @@ public class RegisterDTO {
      * - 如果提供，必须符合中国大陆手机号格式（1开头，11位数字）
      */
     @Pattern(regexp = "^1[3-9]\\d{9}$", message = "手机号格式不正确")
+    @SensitiveField(SensitiveType.PHONE)
     private String phone;
 }

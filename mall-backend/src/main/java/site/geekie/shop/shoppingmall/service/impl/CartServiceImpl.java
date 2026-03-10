@@ -3,6 +3,7 @@ package site.geekie.shop.shoppingmall.service.impl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import site.geekie.shop.shoppingmall.annotation.LogOperation;
 import site.geekie.shop.shoppingmall.common.ResultCode;
 import site.geekie.shop.shoppingmall.converter.CartItemConverter;
 import site.geekie.shop.shoppingmall.dto.CartItemDTO;
@@ -50,6 +51,7 @@ public class CartServiceImpl implements CartService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
+    @LogOperation(value = "添加购物车", module = "购物车")
     public CartItemVO addToCart(CartItemDTO request, Long userId) {
         // 验证商品是否存在且可售
         ProductDO product = productMapper.findById(request.getProductId());

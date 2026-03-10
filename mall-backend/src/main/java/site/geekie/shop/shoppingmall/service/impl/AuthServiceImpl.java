@@ -11,6 +11,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import site.geekie.shop.shoppingmall.annotation.LogOperation;
 import site.geekie.shop.shoppingmall.common.ResultCode;
 import site.geekie.shop.shoppingmall.converter.UserConverter;
 import site.geekie.shop.shoppingmall.dto.LoginDTO;
@@ -69,6 +70,7 @@ public class AuthServiceImpl implements AuthService {
      */
     @Override
     @Transactional
+    @LogOperation(value = "用户注册", module = "认证")
     public void register(RegisterDTO request) {if (userMapper.findByUsername(request.getUsername()) != null) {
             throw new BusinessException(ResultCode.USERNAME_ALREADY_EXISTS);
         }
@@ -107,6 +109,7 @@ public class AuthServiceImpl implements AuthService {
      * @throws BusinessException 当用户名或密码错误时抛出
      */
     @Override
+    @LogOperation(value = "用户登录", module = "认证")
     public LoginVO login(LoginDTO request) {
         // ====================================================================================================
         // 【V1不异常处理】

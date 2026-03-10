@@ -7,6 +7,19 @@ import { ElMessage } from 'element-plus'
 import router from '@/router'
 import { getToken, removeToken, clearStorage } from '@/utils/storage'
 
+/**
+ * 字段校验错误类
+ * 当后端返回 code=400 且 message="Validation failed" 时抛出
+ * fields 属性包含字段名到错误信息的映射，例如 { username: '用户名不能为空' }
+ */
+export class ValidationError extends Error {
+  constructor(message, fields) {
+    super(message)
+    this.name = 'ValidationError'
+    this.fields = fields // { fieldName: errorMessage }
+  }
+}
+
 // 创建 axios 实例
 const request = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL,
@@ -42,7 +55,12 @@ request.interceptors.response.use(
       return data
     }
 
-    // 业务错误
+    // 字段校验错误：不弹全局提示，传递给表单组件处理
+    if (code === 400 && message === 'Validation failed' && data && typeof data === 'object') {
+      return Promise.reject(new ValidationError(message, data))
+    }
+
+    // 其他业务错误
     ElMessage.error(message || '操作失败')
     return Promise.reject(new Error(message || '操作失败'))
   },

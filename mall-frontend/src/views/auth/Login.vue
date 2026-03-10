@@ -71,6 +71,7 @@
 import { ref, reactive } from 'vue'
 import { useAuthStore } from '@/store/auth'
 import { ElMessage } from 'element-plus'
+import { ValidationError } from '@/api/request'
 
 const authStore = useAuthStore()
 const formRef = ref(null)
@@ -95,9 +96,30 @@ const rules = {
   ]
 }
 
+// 将服务端字段错误应用到表单
+const applyServerErrors = (fields) => {
+  if (!formRef.value) return
+  const unmatchedErrors = []
+  Object.entries(fields).forEach(([field, message]) => {
+    const formItem = formRef.value.fields?.find((item) => item.prop === field)
+    if (formItem) {
+      formItem.validateState = 'error'
+      formItem.validateMessage = message
+    } else {
+      unmatchedErrors.push(message)
+    }
+  })
+  if (unmatchedErrors.length > 0) {
+    ElMessage.error(unmatchedErrors.join('；'))
+  }
+}
+
 // 登录处理
 const handleLogin = async () => {
   if (!formRef.value) return
+
+  // 重置之前的服务端错误状态
+  formRef.value.clearValidate()
 
   try {
     // 验证表单
@@ -113,8 +135,10 @@ const handleLogin = async () => {
 
     // 登录成功后会在 store 中自动跳转
   } catch (error) {
-    if (error !== false) {
-      // false 是表单验证失败
+    if (error instanceof ValidationError && error.fields) {
+      applyServerErrors(error.fields)
+    } else if (error !== false) {
+      // false 是表单验证失败，其他错误记录日志
       console.error('登录失败:', error)
     }
   } finally {

@@ -1,6 +1,5 @@
 package site.geekie.shop.shoppingmall.aspect;
 
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
@@ -11,12 +10,11 @@ import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
 import site.geekie.shop.shoppingmall.annotation.RateLimiter;
 import site.geekie.shop.shoppingmall.common.ResultCode;
 import site.geekie.shop.shoppingmall.exception.BusinessException;
 import site.geekie.shop.shoppingmall.security.SecurityUser;
+import site.geekie.shop.shoppingmall.util.IpUtils;
 
 import java.util.Collections;
 
@@ -76,7 +74,7 @@ public class RateLimiterAspect {
         String keySuffix = rateLimiter.key().isEmpty() ? methodName : rateLimiter.key();
 
         // 优先使用已认证用户 ID，未认证时降级为客户端 IP
-        String identity = getClientIp();
+        String identity = IpUtils.getClientIp();
         try {
             Authentication auth = SecurityContextHolder.getContext().getAuthentication();
             if (auth != null && auth.getPrincipal() instanceof SecurityUser securityUser) {
@@ -90,30 +88,5 @@ public class RateLimiterAspect {
         }
 
         return "ratelimit:" + identity + ":" + keySuffix;
-    }
-
-    /**
-     * 获取客户端真实 IP（支持反向代理）
-     */
-    private String getClientIp() {
-        try {
-            ServletRequestAttributes attrs = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
-            if (attrs == null) {
-                return "unknownIP";
-            }
-            HttpServletRequest request = attrs.getRequest();
-            String ip = request.getHeader("X-Forwarded-For");
-            if (ip != null && !ip.isEmpty() && !"unknown".equalsIgnoreCase(ip)) {
-                // X-Forwarded-For 可能包含多个 IP，取第一个（客户端真实 IP）
-                return ip.split(",")[0].trim();
-            }
-            ip = request.getHeader("X-Real-IP");
-            if (ip != null && !ip.isEmpty() && !"unknown".equalsIgnoreCase(ip)) {
-                return ip;
-            }
-            return request.getRemoteAddr();
-        } catch (Exception e) {
-            return "unknownIP";
-        }
     }
 }
