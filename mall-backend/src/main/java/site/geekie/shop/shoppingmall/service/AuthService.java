@@ -35,4 +35,13 @@ public interface AuthService {
      *         当用户名或密码错误时抛出
      */
     LoginVO login(LoginDTO request);
+
+    /**
+     * 用户登出
+     * 将当前 token 加入黑名单，并清除该用户的认证缓存。
+     * 无效 token 也正常返回（幂等）。
+     *
+     * @param token 当前请求携带的 JWT token（不含 "Bearer " 前缀）
+     */
+    void logout(String token);
 }

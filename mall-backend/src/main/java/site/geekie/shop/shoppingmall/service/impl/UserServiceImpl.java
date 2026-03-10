@@ -12,40 +12,38 @@ import site.geekie.shop.shoppingmall.common.PageResult;
 import site.geekie.shop.shoppingmall.common.ResultCode;
 import site.geekie.shop.shoppingmall.converter.UserConverter;
 import site.geekie.shop.shoppingmall.dto.UpdatePasswordDTO;
+import site.geekie.shop.shoppingmall.dto.UpdateProfileDTO;
 import site.geekie.shop.shoppingmall.entity.UserDO;
-import site.geekie.shop.shoppingmall.vo.UserVO;
 import site.geekie.shop.shoppingmall.exception.BusinessException;
 import site.geekie.shop.shoppingmall.mapper.UserMapper;
 import site.geekie.shop.shoppingmall.security.SecurityUser;
 import site.geekie.shop.shoppingmall.service.UserService;
+import site.geekie.shop.shoppingmall.util.TokenBlacklistService;
+import site.geekie.shop.shoppingmall.util.UserAuthCacheService;
+import site.geekie.shop.shoppingmall.vo.UserVO;
 
 /**
  * 用户服务实现类
  * 实现用户信息查询、更新和密码修改的业务逻辑
  *
- * 核心功能：
- *   - 获取当前登录用户信息：从Security上下文获取
- *   - 根据ID查询用户信息
- *   - 更新用户信息：仅限当前登录用户
- *   - 修改密码：验证旧密码后更新
- *
+ * 缓存失效策略：
+ *   - updateUserStatus：禁用时 forceLogoutUser + evictUser；启用时 clearForceLogout + evictUser
+ *   - updateUserRole：forceLogoutUser + evictUser（角色变更必须重新登录）
+ *   - updatePassword：evictUser（前端已有自动 logout 逻辑）
+ *   - updateUser：evictUser（仅清缓存，无需踢下线）
  */
 @Service
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
 
-    // 用户数据访问对象
     private final UserMapper userMapper;
-
-    // 密码编码器（BCrypt）
     private final PasswordEncoder passwordEncoder;
-
-    // 用户实体转换器
     private final UserConverter userConverter;
+    private final TokenBlacklistService tokenBlacklistService;
+    private final UserAuthCacheService userAuthCacheService;
 
     /**
      * 获取当前登录用户信息
-     * 从Spring Security上下文中获取当前认证用户
      *
      * @return 用户响应对象
      * @throws BusinessException 当用户不存在时抛出
@@ -74,23 +72,62 @@ public class UserServiceImpl implements UserService {
 
     /**
      * 更新当前登录用户信息
-     * 自动设置用户ID为当前登录用户的ID，确保用户只能更新自己的信息
+     * 仅允许更新 username、email、phone、avatar，防止越权修改 role/status
+     * 对 username、email、phone 进行唯一性校验
+     * 变更后清除认证缓存，下次请求重新加载。
      *
-     * @param user 包含待更新字段的用户对象
-     * @return 更新后的用户实体
+     * @param dto 包含待更新字段的 DTO
+     * @return 更新后的用户视图对象
      */
     @Override
     @Transactional
-    public UserDO updateUser(UserDO user) {
+    public UserVO updateUser(UpdateProfileDTO dto) {
         UserDO currentUser = getCurrentUserEntity();
-        user.setId(currentUser.getId()); // 确保只能更新自己的信息
-        userMapper.updateById(user);
-        return userMapper.findById(currentUser.getId());
+        Long currentUserId = currentUser.getId();
+
+        // 唯一性校验：用户名
+        if (dto.getUsername() != null && !dto.getUsername().equals(currentUser.getUsername())) {
+            UserDO existing = userMapper.findByUsername(dto.getUsername());
+            if (existing != null && !existing.getId().equals(currentUserId)) {
+                throw new BusinessException(ResultCode.INVALID_PARAMETER, "该用户名已被使用");
+            }
+        }
+
+        // 唯一性校验：邮箱
+        if (dto.getEmail() != null && !dto.getEmail().equals(currentUser.getEmail())) {
+            UserDO existing = userMapper.findByEmail(dto.getEmail());
+            if (existing != null && !existing.getId().equals(currentUserId)) {
+                throw new BusinessException(ResultCode.INVALID_PARAMETER, "该邮箱已被使用");
+            }
+        }
+
+        // 唯一性校验：手机号
+        if (dto.getPhone() != null && !dto.getPhone().isEmpty()
+                && !dto.getPhone().equals(currentUser.getPhone())) {
+            UserDO existing = userMapper.findByPhone(dto.getPhone());
+            if (existing != null && !existing.getId().equals(currentUserId)) {
+                throw new BusinessException(ResultCode.INVALID_PARAMETER, "该手机号已被使用");
+            }
+        }
+
+        UserDO updateDO = new UserDO();
+        updateDO.setId(currentUserId);
+        updateDO.setUsername(dto.getUsername());
+        updateDO.setEmail(dto.getEmail());
+        updateDO.setPhone(dto.getPhone());
+        updateDO.setAvatar(dto.getAvatar());
+        userMapper.updateById(updateDO);
+
+        // 清除认证缓存，下次请求重新从 DB 加载最新信息
+        userAuthCacheService.evictUser(currentUserId);
+
+        return userConverter.toVO(userMapper.findById(currentUserId));
     }
 
     /**
      * 修改当前登录用户密码
-     * 先验证旧密码的正确性，再使用BCrypt加密新密码并更新
+     * 先验证旧密码的正确性，再使用BCrypt加密新密码并更新。
+     * 变更后清除认证缓存（前端已有自动 logout 逻辑，无需踢下线）。
      *
      * @param request 密码修改请求
      * @throws BusinessException 当旧密码错误时抛出
@@ -101,14 +138,15 @@ public class UserServiceImpl implements UserService {
     public void updatePassword(UpdatePasswordDTO request) {
         UserDO currentUser = getCurrentUserEntity();
 
-        // 验证旧密码
         if (!passwordEncoder.matches(request.getOldPassword(), currentUser.getPassword())) {
             throw new BusinessException(ResultCode.INVALID_CREDENTIALS, "旧密码错误");
         }
 
-        // 加密新密码并更新
         String newEncodedPassword = passwordEncoder.encode(request.getNewPassword());
         userMapper.updatePassword(currentUser.getId(), newEncodedPassword);
+
+        // 清除认证缓存（当前 token 的黑名单由 Controller 层的 logout 接口处理）
+        userAuthCacheService.evictUser(currentUser.getId());
     }
 
     /**
@@ -119,11 +157,9 @@ public class UserServiceImpl implements UserService {
      * @throws BusinessException 当用户不存在时抛出
      */
     private UserDO getCurrentUserEntity() {
-        // 从Security上下文获取认证用户
         SecurityUser securityUser = (SecurityUser) SecurityContextHolder.getContext()
                 .getAuthentication()
                 .getPrincipal();
-        // 从数据库查询最新用户信息
         UserDO user = userMapper.findById(securityUser.getUser().getId());
         if (user == null) {
             throw new BusinessException(ResultCode.USER_NOT_FOUND);
@@ -149,8 +185,10 @@ public class UserServiceImpl implements UserService {
 
     /**
      * 更新用户状态（管理员）
+     * 禁用时：写入 force-logout 标记（使所有已签发 token 立即失效）+ 清除认证缓存
+     * 启用时：清除 force-logout 标记 + 清除认证缓存（允许用户重新登录）
      *
-     * @param id 用户ID
+     * @param id     用户ID
      * @param status 用户状态（1-正常，0-禁用）
      */
     @Override
@@ -162,12 +200,23 @@ public class UserServiceImpl implements UserService {
         }
 
         userMapper.updateStatus(id, status);
+
+        if (Integer.valueOf(0).equals(status)) {
+            // 禁用用户：强制所有已签发 token 立即失效
+            tokenBlacklistService.forceLogoutUser(id);
+        } else {
+            // 启用用户：清除强制登出标记，允许重新登录
+            tokenBlacklistService.clearForceLogout(id);
+        }
+        // 无论启用/禁用，都清除认证缓存
+        userAuthCacheService.evictUser(id);
     }
 
     /**
      * 更新用户角色（管理员）
+     * 角色变更后强制用户重新登录以获取新角色的 token。
      *
-     * @param id 用户ID
+     * @param id   用户ID
      * @param role 用户角色（USER/ADMIN）
      */
     @Override
@@ -178,11 +227,14 @@ public class UserServiceImpl implements UserService {
             throw new BusinessException(ResultCode.USER_NOT_FOUND);
         }
 
-        // 验证角色是否合法
         if (!"USER".equals(role) && !"ADMIN".equals(role)) {
             throw new BusinessException(ResultCode.INVALID_PARAMETER, "角色必须为USER或ADMIN");
         }
 
         userMapper.updateRole(id, role);
+
+        // 角色变更：强制所有已签发 token 失效，用户必须重新登录获取包含新角色的 token
+        tokenBlacklistService.forceLogoutUser(id);
+        userAuthCacheService.evictUser(id);
     }
 }

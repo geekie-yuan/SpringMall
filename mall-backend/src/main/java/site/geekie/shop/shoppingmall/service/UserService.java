@@ -2,6 +2,7 @@ package site.geekie.shop.shoppingmall.service;
 
 import site.geekie.shop.shoppingmall.common.PageResult;
 import site.geekie.shop.shoppingmall.dto.UpdatePasswordDTO;
+import site.geekie.shop.shoppingmall.dto.UpdateProfileDTO;
 import site.geekie.shop.shoppingmall.entity.UserDO;
 import site.geekie.shop.shoppingmall.vo.UserVO;
 
@@ -40,12 +41,12 @@ public interface UserService {
 
     /**
      * 更新当前登录用户信息
-     * 仅允许用户更新自己的信息
+     * 仅允许用户更新自己的信息（email、phone、avatar）
      *
-     * @param user 包含待更新字段的用户对象
-     * @return 更新后的用户实体
+     * @param dto 包含待更新字段的 DTO
+     * @return 更新后的用户视图对象
      */
-    UserDO updateUser(UserDO user);
+    UserVO updateUser(UpdateProfileDTO dto);
 
     /**
      * 修改当前登录用户密码
