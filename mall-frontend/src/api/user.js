@@ -8,18 +8,18 @@ import request from './request'
  */
 export const getUserInfo = () => {
   return request({
-    url: '/user/info',
+    url: '/user/profile',
     method: 'GET'
   })
 }
 
 /**
  * 更新用户信息
- * @param {Object} data - 用户信息
+ * @param {Object} data - 用户信息 { username, email, phone, avatar }
  */
 export const updateUserInfo = (data) => {
   return request({
-    url: '/user/info',
+    url: '/user/profile',
     method: 'PUT',
     data
   })

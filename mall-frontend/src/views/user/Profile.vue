@@ -9,12 +9,20 @@
           <template #header>
             <span>基本信息</span>
           </template>
-          <el-form :model="userForm" label-width="100px">
-            <el-form-item label="用户名">
-              <el-input v-model="userForm.username" disabled />
+          <el-form
+            ref="profileFormRef"
+            :model="userForm"
+            :rules="profileRules"
+            label-width="100px"
+          >
+            <el-form-item label="用户名" prop="username">
+              <el-input v-model="userForm.username" />
             </el-form-item>
-            <el-form-item label="邮箱">
-              <el-input v-model="userForm.email" disabled />
+            <el-form-item label="邮箱" prop="email">
+              <el-input v-model="userForm.email" />
+            </el-form-item>
+            <el-form-item label="手机号" prop="phone">
+              <el-input v-model="userForm.phone" placeholder="请输入手机号" />
             </el-form-item>
             <el-form-item label="角色">
               <el-tag :type="userForm.role === 'ADMIN' ? 'danger' : 'primary'">
@@ -22,7 +30,16 @@
               </el-tag>
             </el-form-item>
             <el-form-item label="注册时间">
-              <span>{{ formatDate(userForm.createTime) }}</span>
+              <span>{{ formatDate(userForm.createdAt) }}</span>
+            </el-form-item>
+            <el-form-item>
+              <el-button
+                type="primary"
+                :loading="profileSubmitting"
+                @click="handleUpdateProfile"
+              >
+                保存修改
+              </el-button>
             </el-form-item>
           </el-form>
         </el-card>
@@ -81,22 +98,69 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { useAuthStore } from '@/store/auth'
+import { useUserStore } from '@/store/user'
 import { updatePassword } from '@/api/user'
 import { formatDate } from '@/utils/format'
 import { ElMessage } from 'element-plus'
 import { ValidationError } from '@/api/request'
 
 const authStore = useAuthStore()
+const userStore = useUserStore()
+const profileFormRef = ref(null)
 const passwordFormRef = ref(null)
 const submitting = ref(false)
+const profileSubmitting = ref(false)
 
 // 用户信息
 const userForm = reactive({
   username: '',
   email: '',
+  phone: '',
   role: '',
-  createTime: ''
+  createdAt: ''
 })
+
+// 个人信息验证规则
+const profileRules = {
+  username: [
+    { required: true, message: '请输入用户名', trigger: 'blur' },
+    { min: 2, max: 30, message: '用户名长度为2-30个字符', trigger: 'blur' }
+  ],
+  email: [
+    { type: 'email', message: '请输入正确的邮箱地址', trigger: 'blur' }
+  ],
+  phone: [
+    { max: 20, message: '手机号不能超过20个字符', trigger: 'blur' }
+  ]
+}
+
+// 保存个人信息
+const handleUpdateProfile = async () => {
+  if (!profileFormRef.value) return
+  const originalUsername = authStore.user?.username
+  try {
+    await profileFormRef.value.validate()
+    profileSubmitting.value = true
+    await userStore.updateUserInfo({
+      username: userForm.username,
+      email: userForm.email,
+      phone: userForm.phone
+    })
+    // 用户名变更后需要重新登录（身份验证字段已变）
+    if (userForm.username !== originalUsername) {
+      ElMessage.success('用户名已修改，请重新登录')
+      setTimeout(() => {
+        authStore.logout()
+      }, 1500)
+    }
+  } catch (error) {
+    if (error !== false) {
+      console.error('更新个人信息失败:', error)
+    }
+  } finally {
+    profileSubmitting.value = false
+  }
+}
 
 // 密码表单
 const passwordForm = reactive({
@@ -192,10 +256,11 @@ onMounted(() => {
   // 加载用户信息
   const user = authStore.user
   if (user) {
-    userForm.username = user.username
-    userForm.email = user.email
-    userForm.role = user.role
-    userForm.createTime = user.createTime
+    userForm.username = user.username || ''
+    userForm.email = user.email || ''
+    userForm.phone = user.phone || ''
+    userForm.role = user.role || ''
+    userForm.createdAt = user.createdAt || ''
   }
 })
 </script>

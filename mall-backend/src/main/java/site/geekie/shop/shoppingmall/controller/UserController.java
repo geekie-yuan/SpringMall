@@ -8,8 +8,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import site.geekie.shop.shoppingmall.common.Result;
 import site.geekie.shop.shoppingmall.dto.UpdatePasswordDTO;
+import site.geekie.shop.shoppingmall.dto.UpdateProfileDTO;
 import site.geekie.shop.shoppingmall.vo.UserVO;
-import site.geekie.shop.shoppingmall.entity.UserDO;
 import site.geekie.shop.shoppingmall.annotation.RateLimiter;
 import site.geekie.shop.shoppingmall.service.UserService;
 
@@ -77,20 +77,19 @@ public class UserController {
 
     /**
      * 更新当前登录用户信息
-     * 允许用户更新自己的个人信息（邮箱、手机号、头像等）
+     * 允许用户更新自己的个人信息（邮箱、手机号、头像）
      *
      * 请求路径：PUT /api/v1/user/profile
      * 认证：需要Bearer Token
      * 权限：用户只能更新自己的信息
-     * 说明：用户ID由服务端从认证上下文中获取，客户端提供的ID将被忽略
      *
-     * @param user 包含待更新字段的用户对象
+     * @param dto 包含待更新字段的 DTO（仅 email、phone、avatar）
      * @return 包含更新后用户信息的统一响应对象
      */
     @Operation(summary = "更新用户信息")
     @PutMapping("/profile")
-    public Result<UserDO> updateProfile(@RequestBody UserDO user) {
-        UserDO updatedUser = userService.updateUser(user);
+    public Result<UserVO> updateProfile(@Valid @RequestBody UpdateProfileDTO dto) {
+        UserVO updatedUser = userService.updateUser(dto);
         return Result.success(updatedUser);
     }
 
