@@ -42,10 +42,9 @@ public class FeatureController {
 - 业务错误应抛 `BusinessException`，**不要**手动构造错误 Result。
 
 ### Service（业务层）
-- 接口定义在 `service/`，实现在 `service/impl/`。
-- 实现类标 `@Service` + `@RequiredArgsConstructor`。
-- 执行多次 Mapper 写操作的方法标 `@Transactional`。
-- 违反业务规则时抛 `BusinessException(ResultCode.XXX)`。
+- 接口定义在 `service/`，实现在 `service/impl/`
+- 执行多次 Mapper 写操作的方法标 `@Transactional`
+- 违反业务规则时抛 `BusinessException(ResultCode.XXX)`
 
 ### MyBatis Mapper
 接口（`mapper/FeatureMapper.java`）：
@@ -125,7 +124,6 @@ public class Feature {
 - **命名**：类名以 `BO` 结尾，如 `OrderCalculationBO`
 - **职责**：由 Service 层输出的封装业务逻辑的对象，用于跨服务的业务逻辑封装
 - **使用场景**：复杂业务计算的中间结果、Service 间传递的业务对象
-- **注意**：当前项目较简单，暂未引入 BO 层，待业务复杂度提升后按需添加
 
 #### AO（Application Object）
 - **位置**：`dto/ao/` 包（按需创建）
