@@ -12,10 +12,6 @@
           <div class="stat-info">
             <p class="stat-label">总销售额</p>
             <h3 class="stat-value">¥{{ formatPrice(stats.totalSales) }}</h3>
-            <p class="stat-trend positive">
-              <el-icon><TrendCharts /></el-icon>
-              <span>较上月 +12.5%</span>
-            </p>
           </div>
         </div>
       </el-card>
@@ -28,10 +24,6 @@
           <div class="stat-info">
             <p class="stat-label">订单总数</p>
             <h3 class="stat-value">{{ stats.totalOrders }}</h3>
-            <p class="stat-trend positive">
-              <el-icon><TrendCharts /></el-icon>
-              <span>较上月 +8.3%</span>
-            </p>
           </div>
         </div>
       </el-card>
@@ -44,10 +36,6 @@
           <div class="stat-info">
             <p class="stat-label">用户总数</p>
             <h3 class="stat-value">{{ stats.totalUsers }}</h3>
-            <p class="stat-trend positive">
-              <el-icon><TrendCharts /></el-icon>
-              <span>较上月 +15.2%</span>
-            </p>
           </div>
         </div>
       </el-card>
@@ -157,10 +145,9 @@ import {
   Menu,
   Tickets,
   UserFilled,
-  TrendCharts,
   ArrowRight
 } from '@element-plus/icons-vue'
-import { getAllOrders } from '@/api/admin/order'
+import { getAllOrders, getTotalSales } from '@/api/admin/order'
 import { getAllProducts } from '@/api/product'
 import { getAllUsers } from '@/api/admin/user'
 import { formatPrice, formatDate } from '@/utils/format'
@@ -173,7 +160,7 @@ const recentOrders = ref([])
 const statusText = ORDER_STATUS_TEXT
 const statusTagType = ORDER_STATUS_TAG_TYPE
 
-// 统计数据（模拟数据，实际应从后端获取）
+// 统计数据（初始值，由 fetchStats() 从后端获取）
 const stats = ref({
   totalSales: 0,
   totalOrders: 0,
@@ -187,7 +174,7 @@ const fetchStats = async () => {
   try {
     const orders = await getAllOrders({ page: 1, size: 1 })
     stats.value.totalOrders = orders.total
-    // TODO: 总销售额需后端聚合接口 GET /admin/stats/sales，当前无法从分页数据客端计算
+    stats.value.totalSales = Number(await getTotalSales())
 
     const products = await getAllProducts({ page: 1, size: 1 })
     stats.value.totalProducts = products.total

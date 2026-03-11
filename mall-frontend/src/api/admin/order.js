@@ -60,3 +60,13 @@ export const cancelOrder = (orderNo) => {
     method: 'PUT'
   })
 }
+
+/**
+ * 获取总销售额（排除已取消订单）
+ */
+export const getTotalSales = () => {
+  return request({
+    url: '/admin/orders/stats/total-sales',
+    method: 'GET'
+  })
+}

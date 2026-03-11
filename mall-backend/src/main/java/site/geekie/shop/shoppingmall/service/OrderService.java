@@ -4,6 +4,7 @@ import site.geekie.shop.shoppingmall.common.PageResult;
 import site.geekie.shop.shoppingmall.dto.OrderDTO;
 import site.geekie.shop.shoppingmall.vo.OrderVO;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 /**
@@ -116,4 +117,12 @@ public interface OrderService {
      * @param orderNo 订单号
      */
     void cancelOrderByAdmin(String orderNo);
+
+    /**
+     * 统计总销售额（管理员）
+     * 排除 CANCELLED 状态的订单，汇总所有订单的实付金额
+     *
+     * @return 总销售额，无数据时返回 0
+     */
+    BigDecimal getTotalSales();
 }

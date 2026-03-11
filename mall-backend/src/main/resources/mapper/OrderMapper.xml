@@ -146,4 +146,9 @@
         SELECT COUNT(*) FROM mall_order o
     </select>
 
+    <!-- 统计非取消订单的实付金额总和 -->
+    <select id="sumPayAmountExcludeCancelled" resultType="java.math.BigDecimal">
+        SELECT COALESCE(SUM(pay_amount), 0) FROM mall_order WHERE status != 'CANCELLED'
+    </select>
+
 </mapper>

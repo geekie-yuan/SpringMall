@@ -4,6 +4,7 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import site.geekie.shop.shoppingmall.entity.OrderDO;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 /**
@@ -120,4 +121,12 @@ public interface OrderMapper {
      * @return 订单数
      */
     int countAll();
+
+    /**
+     * 统计非取消订单的实付金额总和（管理员用）
+     * 排除 CANCELLED 状态的订单
+     *
+     * @return 总销售额，无数据时返回 0
+     */
+    BigDecimal sumPayAmountExcludeCancelled();
 }

@@ -433,4 +433,9 @@ public class OrderServiceImpl implements OrderService {
         // 更新订单状态为已取消
         orderMapper.updateStatus(orderNo, OrderStatus.CANCELLED.getCode());
     }
+
+    @Override
+    public BigDecimal getTotalSales() {
+        return orderMapper.sumPayAmountExcludeCancelled();
+    }
 }

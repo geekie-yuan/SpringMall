@@ -1,6 +1,7 @@
 package site.geekie.shop.shoppingmall.controller.admin;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.constraints.Max;
 import lombok.RequiredArgsConstructor;
@@ -11,6 +12,8 @@ import site.geekie.shop.shoppingmall.common.PageResult;
 import site.geekie.shop.shoppingmall.common.Result;
 import site.geekie.shop.shoppingmall.vo.OrderVO;
 import site.geekie.shop.shoppingmall.service.OrderService;
+
+import java.math.BigDecimal;
 
 /**
  * 管理员-订单管理控制器
@@ -103,7 +106,16 @@ public class AdminOrderController {
         return Result.success();
     }
 
-    // TODO: 增加销售额聚合接口，供 Dashboard 总销售额使用
-    // GET /admin/stats/sales
-    // SELECT SUM(pay_amount) FROM order WHERE status != 'CANCELLED'
+    /**
+     * 获取总销售额（管理员）
+     * GET /api/v1/admin/orders/stats/total-sales
+     *
+     * @return 总销售额，排除已取消订单
+     */
+    @Operation(summary = "获取总销售额")
+    @SecurityRequirement(name = "Bearer Authentication")
+    @GetMapping("/stats/total-sales")
+    public Result<BigDecimal> getTotalSales() {
+        return Result.success(orderService.getTotalSales());
+    }
 }
