@@ -83,7 +83,7 @@ wxpay:
   api-v3-key: ${WXPAY_API_V3_KEY:ABCDEF1234567890ABCDEF1234567890}
   serial-no: ${WXPAY_SERIAL_NO:1234567890ABCDEF1234567890ABCDEF12345678}
   private-key-string: ${WXPAY_PRIVATE_KEY:}
-  private-key-path: ${WXPAY_PRIVATE_KEY_PATH:classpath:certs/wechatpay_private_key.pem}
+  private-key-path: ${WXPAY_PRIVATE_KEY_PATH}
   notify-url: ${WXPAY_NOTIFY_URL:https://your-domain.ngrok-free.dev/api/v1/payment/wechat/notify}
   refund-notify-url: ${WXPAY_REFUND_NOTIFY_URL:https://your-domain.ngrok-free.dev/api/v1/payment/wechat/refund/notify}
 

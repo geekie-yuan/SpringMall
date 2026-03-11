@@ -18,6 +18,13 @@ import site.geekie.shop.shoppingmall.security.SecurityUser;
 import site.geekie.shop.shoppingmall.util.IpUtils;
 import site.geekie.shop.shoppingmall.util.SensitiveFieldSerializer;
 
+/**
+ * 访问日志切面
+ *
+ * 切入点：所有 @RestController 方法，排除 @IgnoreLog 注解的方法
+ * 日志内容：HTTP 方法、URI、客户端 IP、用户 ID、请求参数、响应状态码、处理时间
+ * 日志级别：INFO
+ */
 @Aspect
 @Component
 @Order(1)

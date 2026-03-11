@@ -1,16 +1,13 @@
 package site.geekie.shop.shoppingmall.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import lombok.RequiredArgsConstructor;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import site.geekie.shop.shoppingmall.common.PageResult;
 import site.geekie.shop.shoppingmall.common.Result;
-import site.geekie.shop.shoppingmall.dto.ProductDTO;
 import site.geekie.shop.shoppingmall.vo.ProductVO;
 import site.geekie.shop.shoppingmall.annotation.RateLimiter;
 import site.geekie.shop.shoppingmall.service.ProductService;
@@ -92,50 +89,4 @@ public class ProductController {
         return Result.success(product);
     }
 
-    /**
-     * 新增商品
-     * 需要ADMIN角色
-     *
-     * @param request 商品请求
-     * @return 新增的商品信息
-     */
-    @Operation(summary = "新增商品")
-    @SecurityRequirement(name = "Bearer Authentication")
-    @PostMapping
-    public Result<ProductVO> addProduct(@Valid @RequestBody ProductDTO request) {
-        ProductVO product = productService.addProduct(request);
-        return Result.success("商品添加成功", product);
-    }
-
-    /**
-     * 修改商品
-     * 需要ADMIN角色
-     *
-     * @param id 商品ID
-     * @param request 商品请求
-     * @return 修改后的商品信息
-     */
-    @Operation(summary = "修改商品")
-    @SecurityRequirement(name = "Bearer Authentication")
-    @PutMapping("/{id}")
-    public Result<ProductVO> updateProduct(@PathVariable Long id,
-                                                  @Valid @RequestBody ProductDTO request) {
-        ProductVO product = productService.updateProduct(id, request);
-        return Result.success("商品修改成功", product);
-    }
-
-    /**
-     * 删除商品
-     * 需要ADMIN角色
-     *
-     * @param id 商品ID
-     * @return 统一响应对象
-     */
-    @Operation(summary = "删除商品")
-    @SecurityRequirement(name = "Bearer Authentication")
-    @DeleteMapping("/{id}")
-    public Result<Void> deleteProduct(@PathVariable Long id) {
-        productService.deleteProduct(id);
-        return Result.success("商品删除成功", null);
-    }
 }

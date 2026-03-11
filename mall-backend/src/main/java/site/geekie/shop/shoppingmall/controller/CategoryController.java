@@ -1,14 +1,11 @@
 package site.geekie.shop.shoppingmall.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import site.geekie.shop.shoppingmall.annotation.RateLimiter;
 import site.geekie.shop.shoppingmall.common.Result;
-import site.geekie.shop.shoppingmall.dto.CategoryDTO;
 import site.geekie.shop.shoppingmall.vo.CategoryVO;
 import site.geekie.shop.shoppingmall.service.CategoryService;
 
@@ -87,51 +84,4 @@ public class CategoryController {
         return Result.success(category);
     }
 
-    /**
-     * 新增分类
-     * 需要ADMIN角色
-     *
-     * @param request 分类请求
-     * @return 新增的分类信息
-     */
-    @Operation(summary = "新增分类")
-    @SecurityRequirement(name = "Bearer Authentication")
-    @PostMapping
-    public Result<CategoryVO> addCategory(@Valid @RequestBody CategoryDTO request) {
-        CategoryVO category = categoryService.addCategory(request);
-        return Result.success("分类添加成功", category);
-    }
-
-    /**
-     * 修改分类
-     * 需要ADMIN角色
-     *
-     * @param id 分类ID
-     * @param request 分类请求
-     * @return 修改后的分类信息
-     */
-    @Operation(summary = "修改分类")
-    @SecurityRequirement(name = "Bearer Authentication")
-    @PutMapping("/{id}")
-    public Result<CategoryVO> updateCategory(@PathVariable Long id,
-                                                    @Valid @RequestBody CategoryDTO request) {
-        CategoryVO category = categoryService.updateCategory(id, request);
-        return Result.success("分类修改成功", category);
-    }
-
-    /**
-     * 删除分类
-     * 需要ADMIN角色
-     * 仅允许删除没有子分类且没有商品的分类
-     *
-     * @param id 分类ID
-     * @return 统一响应对象
-     */
-    @Operation(summary = "删除分类")
-    @SecurityRequirement(name = "Bearer Authentication")
-    @DeleteMapping("/{id}")
-    public Result<Void> deleteCategory(@PathVariable Long id) {
-        categoryService.deleteCategory(id);
-        return Result.success("分类删除成功", null);
-    }
 }

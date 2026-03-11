@@ -15,11 +15,11 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * 自定义支付宝 HTTP 客户端，强制使用 TLSv1.2 协议。
- * <p>
+ *
  * 原因：支付宝 SDK 默认的 HttpClientUtil 使用 SSLContext.getInstance("TLS")，
  * 在 Java 21 中会优先协商 TLSv1.3，但支付宝沙箱环境不完全兼容 TLSv1.3，
  * 导致 SSLHandshakeException: Remote host terminated the handshake。
- * <p>
+ *
  * 通过 AlipayConfig.setCustomizedHttpClient() 注入本类，替换 SDK 默认的 HTTP 实现。
  */
 public class Tls12AlipayHttpClient extends AbstractHttpClient {

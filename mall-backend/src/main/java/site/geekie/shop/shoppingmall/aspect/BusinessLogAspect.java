@@ -10,6 +10,13 @@ import org.springframework.stereotype.Component;
 import site.geekie.shop.shoppingmall.annotation.LogOperation;
 import site.geekie.shop.shoppingmall.util.SensitiveFieldSerializer;
 
+/**
+ * 业务日志切面
+ *
+ * 切入点：所有 @LogOperation 注解的方法
+ * 日志内容：模块、操作描述、类名、方法名、请求参数、返回结果、异常信息、处理时间
+ * 日志级别：INFO（正常）/ ERROR（异常）
+ */
 @Aspect
 @Component
 @Order(2)
