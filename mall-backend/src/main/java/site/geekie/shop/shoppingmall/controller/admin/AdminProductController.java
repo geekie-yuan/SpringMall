@@ -45,11 +45,13 @@ public class AdminProductController {
             @RequestParam(defaultValue = "10") @Max(100) int size,
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) Long categoryId,
-            @RequestParam(required = false) String status) {
+            @RequestParam(required = false) String status,
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir) {
         Integer statusInt = null;
         if ("ON_SALE".equals(status)) statusInt = 1;
         else if ("OFF_SALE".equals(status)) statusInt = 0;
-        return Result.success(productService.getAllProducts(page, size, keyword, categoryId, statusInt));
+        return Result.success(productService.getAllProducts(page, size, keyword, categoryId, statusInt, sortBy, sortDir));
     }
 
     /**

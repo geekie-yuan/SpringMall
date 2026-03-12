@@ -40,8 +40,12 @@ public class ProductController {
     @GetMapping
     public Result<PageResult<ProductVO>> getAllProducts(
             @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "10") @Max(100) int size) {
-        return Result.success(productService.getAllProducts(page, size, null, null, null));
+            @RequestParam(defaultValue = "10") @Max(100) int size,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) Long categoryId,
+            @RequestParam(defaultValue = "sales") String sortBy,
+            @RequestParam(defaultValue = "DESC") String sortDir) {
+        return Result.success(productService.getAllProducts(page, size, keyword, categoryId, 1, sortBy, sortDir));
     }
 
     /**
@@ -66,7 +70,7 @@ public class ProductController {
      * @return 商品列表
      */
     @Operation(summary = "搜索商品")
-    @RateLimiter(count = 30, period = 60)
+    @RateLimiter(count = 15, period = 60)
     @GetMapping("/search")
     public Result<PageResult<ProductVO>> searchProducts(
             @RequestParam String keyword,

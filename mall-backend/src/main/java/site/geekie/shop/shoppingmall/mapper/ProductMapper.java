@@ -36,11 +36,15 @@ public interface ProductMapper {
      * @param keyword 搜索关键词（匹配商品名称或副标题）
      * @param categoryId 分类ID
      * @param status 状态（0-下架，1-上架）
+     * @param sortColumn 排序列（白名单校验后传入）
+     * @param sortDir 排序方向（ASC/DESC）
      * @return 商品列表
      */
     List<ProductDO> findAllWithFilter(@Param("keyword") String keyword,
                                      @Param("categoryId") Long categoryId,
-                                     @Param("status") Integer status);
+                                     @Param("status") Integer status,
+                                     @Param("sortColumn") String sortColumn,
+                                     @Param("sortDir") String sortDir);
 
     /**
      * 根据分类ID查询商品列表
@@ -50,15 +54,6 @@ public interface ProductMapper {
      * @return 商品列表
      */
     List<ProductDO> findByCategoryId(@Param("categoryId") Long categoryId);
-
-    /**
-     * 根据状态查询商品列表
-     * 按创建时间倒序排列
-     *
-     * @param status 状态（0-下架，1-上架）
-     * @return 商品列表
-     */
-    List<ProductDO> findByStatus(@Param("status") Integer status);
 
     /**
      * 根据关键词搜索商品
@@ -121,4 +116,22 @@ public interface ProductMapper {
      * @return 影响行数
      */
     int increaseStock(@Param("id") Long id, @Param("quantity") Integer quantity);
+
+    /**
+     * 增加销量
+     *
+     * @param id 商品ID
+     * @param quantity 增加数量
+     * @return 影响行数
+     */
+    int increaseSalesCount(@Param("id") Long id, @Param("quantity") Integer quantity);
+
+    /**
+     * 扣减销量（最小为0）
+     *
+     * @param id 商品ID
+     * @param quantity 扣减数量
+     * @return 影响行数
+     */
+    int decreaseSalesCount(@Param("id") Long id, @Param("quantity") Integer quantity);
 }

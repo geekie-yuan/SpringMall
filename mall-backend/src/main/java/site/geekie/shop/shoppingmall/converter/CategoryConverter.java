@@ -17,6 +17,7 @@ import java.util.List;
 public interface CategoryConverter {
 
     @Mapping(target = "children", ignore = true)
+    @Mapping(target = "productCount", ignore = true)
     CategoryVO toVO(CategoryDO category);
 
     List<CategoryVO> toVOList(List<CategoryDO> categories);

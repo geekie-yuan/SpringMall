@@ -18,6 +18,7 @@ public class CategoryVO {
     private Integer sortOrder;
     private String icon;
     private Integer status;
+    private Integer productCount;
     private LocalDateTime createdAt;
     private List<CategoryVO> children;
 

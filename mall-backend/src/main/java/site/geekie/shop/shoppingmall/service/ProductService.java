@@ -18,7 +18,7 @@ public interface ProductService {
      *
      * @return 所有商品列表
      */
-    PageResult<ProductVO> getAllProducts(int page, int size, String keyword, Long categoryId, Integer status);
+    PageResult<ProductVO> getAllProducts(int page, int size, String keyword, Long categoryId, Integer status, String sortBy, String sortDir);
 
     /**
      * 根据分类ID获取商品列表
@@ -27,14 +27,6 @@ public interface ProductService {
      * @return 商品列表
      */
     List<ProductVO> getProductsByCategoryId(Long categoryId);
-
-    /**
-     * 根据状态获取商品列表
-     *
-     * @param status 状态（0-下架，1-上架）
-     * @return 商品列表
-     */
-    List<ProductVO> getProductsByStatus(Integer status);
 
     /**
      * 搜索商品

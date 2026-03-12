@@ -64,6 +64,11 @@ public class ProductDO {
     private Integer status;
 
     /**
+     * 累计销量
+     */
+    private Integer salesCount;
+
+    /**
      * 创建时间
      */
     private LocalDateTime createdAt;

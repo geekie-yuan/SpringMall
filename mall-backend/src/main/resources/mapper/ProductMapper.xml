@@ -15,13 +15,14 @@
         <result column="price" property="price"/>
         <result column="stock" property="stock"/>
         <result column="status" property="status"/>
+        <result column="sales_count" property="salesCount"/>
         <result column="created_at" property="createdAt"/>
         <result column="updated_at" property="updatedAt"/>
     </resultMap>
 
     <!-- 基础字段列表 -->
     <sql id="Base_Column_List">
-        id, category_id, name, subtitle, main_image, images, detail, price, stock, status, created_at, updated_at
+        id, category_id, name, subtitle, main_image, images, detail, price, stock, status, sales_count, created_at, updated_at
     </sql>
 
     <!-- 根据ID查询商品 -->
@@ -40,21 +41,23 @@
 
     <!-- 带过滤条件查询所有商品 -->
     <select id="findAllWithFilter" resultMap="BaseResultMap">
-        SELECT <include refid="Base_Column_List"/>
-        FROM mall_product
+        SELECT prod.id, prod.category_id, prod.name, prod.subtitle, prod.main_image, prod.images,
+               prod.detail, prod.price, prod.stock, prod.status, prod.sales_count, prod.created_at, prod.updated_at
+        FROM mall_product prod
+        LEFT JOIN mall_category cat ON prod.category_id = cat.id
         <where>
             <if test="keyword != null and keyword != ''">
-                AND (name LIKE CONCAT('%', #{keyword}, '%')
-                    OR subtitle LIKE CONCAT('%', #{keyword}, '%'))
+                AND (prod.name LIKE CONCAT('%', #{keyword}, '%')
+                    OR prod.subtitle LIKE CONCAT('%', #{keyword}, '%'))
             </if>
             <if test="categoryId != null">
-                AND category_id = #{categoryId}
+                AND prod.category_id = #{categoryId}
             </if>
             <if test="status != null">
-                AND status = #{status}
+                AND prod.status = #{status}
             </if>
         </where>
-        ORDER BY created_at DESC
+        ORDER BY ${sortColumn} ${sortDir}
     </select>
 
     <!-- 根据分类ID查询商品 -->
@@ -62,14 +65,6 @@
         SELECT <include refid="Base_Column_List"/>
         FROM mall_product
         WHERE category_id = #{categoryId}
-        ORDER BY created_at DESC
-    </select>
-
-    <!-- 根据状态查询商品 -->
-    <select id="findByStatus" resultMap="BaseResultMap">
-        SELECT <include refid="Base_Column_List"/>
-        FROM mall_product
-        WHERE status = #{status}
         ORDER BY created_at DESC
     </select>
 
@@ -132,6 +127,16 @@
         SET stock = stock + #{quantity},
             updated_at = CURRENT_TIMESTAMP
         WHERE id = #{id}
+    </update>
+
+    <!-- 增加销量 -->
+    <update id="increaseSalesCount">
+        UPDATE mall_product SET sales_count = sales_count + #{quantity} WHERE id = #{id}
+    </update>
+
+    <!-- 扣减销量（最小为0） -->
+    <update id="decreaseSalesCount">
+        UPDATE mall_product SET sales_count = GREATEST(sales_count - #{quantity}, 0) WHERE id = #{id}
     </update>
 
 </mapper>

@@ -16,6 +16,7 @@ import site.geekie.shop.shoppingmall.entity.CategoryDO;
 import site.geekie.shop.shoppingmall.vo.CategoryVO;
 import site.geekie.shop.shoppingmall.exception.BusinessException;
 import site.geekie.shop.shoppingmall.mapper.CategoryMapper;
+import site.geekie.shop.shoppingmall.mapper.ProductMapper;
 import site.geekie.shop.shoppingmall.service.CategoryService;
 
 import java.util.ArrayList;
@@ -36,6 +37,7 @@ public class CategoryServiceImpl implements CategoryService {
     private static final long CACHE_TTL_HOURS = 1;
 
     private final CategoryMapper categoryMapper;
+    private final ProductMapper productMapper;
     private final CategoryConverter categoryConverter;
     private final StringRedisTemplate stringRedisTemplate;
 
@@ -68,7 +70,12 @@ public class CategoryServiceImpl implements CategoryService {
         List<CategoryDO> categories = categoryMapper.findAll();
         List<CategoryVO> result = categoryConverter.toVOList(categories);
 
-        // 3. 写入缓存
+        // 3. 填充每个分类的商品数量
+        for (CategoryVO vo : result) {
+            vo.setProductCount(productMapper.countByCategoryId(vo.getId()));
+        }
+
+        // 4. 写入缓存
         try {
             String json = objectMapper.writeValueAsString(result);
             stringRedisTemplate.opsForValue().set(CACHE_ALL_KEY, json, CACHE_TTL_HOURS, TimeUnit.HOURS);

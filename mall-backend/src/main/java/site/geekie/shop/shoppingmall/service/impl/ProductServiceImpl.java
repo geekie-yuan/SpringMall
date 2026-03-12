@@ -21,6 +21,7 @@ import site.geekie.shop.shoppingmall.util.ProductCacheService;
 import site.geekie.shop.shoppingmall.util.StockRedisService;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * 商品服务实现类
@@ -31,6 +32,17 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ProductServiceImpl implements ProductService {
 
+    // 排序列白名单，防止 SQL 注入
+    private static final Map<String, String> SORT_COLUMN_WHITELIST = Map.of(
+            "id", "prod.id",
+            "name", "prod.name",
+            "categoryName", "cat.name",
+            "price", "prod.price",
+            "stock", "prod.stock",
+            "createdAt", "prod.created_at",
+            "sales", "prod.sales_count"
+    );
+
     private final ProductMapper productMapper;
     private final CategoryMapper categoryMapper;
     private final ProductConverter productConverter;
@@ -38,9 +50,11 @@ public class ProductServiceImpl implements ProductService {
     private final ProductCacheService productCacheService;
 
     @Override
-    public PageResult<ProductVO> getAllProducts(int page, int size, String keyword, Long categoryId, Integer status) {
+    public PageResult<ProductVO> getAllProducts(int page, int size, String keyword, Long categoryId, Integer status, String sortBy, String sortDir) {
+        String sortColumn = SORT_COLUMN_WHITELIST.getOrDefault(sortBy, "prod.id");
+        String dir = "asc".equalsIgnoreCase(sortDir) ? "ASC" : "DESC";
         PageHelper.startPage(page, size);
-        List<ProductDO> products = productMapper.findAllWithFilter(keyword, categoryId, status);
+        List<ProductDO> products = productMapper.findAllWithFilter(keyword, categoryId, status, sortColumn, dir);
         PageInfo<ProductDO> pageInfo = new PageInfo<>(products);
         List<ProductVO> list = productConverter.toVOList(products, categoryMapper);
         return new PageResult<>(list, pageInfo.getTotal(), page, size);
@@ -49,12 +63,6 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public List<ProductVO> getProductsByCategoryId(Long categoryId) {
         List<ProductDO> products = productMapper.findByCategoryId(categoryId);
-        return productConverter.toVOList(products, categoryMapper);
-    }
-
-    @Override
-    public List<ProductVO> getProductsByStatus(Integer status) {
-        List<ProductDO> products = productMapper.findByStatus(status);
         return productConverter.toVOList(products, categoryMapper);
     }
 

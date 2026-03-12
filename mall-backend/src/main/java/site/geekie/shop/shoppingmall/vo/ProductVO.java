@@ -22,6 +22,7 @@ public class ProductVO {
     private BigDecimal price;
     private Integer stock;
     private Integer status;
+    private Integer salesCount;
     private LocalDateTime createdAt;
 
     public ProductVO(Long id, Long categoryId, String name, String subtitle,
