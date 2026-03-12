@@ -26,3 +26,4 @@ mall-backend/.git/
 .env.*.local
 
 .claude - 副本/
+.claude/worktrees/

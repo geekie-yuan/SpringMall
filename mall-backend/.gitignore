@@ -54,3 +54,5 @@ tmpclaude-*
 ### OS Files ###
 .DS_Store
 Thumbs.db
+
+.claude/worktree

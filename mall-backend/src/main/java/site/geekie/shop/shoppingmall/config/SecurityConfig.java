@@ -20,6 +20,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import site.geekie.shop.shoppingmall.security.JwtAuthenticationEntryPoint;
 import site.geekie.shop.shoppingmall.security.JwtAuthenticationFilter;
 
 import java.util.Arrays;
@@ -54,6 +55,9 @@ public class SecurityConfig {
 
     // 用户详情服务，用于加载用户认证信息
     private final UserDetailsService userDetailsService;
+
+    // JWT认证入口点，未登录时返回 HTTP 401
+    private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
 
     /**
      * 配置安全过滤器链
@@ -116,7 +120,11 @@ public class SecurityConfig {
                 // 设置认证提供者
                 .authenticationProvider(authenticationProvider())
                 // 在UsernamePasswordAuthenticationFilter之前添加JWT过滤器
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                // 配置异常处理：未认证时返回 401 而非默认的 403
+                .exceptionHandling(exceptions -> exceptions
+                        .authenticationEntryPoint(jwtAuthenticationEntryPoint)
+                );
 
         return http.build();
     }

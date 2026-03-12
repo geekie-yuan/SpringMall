@@ -43,12 +43,12 @@ class JwtTokenTest {
         Map<String, Object> adminClaims = new HashMap<>();
         adminClaims.put("username", "admin");
         adminClaims.put("email", "admin@example.com");
-        adminClaims.put("createdAt", LocalDateTime.of(2025, 5, 20, 14, 30, 0)
+        adminClaims.put("createdAt", LocalDateTime.of(2026, 1, 12, 15, 20, 23)
                 .atZone(ZoneId.systemDefault()).toInstant().toEpochMilli());
 
         String adminToken = Jwts.builder()
                 .claims(adminClaims)
-                .subject("2") // userId
+                .subject("1") // userId
                 .issuedAt(now)
                 .expiration(expiry)
                 .signWith(key)
