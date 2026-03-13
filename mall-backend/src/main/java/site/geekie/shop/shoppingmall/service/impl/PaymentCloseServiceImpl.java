@@ -9,10 +9,13 @@ import site.geekie.shop.shoppingmall.common.PaymentMethod;
 import site.geekie.shop.shoppingmall.common.PaymentStatus;
 import site.geekie.shop.shoppingmall.common.ResultCode;
 import site.geekie.shop.shoppingmall.entity.OrderDO;
+import site.geekie.shop.shoppingmall.entity.OrderItemDO;
 import site.geekie.shop.shoppingmall.entity.PaymentDO;
 import site.geekie.shop.shoppingmall.exception.BusinessException;
+import site.geekie.shop.shoppingmall.mapper.OrderItemMapper;
 import site.geekie.shop.shoppingmall.mapper.OrderMapper;
 import site.geekie.shop.shoppingmall.mapper.PaymentMapper;
+import site.geekie.shop.shoppingmall.mapper.ProductMapper;
 import site.geekie.shop.shoppingmall.service.AlipayPaymentService;
 import site.geekie.shop.shoppingmall.service.PaymentCloseService;
 import site.geekie.shop.shoppingmall.service.StripeService;
@@ -32,6 +35,8 @@ public class PaymentCloseServiceImpl implements PaymentCloseService {
     private final PaymentMapper paymentMapper;
     private final AlipayPaymentService alipayPaymentService;
     private final OrderMapper orderMapper;
+    private final OrderItemMapper orderItemMapper;
+    private final ProductMapper productMapper;
 
     /**
      * StripeService 与本类存在循环依赖，使用 @Lazy 延迟注入以打破循环
@@ -39,11 +44,13 @@ public class PaymentCloseServiceImpl implements PaymentCloseService {
     private final StripeService stripeService;
 
     @Autowired
-    public PaymentCloseServiceImpl(PaymentMapper paymentMapper, @Lazy AlipayPaymentService alipayPaymentService, @Lazy StripeService stripeService, OrderMapper orderMapper) {
+    public PaymentCloseServiceImpl(PaymentMapper paymentMapper, @Lazy AlipayPaymentService alipayPaymentService, @Lazy StripeService stripeService, OrderMapper orderMapper, OrderItemMapper orderItemMapper, ProductMapper productMapper) {
         this.paymentMapper = paymentMapper;
         this.alipayPaymentService = alipayPaymentService;
         this.stripeService = stripeService;
         this.orderMapper = orderMapper;
+        this.orderItemMapper = orderItemMapper;
+        this.productMapper = productMapper;
     }
 
     @Override
@@ -82,11 +89,19 @@ public class PaymentCloseServiceImpl implements PaymentCloseService {
             payment.setNotifyTime(LocalDateTime.now());
             paymentMapper.updateById(payment);
 
-            // 更新订单状态为 PAID
-            OrderDO order = orderMapper.findByOrderNo(payment.getOrderNo());
-            if (order != null && OrderStatus.UNPAID.getCode().equals(order.getStatus())) {
-                orderMapper.updateStatus(payment.getOrderNo(), OrderStatus.PAID.getCode());
+            // 原子性更新订单状态为 PAID（乐观锁防止并发重复）
+            int updated = orderMapper.compareAndUpdateStatus(
+                    payment.getOrderNo(), OrderStatus.UNPAID.getCode(), OrderStatus.PAID.getCode());
+            if (updated > 0) {
                 orderMapper.updatePaymentTime(payment.getOrderNo());
+                // 支付成功后，更新商品销量
+                OrderDO order = orderMapper.findByOrderNo(payment.getOrderNo());
+                if (order != null) {
+                    List<OrderItemDO> items = orderItemMapper.findByOrderId(order.getId());
+                    for (OrderItemDO item : items) {
+                        productMapper.increaseSalesCount(item.getProductId(), item.getQuantity());
+                    }
+                }
             }
 
             throw new BusinessException(ResultCode.PAYMENT_ALREADY_PAID_BY_OTHER_METHOD);

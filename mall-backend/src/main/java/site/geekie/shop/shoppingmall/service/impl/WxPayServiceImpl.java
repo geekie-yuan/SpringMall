@@ -21,6 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import site.geekie.shop.shoppingmall.common.OrderStatus;
 import site.geekie.shop.shoppingmall.common.ResultCode;
 import site.geekie.shop.shoppingmall.config.WxPayConfig;
 import site.geekie.shop.shoppingmall.dto.CreateWxPaymentDTO;
@@ -30,8 +31,11 @@ import site.geekie.shop.shoppingmall.entity.PaymentDO;
 import site.geekie.shop.shoppingmall.entity.RefundDO;
 import site.geekie.shop.shoppingmall.exception.BusinessException;
 import site.geekie.shop.shoppingmall.exception.WxPayException;
+import site.geekie.shop.shoppingmall.entity.OrderItemDO;
+import site.geekie.shop.shoppingmall.mapper.OrderItemMapper;
 import site.geekie.shop.shoppingmall.mapper.OrderMapper;
 import site.geekie.shop.shoppingmall.mapper.PaymentMapper;
+import site.geekie.shop.shoppingmall.mapper.ProductMapper;
 import site.geekie.shop.shoppingmall.mapper.RefundMapper;
 import site.geekie.shop.shoppingmall.service.WxPayService;
 import site.geekie.shop.shoppingmall.util.OrderNoGenerator;
@@ -40,6 +44,7 @@ import site.geekie.shop.shoppingmall.vo.WxRefundVO;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -61,6 +66,8 @@ public class WxPayServiceImpl implements WxPayService {
     private final PaymentMapper paymentMapper;
     private final RefundMapper refundMapper;
     private final OrderMapper orderMapper;
+    private final OrderItemMapper orderItemMapper;
+    private final ProductMapper productMapper;
 
     @Override
     @Transactional
@@ -206,9 +213,20 @@ public class WxPayServiceImpl implements WxPayService {
             // 6. 更新支付记录
             paymentMapper.updateStatus(outTradeNo, "SUCCESS", transaction.getTransactionId());
 
-            // 7. 更新订单状态和支付时间
-            orderMapper.updateStatus(payment.getOrderNo(), "PAID");
-            orderMapper.updatePaymentTime(payment.getOrderNo());
+            // 7. 原子性更新订单状态为 PAID（乐观锁防止并发重复）
+            int updated = orderMapper.compareAndUpdateStatus(
+                    payment.getOrderNo(), OrderStatus.UNPAID.getCode(), OrderStatus.PAID.getCode());
+            if (updated > 0) {
+                orderMapper.updatePaymentTime(payment.getOrderNo());
+                // 支付成功后，更新商品销量
+                OrderDO paidOrder = orderMapper.findByOrderNo(payment.getOrderNo());
+                if (paidOrder != null) {
+                    List<OrderItemDO> items = orderItemMapper.findByOrderId(paidOrder.getId());
+                    for (OrderItemDO item : items) {
+                        productMapper.increaseSalesCount(item.getProductId(), item.getQuantity());
+                    }
+                }
+            }
 
             log.info("微信支付回调处理成功，支付单号：{}，微信订单号：{}",
                 outTradeNo, transaction.getTransactionId());

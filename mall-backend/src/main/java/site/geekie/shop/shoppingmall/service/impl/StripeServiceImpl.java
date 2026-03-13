@@ -30,6 +30,7 @@ import site.geekie.shop.shoppingmall.exception.BusinessException;
 import site.geekie.shop.shoppingmall.mapper.OrderItemMapper;
 import site.geekie.shop.shoppingmall.mapper.OrderMapper;
 import site.geekie.shop.shoppingmall.mapper.PaymentMapper;
+import site.geekie.shop.shoppingmall.mapper.ProductMapper;
 import site.geekie.shop.shoppingmall.mapper.RefundMapper;
 import site.geekie.shop.shoppingmall.mq.producer.PaymentMessageProducer;
 import site.geekie.shop.shoppingmall.service.PaymentCloseService;
@@ -59,6 +60,7 @@ public class StripeServiceImpl implements StripeService {
     private final PaymentMapper paymentMapper;
     private final RefundMapper refundMapper;
     private final OrderItemMapper orderItemMapper;
+    private final ProductMapper productMapper;
     private final StripeConfig stripeConfig;
     private final RedisDistributedLock redisDistributedLock;
     private final PaymentCloseService paymentCloseService;
@@ -597,19 +599,23 @@ public class StripeServiceImpl implements StripeService {
         payment.setTradeNo(paymentIntentId);
         paymentMapper.updateById(payment);
 
-        // 更新订单状态（UNPAID->PAID）
-        OrderDO order = orderMapper.findByOrderNo(orderNo);
-        if (order != null) {
-            OrderStatus currentOrderStatus = OrderStatus.fromCode(order.getStatus());
-            if (currentOrderStatus.canTransitTo(OrderStatus.PAID)) {
-                orderMapper.updateStatus(orderNo, OrderStatus.PAID.getCode());
-                orderMapper.updatePaymentTime(orderNo);
-                log.info("订单支付成功 - 订单号: {}, 支付流水号: {}, PaymentIntent ID: {}",
-                    orderNo, payment.getPaymentNo(), paymentIntentId);
-            } else {
-                log.warn("订单状态无法转换为 PAID - 当前状态: {}, 订单号: {}",
-                    order.getStatus(), orderNo);
+        // 原子性更新订单状态为 PAID（乐观锁防止并发重复）
+        int updated = orderMapper.compareAndUpdateStatus(
+                orderNo, OrderStatus.UNPAID.getCode(), OrderStatus.PAID.getCode());
+        if (updated > 0) {
+            orderMapper.updatePaymentTime(orderNo);
+            log.info("订单支付成功 - 订单号: {}, 支付流水号: {}, PaymentIntent ID: {}",
+                orderNo, payment.getPaymentNo(), paymentIntentId);
+            // 支付成功后，更新商品销量
+            OrderDO order = orderMapper.findByOrderNo(orderNo);
+            if (order != null) {
+                List<OrderItemDO> items = orderItemMapper.findByOrderId(order.getId());
+                for (OrderItemDO item : items) {
+                    productMapper.increaseSalesCount(item.getProductId(), item.getQuantity());
+                }
             }
+        } else {
+            log.warn("订单状态已被其他线程更新，跳过 - 订单号: {}", orderNo);
         }
     }
 

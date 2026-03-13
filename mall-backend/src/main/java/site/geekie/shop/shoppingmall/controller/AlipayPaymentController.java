@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,6 +19,7 @@ import site.geekie.shop.shoppingmall.dto.CreateAlipayPaymentDTO;
 import site.geekie.shop.shoppingmall.service.AlipayPaymentService;
 import site.geekie.shop.shoppingmall.vo.AlipayPaymentVO;
 
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -74,7 +76,7 @@ public class AlipayPaymentController {
 
     @GetMapping("/return")
     @Operation(summary = "支付宝同步返回", description = "支付宝支付完成后跳转回商户网站")
-    public String handleReturn(HttpServletRequest request) {
+    public void handleReturn(HttpServletRequest request, HttpServletResponse response) throws IOException {
         String outTradeNo = request.getParameter("out_trade_no");  // 支付流水号（即本系统支付流水号）
         String tradeNo = request.getParameter("trade_no");  // 支付宝交易号
 
@@ -84,12 +86,13 @@ public class AlipayPaymentController {
         // 若 out_trade_no 缺失（用户中途关闭页面），跳转到订单列表页。
         if (outTradeNo == null || outTradeNo.isEmpty()) {
             log.warn("支付宝同步返回缺少 out_trade_no 参数，重定向到订单列表");
-            return "redirect:" + frontendUrl + "/orders";
+            response.sendRedirect(frontendUrl + "/orders");
+            return;
         }
 
         // URL 编码参数值，防止特殊字符破坏查询字符串（Java 10+ 无需处理受检异常）
         String encodedPaymentNo = URLEncoder.encode(outTradeNo, StandardCharsets.UTF_8);
-        return "redirect:" + frontendUrl + "/payment/result?paymentNo=" + encodedPaymentNo;
+        response.sendRedirect(frontendUrl + "/payment/result?paymentNo=" + encodedPaymentNo);
     }
 
     @GetMapping("/{paymentNo}")

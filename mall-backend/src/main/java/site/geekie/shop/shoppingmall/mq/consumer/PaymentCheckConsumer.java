@@ -128,16 +128,21 @@ public class PaymentCheckConsumer {
                     payment.setNotifyTime(LocalDateTime.now());
                     paymentMapper.updateById(payment);
 
-                    // 更新订单状态为 PAID（使用 canTransitTo 做幂等保护）
-                    OrderStatus currentOrderStatus = OrderStatus.fromCode(order.getStatus());
-                    if (currentOrderStatus.canTransitTo(OrderStatus.PAID)) {
-                        orderMapper.updateStatus(finalOrderNo, OrderStatus.PAID.getCode());
+                    // 原子性更新订单状态为 PAID（乐观锁防止并发重复）
+                    int updated = orderMapper.compareAndUpdateStatus(
+                            finalOrderNo, OrderStatus.UNPAID.getCode(), OrderStatus.PAID.getCode());
+                    if (updated > 0) {
                         orderMapper.updatePaymentTime(finalOrderNo);
                         log.info("掉单补偿成功 - 订单号: {}, 支付流水号: {}",
                                 finalOrderNo, payment.getPaymentNo());
+                        // 支付成功后，更新商品销量
+                        List<OrderItemDO> items = orderItemMapper.findByOrderId(order.getId());
+                        for (OrderItemDO item : items) {
+                            productMapper.increaseSalesCount(item.getProductId(), item.getQuantity());
+                        }
                     } else {
-                        log.warn("掉单补偿：订单状态无法转换为 PAID - 当前状态: {}, 订单号: {}",
-                                order.getStatus(), finalOrderNo);
+                        log.warn("掉单补偿：订单状态已被其他线程更新，跳过 - 订单号: {}",
+                                finalOrderNo);
                     }
                 });
 

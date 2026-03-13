@@ -73,7 +73,7 @@ alipay:
   charset: UTF-8
   sign-type: RSA2
   notify-url: ${ALIPAY_NOTIFY_URL:https://anders-unattractable-coinstantaneously.ngrok-free.dev/api/v1/payment/alipay/notify}
-  return-url: ${ALIPAY_RETURN_URL:http://localhost:3000/payment/result}
+  return-url: ${ALIPAY_RETURN_URL:http://localhost:8080/api/v1/payment/alipay/return}
   frontend-url: ${FRONTEND_URL:http://localhost:3000}
 
 wxpay:

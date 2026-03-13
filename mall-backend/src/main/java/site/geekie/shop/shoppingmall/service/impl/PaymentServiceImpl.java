@@ -2,6 +2,7 @@ package site.geekie.shop.shoppingmall.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import site.geekie.shop.shoppingmall.annotation.LogOperation;
@@ -16,6 +17,8 @@ import site.geekie.shop.shoppingmall.mapper.RefundMapper;
 import site.geekie.shop.shoppingmall.service.AlipayPaymentService;
 import site.geekie.shop.shoppingmall.service.PaymentService;
 import site.geekie.shop.shoppingmall.service.StripeService;
+import site.geekie.shop.shoppingmall.service.WxPayService;
+import site.geekie.shop.shoppingmall.vo.PaymentVO;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -33,6 +36,52 @@ public class PaymentServiceImpl implements PaymentService {
     private final RefundMapper refundMapper;
     private final AlipayPaymentService alipayPaymentService;
     private final StripeService stripeService;
+    private final ObjectProvider<WxPayService> wxPayServiceProvider;
+
+    @Override
+    public PaymentVO getPaymentByNo(String paymentNo, Long userId) {
+        PaymentDO payment = paymentMapper.findByPaymentNo(paymentNo);
+        if (payment == null) {
+            throw new BusinessException(ResultCode.PAYMENT_NOT_FOUND);
+        }
+
+        if (!payment.getUserId().equals(userId)) {
+            throw new BusinessException(ResultCode.FORBIDDEN);
+        }
+
+        // 触发对应支付通道的状态同步逻辑，确保返回最新状态。
+        String paymentMethod = payment.getPaymentMethod();
+        if (PaymentMethod.ALIPAY.name().equals(paymentMethod)) {
+            alipayPaymentService.queryPayment(paymentNo, userId);
+        } else if (PaymentMethod.STRIPE.name().equals(paymentMethod)) {
+            stripeService.queryPayment(paymentNo, userId);
+        } else if (PaymentMethod.WECHAT.name().equals(paymentMethod)) {
+            WxPayService wxPayService = wxPayServiceProvider.getIfAvailable();
+            if (wxPayService == null) {
+                log.error("查询支付状态失败 - 微信支付未启用，支付流水号: {}", paymentNo);
+                throw new BusinessException(ResultCode.PAYMENT_FAILED, "WeChat Pay is not enabled");
+            }
+            wxPayService.queryPayment(paymentNo, userId);
+        } else {
+            log.error("查询支付状态失败 - 不支持的支付方式: {}, 支付流水号: {}", paymentMethod, paymentNo);
+            throw new BusinessException(ResultCode.PAYMENT_FAILED, "Unsupported payment method");
+        }
+
+        PaymentDO refreshed = paymentMapper.findByPaymentNo(paymentNo);
+        if (refreshed == null) {
+            throw new BusinessException(ResultCode.PAYMENT_NOT_FOUND);
+        }
+
+        return PaymentVO.builder()
+                .paymentNo(refreshed.getPaymentNo())
+                .orderNo(refreshed.getOrderNo())
+                .amount(refreshed.getAmount())
+                .paymentMethod(refreshed.getPaymentMethod())
+                .paymentStatus(refreshed.getPaymentStatus())
+                .tradeNo(refreshed.getTradeNo())
+                .createdAt(refreshed.getCreatedAt())
+                .build();
+    }
 
     @Override
     @Transactional(rollbackFor = Exception.class)

@@ -1,10 +1,21 @@
 package site.geekie.shop.shoppingmall.service;
 
+import site.geekie.shop.shoppingmall.vo.PaymentVO;
+
 /**
  * 支付服务接口
  * 提供支付的业务逻辑方法
  */
 public interface PaymentService {
+
+    /**
+     * 根据支付流水号查询支付状态（自动识别支付方式）
+     *
+     * @param paymentNo 支付流水号
+     * @param userId 用户ID
+     * @return 支付信息
+     */
+    PaymentVO getPaymentByNo(String paymentNo, Long userId);
 
     /**
      * 处理订单退款

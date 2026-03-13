@@ -1,6 +1,6 @@
 # Spring Mall API 接口文档
 
-> 最后更新时间：2026-02-20
+> 最后更新时间：2026-03-14
 
 ## 项目概述
 
@@ -192,10 +192,18 @@ Authorization: Bearer <token>
 
 #### 3.1 商品列表
 ```http
-GET /api/v1/products?page=1&size=10
+GET /api/v1/products?page=1&size=10&sortBy=sales&sortDir=desc
 ```
 
-**查询参数**: `page`（页码，默认1）、`size`（每页数量，默认10，最大100）
+**查询参数**:
+- `page`（页码，默认1）
+- `size`（每页数量，默认10，最大100）
+- `keyword`（商品名称/副标题模糊搜索，可选）
+- `categoryId`（分类ID过滤，可选）
+- `sortBy`（排序字段，可选，支持：`price`、`sales`、`created_at`，默认 `created_at`）
+- `sortDir`（排序方向，可选，`asc` 或 `desc`，默认 `desc`）
+
+**说明**: 用户端接口硬编码 `status=1`，仅返回上架商品
 
 **响应**: PageResult
 ```json
@@ -213,6 +221,7 @@ GET /api/v1/products?page=1&size=10
         "mainImage": "/images/iphone15pro.jpg",
         "price": 7999.00,
         "stock": 100,
+        "salesCount": 156,
         "status": 1
       }
     ],
@@ -241,12 +250,6 @@ GET /api/v1/products/search?keyword=iPhone&page=1&size=10
 ```http
 GET /api/v1/products/category/{categoryId}
 ```
-
-#### 3.5 按状态查询
-```http
-GET /api/v1/products/status/{status}
-```
-- status: 0-下架, 1-上架
 
 ---
 
@@ -533,10 +536,11 @@ Authorization: Bearer <token>
    - 恢复库存
    - 订单状态变为 `CANCELLED`
 2. 如果订单状态为 `PAID`（已支付）：
-   - **自动调用支付宝退款接口**
+   - **自动调用退款接口**（根据支付方式自动选择支付宝/Stripe/微信）
    - 创建退款记录
    - 更新支付记录状态为 `REFUNDED`
    - 恢复库存
+   - **扣减对应商品的累计销量（salesCount）**
    - 订单状态变为 `CANCELLED`
 
 **限制**:
@@ -1227,6 +1231,7 @@ Authorization: Bearer <admin-token>
 - 只能取消 UNPAID（待支付）或 PAID（待发货）状态的订单
 - 取消后订单状态变更为 CANCELLED
 - 自动恢复所有商品库存
+- 已付款订单取消时自动扣减对应商品的累计销量（salesCount）
 
 **响应**:
 ```json
@@ -1473,10 +1478,11 @@ Authorization: Bearer xxx...
 - 用户只能操作自己的数据（购物车、订单、地址）
 - 管理员可以查看和管理所有数据
 
-### 4. 库存管理
+### 4. 库存与销量管理
 - 下单时扣减库存
-- 取消订单时恢复库存
-- 使用乐观锁防止超卖
+- 支付成功时增加商品累计销量（salesCount）
+- 取消订单时恢复库存，已付款订单同时扣减销量
+- 使用乐观锁防止超卖和并发重复更新销量
 
 ### 5. 订单状态流转
 ```

@@ -33,6 +33,7 @@ import site.geekie.shop.shoppingmall.exception.BusinessException;
 import site.geekie.shop.shoppingmall.mapper.OrderItemMapper;
 import site.geekie.shop.shoppingmall.mapper.OrderMapper;
 import site.geekie.shop.shoppingmall.mapper.PaymentMapper;
+import site.geekie.shop.shoppingmall.mapper.ProductMapper;
 import site.geekie.shop.shoppingmall.mq.producer.PaymentMessageProducer;
 import site.geekie.shop.shoppingmall.service.AlipayPaymentService;
 import site.geekie.shop.shoppingmall.service.PaymentCloseService;
@@ -57,6 +58,7 @@ public class AlipayPaymentServiceImpl implements AlipayPaymentService {
     private final OrderMapper orderMapper;
     private final OrderItemMapper orderItemMapper;
     private final PaymentMapper paymentMapper;
+    private final ProductMapper productMapper;
     private final AlipayClient alipayClient;
     private final AlipayConfig alipayConfig;
     private final RedisDistributedLock redisDistributedLock;
@@ -95,13 +97,11 @@ public class AlipayPaymentServiceImpl implements AlipayPaymentService {
         }
 
         // 3. 验证订单状态
-        //TODO: 增加订单状态检查的细粒度，区分订单不存在、订单已取消、订单已支付等不同场景
         if (!OrderStatus.UNPAID.getCode().equals(order.getStatus())) {
             throw new BusinessException(ResultCode.INVALID_ORDER_STATUS);
         }
 
         // 4. 查询订单商品明细
-        //TODO: 优化一下Exception 的类型，区分订单不存在、订单无商品等不同错误场景
         List<OrderItemDO> orderItems = orderItemMapper.findByOrderId(order.getId());
         if (orderItems == null || orderItems.isEmpty()) {
             throw new BusinessException(ResultCode.ORDER_ITEM_NOT_FOUND);
@@ -278,19 +278,23 @@ public class AlipayPaymentServiceImpl implements AlipayPaymentService {
             payment.setNotifyTime(LocalDateTime.now());
             paymentMapper.updateById(payment);
 
-            // 7. 更新订单状态（UNPAID->PAID）
-            OrderDO order = orderMapper.findByOrderNo(payment.getOrderNo());
-            if (order != null) {
-                OrderStatus currentOrderStatus = OrderStatus.fromCode(order.getStatus());
-                if (currentOrderStatus.canTransitTo(OrderStatus.PAID)) {
-                    orderMapper.updateStatus(payment.getOrderNo(), OrderStatus.PAID.getCode());
-                    orderMapper.updatePaymentTime(payment.getOrderNo());
-                    log.info("订单支付成功 - 订单号: {}, 支付流水号: {}, 交易号: {}",
-                            payment.getOrderNo(), outTradeNo, tradeNo);
-                } else {
-                    log.warn("订单状态无法转换为 PAID - 当前状态: {}, 订单号: {}",
-                            order.getStatus(), payment.getOrderNo());
+            // 7. 原子性更新订单状态为 PAID（乐观锁防止并发重复）
+            int updated = orderMapper.compareAndUpdateStatus(
+                    payment.getOrderNo(), OrderStatus.UNPAID.getCode(), OrderStatus.PAID.getCode());
+            if (updated > 0) {
+                orderMapper.updatePaymentTime(payment.getOrderNo());
+                log.info("订单支付成功 - 订单号: {}, 支付流水号: {}, 交易号: {}",
+                        payment.getOrderNo(), outTradeNo, tradeNo);
+                // 支付成功后，更新商品销量
+                OrderDO order = orderMapper.findByOrderNo(payment.getOrderNo());
+                if (order != null) {
+                    List<OrderItemDO> items = orderItemMapper.findByOrderId(order.getId());
+                    for (OrderItemDO item : items) {
+                        productMapper.increaseSalesCount(item.getProductId(), item.getQuantity());
+                    }
                 }
+            } else {
+                log.warn("订单状态已被其他线程更新，跳过 - 订单号: {}", payment.getOrderNo());
             }
 
             return "success";
