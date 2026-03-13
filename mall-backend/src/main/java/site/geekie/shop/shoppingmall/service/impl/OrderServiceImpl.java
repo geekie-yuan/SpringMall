@@ -31,6 +31,7 @@ import site.geekie.shop.shoppingmall.util.StockRedisService;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -41,6 +42,13 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class OrderServiceImpl implements OrderService {
+
+    // 排序列白名单，防止动态 ORDER BY 注入
+    private static final Map<String, String> SORT_COLUMN_WHITELIST = Map.of(
+            "orderNo", "ord.order_no",
+            "createdAt", "ord.created_at",
+            "paymentTime", "ord.payment_time"
+    );
 
     private final OrderMapper orderMapper;
     private final OrderItemMapper orderItemMapper;
@@ -53,7 +61,6 @@ public class OrderServiceImpl implements OrderService {
     private final OrderMessageProducer orderMessageProducer;
     private final StockRedisService stockRedisService;
     private final RedisDistributedLock redisDistributedLock;
-
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -318,6 +325,13 @@ public class OrderServiceImpl implements OrderService {
             log.warn("取消订单时恢复 Redis 库存异常 - 订单号: {}", orderNo, e);
         }
 
+        // 已付款订单取消时，扣减销量
+        if (OrderStatus.PAID.getCode().equals(order.getStatus())) {
+            for (OrderItemDO item : items) {
+                productMapper.decreaseSalesCount(item.getProductId(), item.getQuantity());
+            }
+        }
+
         // 更新订单状态为已取消
         orderMapper.updateStatus(orderNo, OrderStatus.CANCELLED.getCode());
     }
@@ -345,16 +359,18 @@ public class OrderServiceImpl implements OrderService {
     // ===== 管理员方法实现 =====
 
     @Override
-    public PageResult<OrderVO> getAllOrders(int page, int size) {
+    public PageResult<OrderVO> getAllOrders(int page, int size, String sortBy, String sortDir) {
+        String sortColumn = SORT_COLUMN_WHITELIST.getOrDefault(sortBy, "ord.created_at");
+        String dir = "asc".equalsIgnoreCase(sortDir) ? "ASC" : "DESC";
         PageHelper.startPage(page, size);
-        List<OrderDO> orders = orderMapper.findAll();
+        List<OrderDO> orders = orderMapper.findAll(sortColumn, dir);
         PageInfo<OrderDO> pageInfo = new PageInfo<>(orders);
         List<OrderVO> list = orderConverter.toVOList(orders);
         return new PageResult<>(list, pageInfo.getTotal(), page, size);
     }
 
     @Override
-    public PageResult<OrderVO> getAllOrdersByStatus(String status, int page, int size) {
+    public PageResult<OrderVO> getAllOrdersByStatus(String status, int page, int size, String sortBy, String sortDir) {
         // 验证状态是否合法
         try {
             OrderStatus.fromCode(status);
@@ -362,8 +378,10 @@ public class OrderServiceImpl implements OrderService {
             throw new BusinessException(ResultCode.INVALID_ORDER_STATUS);
         }
 
+        String sortColumn = SORT_COLUMN_WHITELIST.getOrDefault(sortBy, "ord.created_at");
+        String dir = "asc".equalsIgnoreCase(sortDir) ? "ASC" : "DESC";
         PageHelper.startPage(page, size);
-        List<OrderDO> orders = orderMapper.findAllByStatus(status);
+        List<OrderDO> orders = orderMapper.findAllByStatus(status, sortColumn, dir);
         PageInfo<OrderDO> pageInfo = new PageInfo<>(orders);
         List<OrderVO> list = orderConverter.toVOList(orders);
         return new PageResult<>(list, pageInfo.getTotal(), page, size);
@@ -428,6 +446,13 @@ public class OrderServiceImpl implements OrderService {
             stockRedisService.batchRestoreStock(items);
         } catch (Exception e) {
             log.warn("管理员取消订单时恢复 Redis 库存异常 - 订单号: {}", orderNo, e);
+        }
+
+        // 已付款订单取消时，扣减销量
+        if (OrderStatus.PAID.getCode().equals(order.getStatus())) {
+            for (OrderItemDO item : items) {
+                productMapper.decreaseSalesCount(item.getProductId(), item.getQuantity());
+            }
         }
 
         // 更新订单状态为已取消

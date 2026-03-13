@@ -42,20 +42,24 @@ public interface OrderMapper {
 
     /**
      * 查询所有订单（管理员用）
-     * 按创建时间倒序排列
      *
+     * @param sortColumn 排序列（白名单校验后传入）
+     * @param sortDir 排序方向（ASC/DESC）
      * @return 订单列表
      */
-    List<OrderDO> findAll();
+    List<OrderDO> findAll(@Param("sortColumn") String sortColumn, @Param("sortDir") String sortDir);
 
     /**
      * 根据订单状态查询所有订单（管理员用）
-     * 按创建时间倒序排列
      *
      * @param status 订单状态
+     * @param sortColumn 排序列（白名单校验后传入）
+     * @param sortDir 排序方向（ASC/DESC）
      * @return 订单列表
      */
-    List<OrderDO> findAllByStatus(@Param("status") String status);
+    List<OrderDO> findAllByStatus(@Param("status") String status,
+                                  @Param("sortColumn") String sortColumn,
+                                  @Param("sortDir") String sortDir);
 
     /**
      * 插入订单
@@ -73,6 +77,19 @@ public interface OrderMapper {
      * @return 影响行数
      */
     int updateStatus(@Param("orderNo") String orderNo, @Param("status") String status);
+
+    /**
+     * 原子性更新订单状态（乐观锁）
+     * 仅当当前状态等于 expectedStatus 时才更新为 newStatus
+     *
+     * @param orderNo 订单号
+     * @param expectedStatus 期望的当前状态
+     * @param newStatus 目标状态
+     * @return 影响行数（0 表示状态已被其他线程更新）
+     */
+    int compareAndUpdateStatus(@Param("orderNo") String orderNo,
+                                @Param("expectedStatus") String expectedStatus,
+                                @Param("newStatus") String newStatus);
 
     /**
      * 更新支付方式

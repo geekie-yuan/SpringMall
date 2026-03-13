@@ -23,7 +23,7 @@ public interface OrderService {
      * 6. 清空已购买的购物车商品
      *
      * @param request 订单请求（包含收货地址ID和备注）
-     * @param userId 当前登录用户ID
+     * @param userId  当前登录用户ID
      * @return 订单响应
      */
     OrderVO createOrder(OrderDTO request, Long userId);
@@ -49,7 +49,7 @@ public interface OrderService {
      * 获取订单详情
      *
      * @param orderNo 订单号
-     * @param userId 当前登录用户ID
+     * @param userId  当前登录用户ID
      * @return 订单详情
      */
     OrderVO getOrderDetail(String orderNo, Long userId);
@@ -60,7 +60,7 @@ public interface OrderService {
      * 取消后恢复库存
      *
      * @param orderNo 订单号
-     * @param userId 当前登录用户ID
+     * @param userId  当前登录用户ID
      */
     void cancelOrder(String orderNo, Long userId);
 
@@ -69,7 +69,7 @@ public interface OrderService {
      * 只有已发货状态的订单可以确认收货
      *
      * @param orderNo 订单号
-     * @param userId 当前登录用户ID
+     * @param userId  当前登录用户ID
      */
     void confirmReceipt(String orderNo, Long userId);
 
@@ -80,17 +80,17 @@ public interface OrderService {
      *
      * @return 所有订单列表
      */
-    PageResult<OrderVO> getAllOrders(int page, int size);
+    PageResult<OrderVO> getAllOrders(int page, int size, String sortBy, String sortDir);
 
     /**
      * 根据状态获取所有订单（管理员）
      *
      * @param status 订单状态
-     * @param page 页码
-     * @param size 每页大小
+     * @param page   页码
+     * @param size   每页大小
      * @return 分页订单列表
      */
-    PageResult<OrderVO> getAllOrdersByStatus(String status, int page, int size);
+    PageResult<OrderVO> getAllOrdersByStatus(String status, int page, int size, String sortBy, String sortDir);
 
     /**
      * 获取订单详情（管理员）

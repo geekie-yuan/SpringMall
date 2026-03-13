@@ -42,8 +42,10 @@ public class AdminOrderController {
     @GetMapping
     public Result<PageResult<OrderVO>> getAllOrders(
             @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "10") @Max(100) int size) {
-        return Result.success(orderService.getAllOrders(page, size));
+            @RequestParam(defaultValue = "10") @Max(100) int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir) {
+        return Result.success(orderService.getAllOrders(page, size, sortBy, sortDir));
     }
 
     /**
@@ -51,8 +53,8 @@ public class AdminOrderController {
      * GET /api/v1/admin/orders/status/{status}
      *
      * @param status 订单状态
-     * @param page 页码
-     * @param size 每页大小
+     * @param page   页码
+     * @param size   每页大小
      * @return 分页订单列表
      */
     @Operation(summary = "根据状态获取订单（管理员）")
@@ -60,8 +62,10 @@ public class AdminOrderController {
     public Result<PageResult<OrderVO>> getOrdersByStatus(
             @PathVariable String status,
             @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "10") @Max(100) int size) {
-        return Result.success(orderService.getAllOrdersByStatus(status, page, size));
+            @RequestParam(defaultValue = "10") @Max(100) int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir) {
+        return Result.success(orderService.getAllOrdersByStatus(status, page, size, sortBy, sortDir));
     }
 
     /**
