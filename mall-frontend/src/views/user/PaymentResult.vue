@@ -204,6 +204,14 @@ const maxPollCount = 10 // 最多轮询 10 次
 const pollInterval = 3000 // 轮询间隔 3 秒
 let pollTimer = null
 
+const normalizeQueryValue = (value) => {
+  if (Array.isArray(value)) {
+    return value[0] || ''
+  }
+
+  return value || ''
+}
+
 // 查询支付状态
 const checkPaymentStatus = async () => {
   if (!paymentNo.value) {
@@ -279,8 +287,9 @@ const retryPayment = () => {
 }
 
 onMounted(async () => {
-  // 从 URL 获取支付单号
-  paymentNo.value = route.query.paymentNo
+  // 同步回跳优先携带 paymentNo，兼容支付宝原始 out_trade_no 参数兜底
+  paymentNo.value = normalizeQueryValue(route.query.paymentNo)
+    || normalizeQueryValue(route.query.out_trade_no)
 
   if (!paymentNo.value) {
     ElMessage.error('支付单号不存在')

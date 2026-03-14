@@ -93,15 +93,14 @@
         </div>
       </template>
 
-      <Loading v-if="loading" />
-      <el-table v-else :data="recentOrders" stripe>
-        <el-table-column prop="orderNo" label="订单号" width="180" />
-        <el-table-column label="用户ID" width="100" align="center">
+      <el-table v-loading="loading" :data="recentOrders" stripe>
+        <el-table-column prop="orderNo" label="订单号" min-width="180" />
+        <el-table-column label="用户ID" width="80" align="center">
           <template #default="{ row }">
             {{ row.userId }}
           </template>
         </el-table-column>
-        <el-table-column label="总金额" width="120" align="right">
+        <el-table-column label="总金额" min-width="120" align="right">
           <template #default="{ row }">
             <span class="price-text">¥{{ formatPrice(row.totalAmount) }}</span>
           </template>
@@ -113,18 +112,18 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="下单时间" width="160">
+        <el-table-column label="下单时间" min-width="160">
           <template #default="{ row }">
             {{ formatDate(row.createdAt) }}
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="100" align="center">
+        <el-table-column label="操作" width="110" align="center">
           <template #default="{ row }">
             <el-button
               text
               type="primary"
               @click="$router.push(`/admin/orders/${row.orderNo}`)"
-            >
+            > 
               查看详情
             </el-button>
           </template>
@@ -152,7 +151,6 @@ import { getAllProducts } from '@/api/product'
 import { getAllUsers } from '@/api/admin/user'
 import { formatPrice, formatDate } from '@/utils/format'
 import { ORDER_STATUS_TEXT, ORDER_STATUS_TAG_TYPE } from '@/utils/constants'
-import Loading from '@/components/common/Loading.vue'
 
 const loading = ref(false)
 const recentOrders = ref([])
@@ -178,6 +176,10 @@ const fetchStats = async () => {
 
     const products = await getAllProducts({ page: 1, size: 1 })
     stats.value.totalProducts = products.total
+
+    // 获取在售商品数量（status: 1 表示在售）
+    const onSaleProducts = await getAllProducts({ page: 1, size: 1, status: 1 })
+    stats.value.onSaleProducts = onSaleProducts.total
 
     const users = await getAllUsers({ page: 1, size: 1 })
     stats.value.totalUsers = users.total

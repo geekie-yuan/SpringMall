@@ -1,68 +1,70 @@
 <template>
-  <div class="login-container">
-    <div class="login-box">
-      <div class="login-header">
-        <h1>Spring Mall</h1>
-        <p>欢迎登录</p>
+  <div class="auth-page">
+    <!-- Left brand panel -->
+    <div class="auth-brand">
+      <router-link to="/" class="brand-logo">SPRING MALL</router-link>
+      <div class="brand-content">
+        <h2 class="brand-headline">发现好物<br />品质生活</h2>
+        <p class="brand-sub">精选全球优质商品，为您的每一次消费增添价值</p>
       </div>
+      <p class="brand-footer">© 2025 Spring Mall</p>
+    </div>
 
-      <el-form
-        ref="formRef"
-        :model="form"
-        :rules="rules"
-        class="login-form"
-        @submit.prevent="handleLogin"
-      >
-        <el-form-item prop="username">
-          <el-input
-            v-model="form.username"
-            placeholder="请输入用户名"
-            size="large"
-            clearable
-          >
-            <template #prefix>
-              <el-icon><User /></el-icon>
-            </template>
-          </el-input>
-        </el-form-item>
-
-        <el-form-item prop="password">
-          <el-input
-            v-model="form.password"
-            type="password"
-            placeholder="请输入密码"
-            size="large"
-            show-password
-            clearable
-            @keyup.enter="handleLogin"
-          >
-            <template #prefix>
-              <el-icon><Lock /></el-icon>
-            </template>
-          </el-input>
-        </el-form-item>
-
-        <el-form-item>
-          <el-checkbox v-model="form.remember">记住我</el-checkbox>
-        </el-form-item>
-
-        <el-form-item>
-          <el-button
-            type="primary"
-            size="large"
-            :loading="loading"
-            class="login-btn"
-            @click="handleLogin"
-          >
-            登录
-          </el-button>
-        </el-form-item>
-
-        <div class="login-footer">
-          <span>还没有账号？</span>
-          <router-link to="/register" class="link">立即注册</router-link>
+    <!-- Right form panel -->
+    <div class="auth-form-panel">
+      <div class="form-wrap">
+        <div class="form-header">
+          <h1 class="form-title">登录</h1>
+          <p class="form-sub">还没有账号？<router-link to="/register" class="form-link">立即注册</router-link></p>
         </div>
-      </el-form>
+
+        <el-form
+          ref="formRef"
+          :model="form"
+          :rules="rules"
+          class="auth-form"
+          @submit.prevent="handleLogin"
+        >
+          <el-form-item prop="username">
+            <label class="field-label">用户名</label>
+            <el-input
+              v-model="form.username"
+              placeholder="请输入用户名"
+              size="large"
+              clearable
+            />
+          </el-form-item>
+
+          <el-form-item prop="password">
+            <label class="field-label">密码</label>
+            <el-input
+              v-model="form.password"
+              type="password"
+              placeholder="请输入密码"
+              size="large"
+              show-password
+              clearable
+              @keyup.enter="handleLogin"
+            />
+          </el-form-item>
+
+          <el-form-item>
+            <el-checkbox v-model="form.remember">记住我</el-checkbox>
+          </el-form-item>
+
+          <el-form-item>
+            <button
+              type="button"
+              class="btn-submit"
+              :disabled="loading"
+              @click="handleLogin"
+            >
+              <span v-if="!loading">登录</span>
+              <span v-else>登录中…</span>
+            </button>
+          </el-form-item>
+        </el-form>
+      </div>
     </div>
   </div>
 </template>
@@ -150,76 +152,157 @@ const handleLogin = async () => {
 <style scoped lang="scss">
 @import '@/assets/styles/variables.scss';
 
-.login-container {
+// ─── Shared auth layout ───────────────────────────────
+.auth-page {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  padding: $spacing-lg;
-}
-
-.login-box {
-  width: 100%;
-  max-width: 400px;
-  background: $bg-color;
-  border-radius: $border-radius-lg;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-  padding: $spacing-xl;
 
   @include mobile {
-    padding: $spacing-lg;
+    grid-template-columns: 1fr;
   }
 }
 
-.login-header {
-  text-align: center;
-  margin-bottom: $spacing-xl;
+// ─── Brand panel (left) ───────────────────────────────
+.auth-brand {
+  background: $bg-dark;
+  color: $text-inverse;
+  display: flex;
+  flex-direction: column;
+  padding: $spacing-xl;
 
-  h1 {
-    font-size: 32px;
-    color: $primary-color;
-    margin: 0 0 $spacing-sm 0;
-    font-weight: bold;
-  }
-
-  p {
-    font-size: 16px;
-    color: $text-secondary;
-    margin: 0;
-  }
+  @include mobile { display: none; }
 }
 
-.login-form {
-  .login-btn {
-    width: 100%;
-    margin-top: $spacing-md;
-  }
+.brand-logo {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-bold;
+  letter-spacing: 0.18em;
+  color: $text-inverse;
+  text-decoration: none;
 }
 
-.login-footer {
-  text-align: center;
-  margin-top: $spacing-md;
-  font-size: 14px;
-  color: $text-secondary;
-
-  .link {
-    color: $primary-color;
-    margin-left: 4px;
-
-    &:hover {
-      text-decoration: underline;
-    }
-  }
+.brand-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
-:deep(.el-form-item) {
+.brand-headline {
+  font-size: clamp(32px, 3.5vw, 52px);
+  font-weight: $font-weight-bold;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
   margin-bottom: $spacing-lg;
 }
 
-:deep(.el-checkbox) {
-  .el-checkbox__label {
-    color: $text-regular;
-  }
+.brand-sub {
+  font-size: $font-size-base;
+  color: rgba(255, 255, 255, 0.6);
+  line-height: $line-height-base;
+  max-width: 320px;
+}
+
+.brand-footer {
+  font-size: $font-size-xs;
+  color: rgba(255, 255, 255, 0.35);
+}
+
+// ─── Form panel (right) ───────────────────────────────
+.auth-form-panel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: $spacing-xl $spacing-lg;
+  background: $bg-color;
+}
+
+.form-wrap {
+  width: 100%;
+  max-width: 380px;
+}
+
+.form-header {
+  margin-bottom: $spacing-xl;
+}
+
+.form-title {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+  letter-spacing: -0.03em;
+  color: $text-primary;
+  margin-bottom: $spacing-sm;
+}
+
+.form-sub {
+  font-size: $font-size-sm;
+  color: $text-secondary;
+}
+
+.form-link {
+  color: $text-primary;
+  font-weight: $font-weight-medium;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+// ─── Field labels ─────────────────────────────────────
+.field-label {
+  display: block;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-bold;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: $text-secondary;
+  margin-bottom: 6px;
+}
+
+// ─── Submit button ────────────────────────────────────
+.btn-submit {
+  width: 100%;
+  padding: 15px;
+  background: $primary-color;
+  color: #fff;
+  border: none;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-bold;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  font-family: $font-family;
+  transition: background $transition-base;
+  margin-top: $spacing-sm;
+
+  &:hover:not(:disabled) { background: #333; }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+}
+
+// ─── El Plus overrides ────────────────────────────────
+:deep(.el-form-item) {
+  margin-bottom: $spacing-lg;
+  display: flex;
+  flex-direction: column;
+
+  .el-form-item__content { flex-direction: column; align-items: stretch; }
+  .el-form-item__error { font-size: $font-size-xs; }
+}
+
+:deep(.el-input__wrapper) {
+  border-radius: 0;
+  box-shadow: 0 0 0 1px $border-base inset;
+
+  &:hover { box-shadow: 0 0 0 1px $text-regular inset; }
+  &.is-focus { box-shadow: 0 0 0 1px $text-primary inset !important; }
+}
+
+:deep(.el-checkbox__label) {
+  font-size: $font-size-sm;
+  color: $text-regular;
+}
+
+:deep(.el-checkbox__inner) {
+  border-radius: 0;
 }
 </style>

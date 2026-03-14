@@ -46,25 +46,6 @@
               />
             </div>
 
-            <!-- 微信支付 -->
-            <div
-              :class="['method-card', selectedMethod === 'WECHAT' ? 'active' : '']"
-              @click="handleMethodClick('WECHAT')"
-            >
-              <div class="method-icon wechat">
-                <el-icon :size="40"><ChatDotSquare /></el-icon>
-              </div>
-              <div class="method-info">
-                <h4>微信支付</h4>
-                <p class="method-desc">使用微信扫码支付</p>
-                <el-tag type="success" size="small">推荐</el-tag>
-              </div>
-              <el-radio
-                v-model="selectedMethod"
-                value="WECHAT"
-              />
-            </div>
-
             <!-- Stripe 支付 -->
             <div
               :class="['method-card', selectedMethod === 'STRIPE' ? 'active' : '']"
@@ -84,24 +65,6 @@
               />
             </div>
 
-            <!-- Mock 模拟支付 -->
-            <div
-              :class="['method-card', selectedMethod === 'MOCK' ? 'active' : '']"
-              @click="handleMethodClick('MOCK')"
-            >
-              <div class="method-icon">
-                <el-icon :size="40"><Tools /></el-icon>
-              </div>
-              <div class="method-info">
-                <h4>模拟支付</h4>
-                <p class="method-desc">测试环境模拟支付（立即成功）</p>
-                <el-tag type="warning" size="small">测试</el-tag>
-              </div>
-              <el-radio
-                v-model="selectedMethod"
-                value="MOCK"
-              />
-            </div>
           </div>
         </div>
 
@@ -146,10 +109,10 @@
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getOrderDetail } from '@/api/order'
-import { pay, createAlipayPayment } from '@/api/payment'
+import { createAlipayPayment, createStripePayment } from '@/api/payment'
 import { formatPrice } from '@/utils/format'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Wallet, CreditCard, Tools, ChatDotSquare } from '@element-plus/icons-vue'
+import { Wallet, CreditCard } from '@element-plus/icons-vue'
 import Loading from '@/components/common/Loading.vue'
 import Empty from '@/components/common/Empty.vue'
 
@@ -190,7 +153,7 @@ const fetchOrderDetail = async () => {
 
 // 支付方式点击处理
 const handleMethodClick = (method) => {
-  if (method === 'ALIPAY' || method === 'WECHAT' || method === 'STRIPE' || method === 'MOCK') {
+  if (method === 'ALIPAY' || method === 'STRIPE') {
     selectedMethod.value = method
   } else {
     ElMessage.info('该支付方式暂未开通，敬请期待')
@@ -204,23 +167,8 @@ const handlePay = async () => {
     return
   }
 
-  // 微信支付直接跳转到微信支付页面
-  if (selectedMethod.value === 'WECHAT') {
-    router.push(`/payment/wechat/${order.value.orderNo}`)
-    return
-  }
-
-  // Stripe 支付直接跳转到 Stripe 支付页面
-  if (selectedMethod.value === 'STRIPE') {
-    router.push({
-      path: '/payment/stripe',
-      query: { orderNo: order.value.orderNo }
-    })
-    return
-  }
-
   try {
-    const paymentMethodText = selectedMethod.value === 'ALIPAY' ? '支付宝' : '模拟支付'
+    const paymentMethodText = selectedMethod.value === 'ALIPAY' ? '支付宝' : 'Stripe'
     await ElMessageBox.confirm(
       `确认使用${paymentMethodText}支付 ¥${formatPrice(order.value.totalAmount)} 吗？`,
       '支付确认',
@@ -234,11 +182,9 @@ const handlePay = async () => {
     paying.value = true
 
     if (selectedMethod.value === 'ALIPAY') {
-      // 支付宝支付
       await handleAlipayPayment()
     } else {
-      // 模拟支付
-      await handleMockPayment()
+      await handleStripePayment()
     }
   } catch (error) {
     if (error !== 'cancel') {
@@ -274,25 +220,12 @@ const handleAlipayPayment = async () => {
   }
 }
 
-// 处理模拟支付
-const handleMockPayment = async () => {
+// 处理 Stripe 支付
+const handleStripePayment = async () => {
   try {
-    const result = await pay({
-      orderNo: order.value.orderNo,
-      paymentMethod: 'MOCK'
-    })
-
-    if (result.paymentStatus === 'SUCCESS') {
-      ElMessage.success('支付成功！')
-
-      // 延迟跳转，让用户看到成功提示
-      setTimeout(() => {
-        router.push(`/orders/${order.value.orderNo}`)
-      }, 1500)
-    } else {
-      ElMessage.error(result.message || '支付失败，请重试')
-      paying.value = false
-    }
+    const result = await createStripePayment(order.value.orderNo)
+    // 直接重定向到 Stripe Checkout 页面
+    window.location.href = result.sessionUrl
   } catch (error) {
     paying.value = false
     throw error
@@ -415,10 +348,6 @@ onMounted(() => {
     .method-icon {
       color: $primary-color;
       flex-shrink: 0;
-
-      &.wechat {
-        color: #07c160;
-      }
 
       &.stripe {
         color: #635bff;

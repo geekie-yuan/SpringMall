@@ -1,19 +1,20 @@
 <template>
   <div class="profile-page">
     <div class="container">
-      <h2 class="page-title">个人中心</h2>
 
-      <div class="profile-content">
-        <!-- 用户信息 -->
-        <el-card class="info-card">
-          <template #header>
-            <span>基本信息</span>
-          </template>
+      <h1 class="page-title">个人中心</h1>
+
+      <div class="profile-layout">
+
+        <!-- Basic Info Section -->
+        <section class="profile-section">
+          <h2 class="section-title">基本信息</h2>
           <el-form
             ref="profileFormRef"
             :model="userForm"
             :rules="profileRules"
-            label-width="100px"
+            label-position="top"
+            class="custom-form"
           >
             <el-form-item label="用户名" prop="username">
               <el-input v-model="userForm.username" />
@@ -25,35 +26,34 @@
               <el-input v-model="userForm.phone" placeholder="请输入手机号" />
             </el-form-item>
             <el-form-item label="角色">
-              <el-tag :type="userForm.role === 'ADMIN' ? 'danger' : 'primary'">
+              <span class="role-badge" :class="userForm.role === 'ADMIN' ? 'role-admin' : 'role-user'">
                 {{ userForm.role === 'ADMIN' ? '管理员' : '普通用户' }}
-              </el-tag>
+              </span>
             </el-form-item>
             <el-form-item label="注册时间">
-              <span>{{ formatDate(userForm.createdAt) }}</span>
+              <span class="info-text">{{ formatDate(userForm.createdAt) }}</span>
             </el-form-item>
             <el-form-item>
-              <el-button
-                type="primary"
-                :loading="profileSubmitting"
+              <button
+                class="btn-save"
+                :disabled="profileSubmitting"
                 @click="handleUpdateProfile"
               >
-                保存修改
-              </el-button>
+                {{ profileSubmitting ? '保存中…' : '保存修改' }}
+              </button>
             </el-form-item>
           </el-form>
-        </el-card>
+        </section>
 
-        <!-- 修改密码 -->
-        <el-card class="password-card">
-          <template #header>
-            <span>修改密码</span>
-          </template>
+        <!-- Change Password Section -->
+        <section class="profile-section">
+          <h2 class="section-title">修改密码</h2>
           <el-form
             ref="passwordFormRef"
             :model="passwordForm"
             :rules="passwordRules"
-            label-width="100px"
+            label-position="top"
+            class="custom-form"
           >
             <el-form-item label="原密码" prop="oldPassword">
               <el-input
@@ -80,16 +80,17 @@
               />
             </el-form-item>
             <el-form-item>
-              <el-button
-                type="primary"
-                :loading="submitting"
+              <button
+                class="btn-save"
+                :disabled="submitting"
                 @click="handleUpdatePassword"
               >
-                修改密码
-              </el-button>
+                {{ submitting ? '提交中…' : '修改密码' }}
+              </button>
             </el-form-item>
           </el-form>
-        </el-card>
+        </section>
+
       </div>
     </div>
   </div>
@@ -111,7 +112,6 @@ const passwordFormRef = ref(null)
 const submitting = ref(false)
 const profileSubmitting = ref(false)
 
-// 用户信息
 const userForm = reactive({
   username: '',
   email: '',
@@ -120,7 +120,6 @@ const userForm = reactive({
   createdAt: ''
 })
 
-// 个人信息验证规则
 const profileRules = {
   username: [
     { required: true, message: '请输入用户名', trigger: 'blur' },
@@ -134,7 +133,6 @@ const profileRules = {
   ]
 }
 
-// 保存个人信息
 const handleUpdateProfile = async () => {
   if (!profileFormRef.value) return
   const originalUsername = authStore.user?.username
@@ -146,12 +144,9 @@ const handleUpdateProfile = async () => {
       email: userForm.email,
       phone: userForm.phone
     })
-    // 用户名变更后需要重新登录（身份验证字段已变）
     if (userForm.username !== originalUsername) {
       ElMessage.success('用户名已修改，请重新登录')
-      setTimeout(() => {
-        authStore.logout()
-      }, 1500)
+      setTimeout(() => { authStore.logout() }, 1500)
     }
   } catch (error) {
     if (error !== false) {
@@ -162,14 +157,12 @@ const handleUpdateProfile = async () => {
   }
 }
 
-// 密码表单
 const passwordForm = reactive({
   oldPassword: '',
   newPassword: '',
   confirmPassword: ''
 })
 
-// 确认密码验证
 const validateConfirmPassword = (rule, value, callback) => {
   if (value === '') {
     callback(new Error('请再次输入新密码'))
@@ -180,7 +173,6 @@ const validateConfirmPassword = (rule, value, callback) => {
   }
 }
 
-// 密码验证规则
 const passwordRules = {
   oldPassword: [
     { required: true, message: '请输入原密码', trigger: 'blur' }
@@ -194,7 +186,6 @@ const passwordRules = {
   ]
 }
 
-// 将服务端字段错误应用到密码表单
 const applyServerErrors = (fields) => {
   if (!passwordFormRef.value) return
   const unmatchedErrors = []
@@ -212,35 +203,22 @@ const applyServerErrors = (fields) => {
   }
 }
 
-// 修改密码
 const handleUpdatePassword = async () => {
   if (!passwordFormRef.value) return
-
-  // 重置之前的服务端错误状态
   passwordFormRef.value.clearValidate()
-
   try {
     await passwordFormRef.value.validate()
-
     submitting.value = true
-
     await updatePassword({
       oldPassword: passwordForm.oldPassword,
       newPassword: passwordForm.newPassword
     })
-
     ElMessage.success('密码修改成功，请重新登录')
-
-    // 清空表单
     passwordForm.oldPassword = ''
     passwordForm.newPassword = ''
     passwordForm.confirmPassword = ''
     passwordFormRef.value.resetFields()
-
-    // 退出登录
-    setTimeout(() => {
-      authStore.logout()
-    }, 1500)
+    setTimeout(() => { authStore.logout() }, 1500)
   } catch (error) {
     if (error instanceof ValidationError && error.fields) {
       applyServerErrors(error.fields)
@@ -253,7 +231,6 @@ const handleUpdatePassword = async () => {
 }
 
 onMounted(() => {
-  // 加载用户信息
   const user = authStore.user
   if (user) {
     userForm.username = user.username || ''
@@ -269,27 +246,105 @@ onMounted(() => {
 @import '@/assets/styles/variables.scss';
 
 .profile-page {
-  padding: $spacing-xl 0;
-  min-height: calc(100vh - 60px);
+  background: $bg-color;
+  min-height: calc(100vh - 68px);
+  padding: $spacing-lg 0 $spacing-xxl;
 }
 
 .page-title {
-  font-size: 24px;
-  color: $text-primary;
+  font-size: $font-size-xxl;
+  font-weight: $font-weight-bold;
+  letter-spacing: -0.03em;
   margin-bottom: $spacing-xl;
 }
 
-.profile-content {
-  max-width: 800px;
+.profile-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: $spacing-xl;
+  align-items: start;
+  max-width: 880px;
 
-  .info-card,
-  .password-card {
-    margin-bottom: $spacing-lg;
+  @include mobile {
+    grid-template-columns: 1fr;
+  }
+}
+
+.profile-section {
+  border: 1px solid $border-light;
+  padding: $spacing-xl;
+}
+
+.section-title {
+  font-size: $font-size-md;
+  font-weight: $font-weight-bold;
+  letter-spacing: -0.02em;
+  margin-bottom: $spacing-lg;
+  padding-bottom: $spacing-md;
+  border-bottom: 1px solid $border-lighter;
+}
+
+.custom-form {
+  :deep(.el-form-item__label) {
+    font-size: $font-size-xs;
+    font-weight: $font-weight-bold;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: $text-secondary;
+    padding-bottom: 4px;
+    line-height: 1;
   }
 
-  :deep(.el-card__header) {
-    background: $bg-page;
-    font-weight: 500;
+  :deep(.el-input__wrapper) {
+    border-radius: 0;
+    box-shadow: 0 0 0 1px $border-base;
+
+    &:hover { box-shadow: 0 0 0 1px $text-secondary; }
+
+    &.is-focus {
+      box-shadow: 0 0 0 1px $primary-color !important;
+    }
   }
+}
+
+.role-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-bold;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+
+  &.role-admin {
+    background: #fee2e2;
+    color: #b91c1c;
+  }
+
+  &.role-user {
+    background: $bg-gray;
+    color: $text-secondary;
+  }
+}
+
+.info-text {
+  font-size: $font-size-sm;
+  color: $text-secondary;
+}
+
+.btn-save {
+  padding: 10px 28px;
+  background: $primary-color;
+  color: #fff;
+  border: none;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-bold;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  font-family: $font-family;
+  transition: background $transition-base;
+
+  &:hover:not(:disabled) { background: #333; }
+  &:disabled { opacity: 0.4; cursor: not-allowed; }
 }
 </style>

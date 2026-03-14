@@ -1,91 +1,80 @@
 <template>
   <div class="order-list-page">
     <div class="container">
-      <h2 class="page-title">我的订单</h2>
 
-      <!-- 状态筛选 -->
-      <el-tabs v-model="activeStatus" @tab-click="handleTabClick">
-        <el-tab-pane label="全部" name="ALL" />
-        <el-tab-pane label="待支付" name="UNPAID" />
-        <el-tab-pane label="待发货" name="PAID" />
-        <el-tab-pane label="待收货" name="SHIPPED" />
-        <el-tab-pane label="已完成" name="COMPLETED" />
-      </el-tabs>
+      <h1 class="page-title">我的订单</h1>
 
-      <!-- 订单列表 -->
+      <!-- Status filter -->
+      <div class="status-tabs">
+        <button
+          v-for="tab in statusTabs"
+          :key="tab.value"
+          class="tab-btn"
+          :class="{ active: activeStatus === tab.value }"
+          @click="handleTabChange(tab.value)"
+        >{{ tab.label }}</button>
+      </div>
+
       <Loading v-if="loading" />
       <Empty v-else-if="!orders.length" type="order" text="暂无订单" />
+
       <div v-else class="order-list">
         <div v-for="order in orders" :key="order.id" class="order-card">
-          <div class="order-header">
-            <span>订单号：{{ order.orderNo }}</span>
-            <span>{{ formatDate(order.createdAt) }}</span>
-            <el-tag :type="statusTagType[order.status]">
+
+          <div class="order-head">
+            <div class="head-meta">
+              <span class="order-no">{{ order.orderNo }}</span>
+              <span class="order-date">{{ formatDate(order.createdAt) }}</span>
+            </div>
+            <span :class="['status-badge', 'status-' + order.status.toLowerCase()]">
               {{ statusText[order.status] }}
-            </el-tag>
+            </span>
           </div>
 
           <div class="order-items">
-            <div
-              v-for="item in order.items"
-              :key="item.id"
-              class="order-item"
-            >
-              <img :src="item.productImage || '/placeholder.png'" :alt="item.productName" />
-              <div class="item-info">
-                <h4>{{ item.productName }}</h4>
-                <p>¥{{ formatPrice(item.unitPrice) }} × {{ item.quantity }}</p>
+            <div v-for="item in order.items" :key="item.id" class="order-item">
+              <div class="item-img">
+                <img :src="item.productImage || '/placeholder.png'" :alt="item.productName" />
+              </div>
+              <div class="item-details">
+                <h4 class="item-name">{{ item.productName }}</h4>
+                <p class="item-price">¥{{ formatPrice(item.unitPrice) }} × {{ item.quantity }}</p>
               </div>
             </div>
           </div>
 
-          <div class="order-footer">
+          <div class="order-foot">
             <div class="order-total">
-              <span>合计：</span>
-              <span class="total-price">¥{{ formatPrice(order.totalAmount) }}</span>
+              合计 <strong>¥{{ formatPrice(order.totalAmount) }}</strong>
             </div>
-
             <div class="order-actions">
-              <el-button size="small" @click="goToDetail(order.orderNo)">
-                查看详情
-              </el-button>
-              <el-button
+              <button class="link-btn" @click="goToDetail(order.orderNo)">查看详情</button>
+              <button
                 v-if="order.status === 'UNPAID'"
-                type="primary"
-                size="small"
+                class="action-btn action-btn--fill"
                 @click="goToPay(order.orderNo)"
-              >
-                去支付
-              </el-button>
-              <el-button
+              >去支付</button>
+              <button
                 v-if="order.status === 'UNPAID' || order.status === 'PAID'"
-                type="danger"
-                size="small"
+                class="action-btn action-btn--outline"
                 @click="handleCancel(order.orderNo)"
-              >
-                取消订单
-              </el-button>
-              <el-button
+              >取消订单</button>
+              <button
                 v-if="order.status === 'SHIPPED'"
-                type="primary"
-                size="small"
+                class="action-btn action-btn--fill"
                 @click="handleConfirm(order.orderNo)"
-              >
-                确认收货
-              </el-button>
-              <el-button
+              >确认收货</button>
+              <button
                 v-if="order.status === 'SHIPPED' || order.status === 'COMPLETED'"
-                type="info"
-                size="small"
-                plain
+                class="action-btn action-btn--muted"
                 @click="handleCancelShipped"
-              >
-                取消订单
-              </el-button>
+              >取消订单</button>
             </div>
           </div>
+
         </div>
       </div>
+
     </div>
   </div>
 </template>
@@ -109,7 +98,14 @@ const loading = ref(false)
 const statusText = ORDER_STATUS_TEXT
 const statusTagType = ORDER_STATUS_TAG_TYPE
 
-// 获取订单列表
+const statusTabs = [
+  { value: 'ALL', label: '全部' },
+  { value: 'UNPAID', label: '待支付' },
+  { value: 'PAID', label: '待发货' },
+  { value: 'SHIPPED', label: '待收货' },
+  { value: 'COMPLETED', label: '已完成' }
+]
+
 const fetchOrders = async () => {
   loading.value = true
   try {
@@ -127,22 +123,14 @@ const fetchOrders = async () => {
   }
 }
 
-// 切换状态
-const handleTabClick = () => {
+const handleTabChange = (status) => {
+  activeStatus.value = status
   fetchOrders()
 }
 
-// 查看详情
-const goToDetail = (orderNo) => {
-  router.push(`/orders/${orderNo}`)
-}
+const goToDetail = (orderNo) => router.push(`/orders/${orderNo}`)
+const goToPay = (orderNo) => router.push(`/payment/${orderNo}`)
 
-// 去支付
-const goToPay = (orderNo) => {
-  router.push(`/payment/${orderNo}`)
-}
-
-// 取消订单
 const handleCancel = async (orderNo) => {
   try {
     await ElMessageBox.confirm('确定要取消该订单吗？', '提示', {
@@ -150,16 +138,12 @@ const handleCancel = async (orderNo) => {
       cancelButtonText: '取消',
       type: 'warning'
     })
-
     await cancelOrder(orderNo)
     ElMessage.success('订单已取消')
     fetchOrders()
-  } catch (error) {
-    // 用户取消
-  }
+  } catch {}
 }
 
-// 确认收货
 const handleConfirm = async (orderNo) => {
   try {
     await ElMessageBox.confirm('确认已收到货物吗？', '提示', {
@@ -167,16 +151,12 @@ const handleConfirm = async (orderNo) => {
       cancelButtonText: '取消',
       type: 'info'
     })
-
     await confirmOrder(orderNo)
     ElMessage.success('确认收货成功')
     fetchOrders()
-  } catch (error) {
-    // 用户取消
-  }
+  } catch {}
 }
 
-// 已发货订单取消提醒
 const handleCancelShipped = () => {
   ElMessageBox.alert('商品已发货，无法取消订单。如需退货，请联系客服。', '无法取消', {
     confirmButtonText: '我知道了',
@@ -184,100 +164,210 @@ const handleCancelShipped = () => {
   })
 }
 
-onMounted(() => {
-  fetchOrders()
-})
+onMounted(fetchOrders)
 </script>
 
 <style scoped lang="scss">
 @import '@/assets/styles/variables.scss';
 
 .order-list-page {
-  padding: $spacing-xl 0;
-  min-height: calc(100vh - 60px);
+  background: $bg-color;
+  min-height: calc(100vh - 68px);
+  padding: $spacing-lg 0 $spacing-xxl;
 }
 
 .page-title {
-  font-size: 24px;
-  color: $text-primary;
-  margin-bottom: $spacing-lg;
+  font-size: $font-size-xxl;
+  font-weight: $font-weight-bold;
+  letter-spacing: -0.03em;
+  margin-bottom: $spacing-xl;
 }
 
+// Status tabs
+.status-tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid $border-light;
+  margin-bottom: $spacing-xl;
+}
+
+.tab-btn {
+  padding: 10px 20px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  font-size: $font-size-sm;
+  color: $text-secondary;
+  cursor: pointer;
+  font-family: $font-family;
+  transition: color $transition-base, border-color $transition-base;
+
+  &:hover { color: $text-primary; }
+
+  &.active {
+    color: $text-primary;
+    font-weight: $font-weight-bold;
+    border-bottom-color: $primary-color;
+  }
+}
+
+// Order cards
 .order-list {
-  .order-card {
-    background: $bg-color;
-    border-radius: $border-radius-base;
-    overflow: hidden;
-    margin-bottom: $spacing-lg;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-lg;
+}
 
-    .order-header {
-      @include flex-between;
-      padding: $spacing-md $spacing-lg;
-      background: $bg-page;
-      border-bottom: 1px solid $border-light;
+.order-card {
+  border: 1px solid $border-light;
+}
 
-      span {
-        color: $text-regular;
-        font-size: 14px;
-      }
-    }
+.order-head {
+  @include flex-between;
+  padding: $spacing-md $spacing-lg;
+  background: $bg-page;
+  border-bottom: 1px solid $border-lighter;
+}
 
-    .order-items {
-      padding: $spacing-lg;
+.head-meta {
+  display: flex;
+  gap: $spacing-lg;
+  align-items: center;
+}
 
-      .order-item {
-        display: flex;
-        gap: $spacing-md;
-        margin-bottom: $spacing-md;
+.order-no {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-bold;
+  letter-spacing: 0.03em;
+  color: $text-primary;
+}
 
-        &:last-child {
-          margin-bottom: 0;
-        }
+.order-date {
+  font-size: $font-size-xs;
+  color: $text-placeholder;
+}
 
-        img {
-          width: 80px;
-          height: 80px;
-          object-fit: cover;
-          border-radius: $border-radius-base;
-        }
+.status-badge {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-bold;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 
-        .item-info {
-          flex: 1;
+  &.status-unpaid { color: #d97706; }
+  &.status-paid   { color: #2563eb; }
+  &.status-shipped { color: #7c3aed; }
+  &.status-completed { color: #059669; }
+  &.status-cancelled { color: $text-placeholder; }
+}
 
-          h4 {
-            font-size: 16px;
-            color: $text-primary;
-            margin: 0 0 $spacing-sm 0;
-          }
+.order-items {
+  padding: $spacing-lg;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
 
-          p {
-            font-size: 14px;
-            color: $text-secondary;
-            margin: 0;
-          }
-        }
-      }
-    }
+.order-item {
+  display: flex;
+  gap: $spacing-md;
+  align-items: flex-start;
+}
 
-    .order-footer {
-      @include flex-between;
-      padding: $spacing-lg;
-      border-top: 1px solid $border-lighter;
+.item-img {
+  width: 64px;
+  height: 64px;
+  flex-shrink: 0;
+  background: $bg-gray;
+  overflow: hidden;
 
-      .order-total {
-        .total-price {
-          font-size: 18px;
-          color: $danger-color;
-          font-weight: bold;
-          margin-left: $spacing-sm;
-        }
-      }
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
 
-      .order-actions {
-        display: flex;
-        gap: $spacing-sm;
-      }
-    }
+.item-details { flex: 1; }
+
+.item-name {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $text-primary;
+  margin: 0 0 4px;
+}
+
+.item-price {
+  font-size: $font-size-xs;
+  color: $text-secondary;
+  margin: 0;
+}
+
+.order-foot {
+  @include flex-between;
+  padding: $spacing-md $spacing-lg;
+  border-top: 1px solid $border-lighter;
+  background: $bg-page;
+}
+
+.order-total {
+  font-size: $font-size-sm;
+  color: $text-secondary;
+
+  strong {
+    font-size: $font-size-md;
+    color: $text-primary;
+    margin-left: 4px;
+  }
+}
+
+.order-actions {
+  display: flex;
+  gap: $spacing-sm;
+  align-items: center;
+}
+
+.link-btn {
+  background: none;
+  border: none;
+  font-size: $font-size-xs;
+  color: $text-secondary;
+  cursor: pointer;
+  font-family: $font-family;
+  text-decoration: underline;
+  padding: 0;
+
+  &:hover { color: $text-primary; }
+}
+
+.action-btn {
+  padding: 7px 16px;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-bold;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  font-family: $font-family;
+  border: 1px solid transparent;
+  transition: background $transition-base, color $transition-base;
+
+  &--fill {
+    background: $primary-color;
+    color: #fff;
+    &:hover { background: #333; }
+  }
+
+  &--outline {
+    background: transparent;
+    color: $text-primary;
+    border-color: $border-base;
+    &:hover { border-color: $primary-color; }
+  }
+
+  &--muted {
+    background: transparent;
+    color: $text-placeholder;
+    border-color: $border-lighter;
+    &:hover { color: $text-secondary; border-color: $border-light; }
   }
 }
 </style>

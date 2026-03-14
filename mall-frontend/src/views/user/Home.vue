@@ -1,70 +1,112 @@
 <template>
   <div class="home">
-    <!-- Banner 轮播 -->
-    <div class="banner-section">
-      <el-carousel height="400px" :interval="5000">
-        <el-carousel-item v-for="item in banners" :key="item.id">
-          <div class="banner-item" :style="{ background: item.bg }">
-            <div class="container">
-              <h2>{{ item.title }}</h2>
-              <p>{{ item.desc }}</p>
-              <el-button type="primary" size="large" @click="$router.push('/products')">
-                立即购买
-              </el-button>
-            </div>
-          </div>
-        </el-carousel-item>
-      </el-carousel>
-    </div>
 
-    <!-- 分类导航 -->
-    <div class="category-section">
+    <!-- Hero Section -->
+    <section class="hero">
+      <div class="hero-content">
+        <p class="hero-eyebrow">2026 新品上市</p>
+        <h1 class="hero-title">精选好物<br>品质生活</h1>
+        <p class="hero-desc">汇聚各类优质商品，每一件都经过严格品控</p>
+        <div class="hero-actions">
+          <router-link to="/products" class="btn-primary">立即选购</router-link>
+          <router-link to="/products" class="btn-ghost">浏览分类</router-link>
+        </div>
+      </div>
+      <div class="hero-visual">
+        <div class="hero-image-grid">
+          <div class="grid-block grid-block--large" style="background: #f0ece6;"></div>
+          <div class="grid-block" style="background: #e8e4dc;"></div>
+          <div class="grid-block" style="background: #dedad2;"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Categories Strip -->
+    <section class="categories-strip">
       <div class="container">
-        <h3 class="section-title">商品分类</h3>
-        <div class="category-grid">
-          <div
-            v-for="category in categories"
-            :key="category.id"
-            class="category-item"
-            @click="goToCategory(category.id)"
-          >
-            <el-icon :size="40"><Grid /></el-icon>
-            <span>{{ category.name }}</span>
+        <div class="strip-inner">
+          <span class="strip-label">分类浏览</span>
+          <div class="category-pills">
+            <button
+              v-for="category in categories"
+              :key="category.id"
+              class="pill"
+              @click="goToCategory(category.id)"
+            >
+              {{ category.name }}
+            </button>
           </div>
         </div>
       </div>
-    </div>
+    </section>
 
-    <!-- 热门商品 -->
-    <div class="products-section">
+    <!-- Featured Products -->
+    <section class="products-section">
       <div class="container">
-        <h3 class="section-title">热门商品</h3>
+        <div class="section-header">
+          <h2 class="section-title">热门商品</h2>
+          <router-link to="/products" class="section-more">查看全部 →</router-link>
+        </div>
+
         <Loading v-if="loading" />
         <Empty v-else-if="!products.length" type="product" text="暂无商品" />
         <div v-else class="product-grid">
           <div
-            v-for="product in products"
+            v-for="(product, index) in products"
             :key="product.id"
             class="product-card"
+            :class="{ 'product-card--featured': index === 0 }"
             @click="goToDetail(product.id)"
           >
-            <div class="product-image">
-              <img :src="product.mainImage || '/placeholder.png'" :alt="product.name" />
-            </div>
-            <div class="product-info">
-              <h4 class="product-name">{{ product.name }}</h4>
-              <p class="product-desc">{{ product.description }}</p>
-              <div class="product-footer">
-                <span class="product-price">¥{{ formatPrice(product.price) }}</span>
-                <el-button type="primary" size="small" @click.stop="addToCart(product)">
+            <div class="product-card__image">
+              <img
+                :src="product.mainImage || '/placeholder.png'"
+                :alt="product.name"
+                loading="lazy"
+              />
+              <div class="product-card__overlay">
+                <button class="btn-overlay" @click.stop="addToCart(product)">
                   加入购物车
-                </el-button>
+                </button>
               </div>
+            </div>
+            <div class="product-card__body">
+              <h3 class="product-card__name">{{ product.name }}</h3>
+              <p class="product-card__price">¥{{ formatPrice(product.price) }}</p>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </section>
+
+    <!-- Value Props -->
+    <section class="value-props">
+      <div class="container">
+        <div class="props-grid">
+          <div class="prop-item">
+            <span class="prop-icon">✦</span>
+            <h4>品质保证</h4>
+            <p>每件商品都由站长亲自导来</p>
+          </div>
+          <div class="prop-item">
+            <span class="prop-icon">✦</span>
+            <h4>全场包邮</h4>
+            <p>因为全场商品没有一个需要邮寄</p>
+          </div>
+          <div class="prop-item">
+            <span class="prop-icon">✦</span>
+            <h4>7 天不换</h4>
+            <p>多发一秒都不给退</p>
+          </div>
+          <div class="prop-item">
+            <span class="prop-icon">✦</span>
+            <h4>安全支付</h4>
+            <p>接口调用, 神仙都盗不了</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
   </div>
 </template>
 
@@ -75,7 +117,6 @@ import { getAllProducts } from '@/api/product'
 import { useAppStore } from '@/store/app'
 import { useCartStore } from '@/store/cart'
 import { formatPrice } from '@/utils/format'
-import { ElMessage } from 'element-plus'
 import Loading from '@/components/common/Loading.vue'
 import Empty from '@/components/common/Empty.vue'
 
@@ -83,65 +124,31 @@ const router = useRouter()
 const appStore = useAppStore()
 const cartStore = useCartStore()
 
-// Banner 数据
-const banners = ref([
-  {
-    id: 1,
-    title: '欢迎来到 Spring Mall',
-    desc: '精选好物，品质保证',
-    bg: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-  },
-  {
-    id: 2,
-    title: '新品上市',
-    desc: '最新商品，等你来选',
-    bg: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)'
-  },
-  {
-    id: 3,
-    title: '限时优惠',
-    desc: '超值特惠，不容错过',
-    bg: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)'
-  }
-])
-
 const categories = ref([])
 const products = ref([])
 const loading = ref(false)
 
-// 获取分类列表
 const fetchCategories = async () => {
   await appStore.fetchCategories()
-  categories.value = appStore.categories.slice(0, 8) // 只显示前8个
+  categories.value = appStore.categories.slice(0, 10)
 }
 
-// 获取商品列表
+// 获取热门商品列表
 const fetchProducts = async () => {
   loading.value = true
   try {
-    const data = await getAllProducts({ page: 0, size: 8 })
-    products.value = data.content || data || []
+    const data = await getAllProducts({ sortBy: 'sales', sortDir: 'desc', size: 9 })
+    products.value = data.list || data || []
   } catch (error) {
-    console.error('获取商品失败:', error)
+    console.error('获取热门商品失败:', error)
   } finally {
     loading.value = false
   }
 }
 
-// 跳转到分类页面
-const goToCategory = (categoryId) => {
-  router.push({
-    path: '/products',
-    query: { categoryId }
-  })
-}
+const goToCategory = (categoryId) => router.push({ path: '/products', query: { categoryId } })
+const goToDetail = (productId) => router.push(`/products/${productId}`)
 
-// 跳转到商品详情
-const goToDetail = (productId) => {
-  router.push(`/products/${productId}`)
-}
-
-// 加入购物车
 const addToCart = async (product) => {
   try {
     await cartStore.addItem(product.id, 1)
@@ -159,198 +166,345 @@ onMounted(() => {
 <style scoped lang="scss">
 @import '@/assets/styles/variables.scss';
 
-.home {
-  background: $bg-page;
-}
+// ─── Hero ────────────────────────────────────────────
+.hero {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-height: 600px;
+  overflow: hidden;
 
-.banner-section {
-  .banner-item {
-    height: 400px;
-    display: flex;
-    align-items: center;
-    color: #fff;
-
-    h2 {
-      font-size: 48px;
-      margin-bottom: $spacing-md;
-      font-weight: bold;
-    }
-
-    p {
-      font-size: 20px;
-      margin-bottom: $spacing-xl;
-    }
-
-    @include mobile {
-      h2 {
-        font-size: 32px;
-      }
-
-      p {
-        font-size: 16px;
-      }
-    }
+  @include mobile {
+    grid-template-columns: 1fr;
+    min-height: auto;
   }
 }
 
-.category-section,
+.hero-content {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: $spacing-xxl $spacing-xl $spacing-xxl $spacing-xxl;
+  background: $bg-color;
+
+  @include tablet {
+    padding: $spacing-xl;
+  }
+  @include mobile {
+    padding: $spacing-xl $spacing-md;
+    order: 2;
+  }
+}
+
+.hero-eyebrow {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-bold;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: $text-secondary;
+  margin-bottom: $spacing-md;
+}
+
+.hero-title {
+  font-size: clamp(36px, 5vw, 64px);
+  font-weight: $font-weight-bold;
+  line-height: $line-height-tight;
+  color: $text-primary;
+  letter-spacing: -0.03em;
+  margin-bottom: $spacing-lg;
+}
+
+.hero-desc {
+  font-size: $font-size-md;
+  color: $text-secondary;
+  line-height: $line-height-loose;
+  max-width: 380px;
+  margin-bottom: $spacing-xl;
+}
+
+.hero-actions {
+  display: flex;
+  gap: $spacing-md;
+  flex-wrap: wrap;
+}
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  background: $primary-color;
+  color: #fff;
+  padding: 14px 32px;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: background $transition-base;
+
+  &:hover { background: #333; }
+}
+
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid $border-base;
+  color: $text-primary;
+  padding: 14px 32px;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: border-color $transition-base, background $transition-base;
+
+  &:hover {
+    border-color: $text-primary;
+    background: $bg-gray;
+  }
+}
+
+.hero-visual {
+  overflow: hidden;
+  @include mobile { display: none; }
+}
+
+.hero-image-grid {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  grid-template-rows: 1fr 1fr;
+
+  .grid-block { width: 100%; height: 100%; }
+  .grid-block--large { grid-row: 1 / 3; }
+}
+
+// ─── Categories Strip ────────────────────────────────
+.categories-strip {
+  border-top: 1px solid $border-light;
+  border-bottom: 1px solid $border-light;
+  padding: $spacing-md 0;
+  background: $bg-color;
+  overflow-x: auto;
+}
+
+.strip-inner {
+  display: flex;
+  align-items: center;
+  gap: $spacing-lg;
+
+  @include mobile { gap: $spacing-md; }
+}
+
+.strip-label {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-bold;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: $text-secondary;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.category-pills {
+  display: flex;
+  gap: $spacing-sm;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  padding-bottom: 2px;
+
+  &::-webkit-scrollbar { display: none; }
+}
+
+.pill {
+  flex-shrink: 0;
+  padding: 6px 16px;
+  border: 1px solid $border-light;
+  background: none;
+  font-size: $font-size-sm;
+  color: $text-regular;
+  cursor: pointer;
+  transition: all $transition-base;
+  font-family: $font-family;
+  letter-spacing: 0.02em;
+
+  &:hover {
+    border-color: $text-primary;
+    color: $text-primary;
+    background: $bg-gray;
+  }
+}
+
+// ─── Products Section ────────────────────────────────
 .products-section {
-  padding: $spacing-xl * 2 0;
+  padding: $spacing-xxl 0;
+  background: $bg-color;
+}
+
+.section-header {
+  @include flex-between;
+  margin-bottom: $spacing-xl;
 }
 
 .section-title {
-  font-size: 28px;
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+  letter-spacing: -0.02em;
   color: $text-primary;
-  margin-bottom: $spacing-xl;
-  text-align: center;
-  font-weight: bold;
-
-  @include mobile {
-    font-size: 24px;
-  }
 }
 
-.category-grid {
-  display: grid;
-  grid-template-columns: repeat(8, 1fr);
-  gap: $spacing-lg;
+.section-more {
+  font-size: $font-size-sm;
+  color: $text-secondary;
+  text-decoration: none;
+  letter-spacing: 0.02em;
+  transition: color $transition-base;
 
-  @include tablet {
-    grid-template-columns: repeat(4, 1fr);
-  }
-
-  @include mobile {
-    grid-template-columns: repeat(4, 1fr);
-    gap: $spacing-md;
-  }
-
-  .category-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: $spacing-lg;
-    background: $bg-color;
-    border-radius: $border-radius-base;
-    cursor: pointer;
-    transition: all 0.3s;
-
-    &:hover {
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-      transform: translateY(-4px);
-    }
-
-    .el-icon {
-      color: $primary-color;
-      margin-bottom: $spacing-sm;
-    }
-
-    span {
-      color: $text-regular;
-      font-size: 14px;
-    }
-
-    @include mobile {
-      padding: $spacing-md;
-
-      .el-icon {
-        font-size: 30px;
-      }
-
-      span {
-        font-size: 12px;
-      }
-    }
-  }
+  &:hover { color: $text-primary; }
 }
 
+// ─── Product Grid ────────────────────────────────────
 .product-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: $spacing-lg;
+  gap: 1px;
+  background: $border-light;
+  border: 1px solid $border-light;
 
-  @include tablet {
-    grid-template-columns: repeat(3, 1fr);
-  }
+  @include tablet { grid-template-columns: repeat(3, 1fr); }
+  @include mobile { grid-template-columns: repeat(2, 1fr); }
+}
 
-  @include mobile {
-    grid-template-columns: repeat(2, 1fr);
-    gap: $spacing-md;
-  }
+.product-card {
+  background: $bg-color;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
 
-  .product-card {
-    background: $bg-color;
-    border-radius: $border-radius-base;
+  &__image {
+    position: relative;
+    aspect-ratio: 3 / 4;
+    background: $bg-gray;
     overflow: hidden;
-    cursor: pointer;
-    transition: all 0.3s;
 
-    &:hover {
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-      transform: translateY(-4px);
-    }
-
-    .product-image {
+    img {
       width: 100%;
-      height: 200px;
-      overflow: hidden;
-      background: $bg-page;
+      height: 100%;
+      object-fit: cover;
+      transition: transform $transition-slow;
+    }
+  }
 
-      img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-      }
+  &__overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.2);
+    display: flex;
+    align-items: flex-end;
+    padding: $spacing-md;
+    opacity: 0;
+    transition: opacity $transition-base;
+  }
 
-      @include mobile {
-        height: 150px;
-      }
+  .btn-overlay {
+    width: 100%;
+    padding: 12px;
+    background: #fff;
+    border: none;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-medium;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    font-family: $font-family;
+    transition: background $transition-base;
+
+    &:hover { background: $bg-gray; }
+  }
+
+  &:hover {
+    .product-card__image img { transform: scale(1.04); }
+    .product-card__overlay { opacity: 1; }
+  }
+
+  &__body {
+    padding: $spacing-md $spacing-md $spacing-lg;
+  }
+
+  &__name {
+    font-size: $font-size-base;
+    font-weight: $font-weight-medium;
+    color: $text-primary;
+    margin-bottom: 4px;
+    @include text-ellipsis;
+    letter-spacing: -0.01em;
+  }
+
+  &__price {
+    font-size: $font-size-base;
+    color: $text-regular;
+    font-weight: $font-weight-regular;
+  }
+
+  // 第一个商品 — 占两列两行
+  &--featured {
+    grid-column: span 2;
+    grid-row: span 2;
+
+    .product-card__image {
+      aspect-ratio: auto;
+      height: 100%;
+      min-height: 500px;
+
+      @include mobile { min-height: 300px; }
     }
 
-    .product-info {
-      padding: $spacing-md;
+    .product-card__name { font-size: $font-size-md; }
+    .product-card__price { font-size: $font-size-md; }
 
-      .product-name {
-        @include text-ellipsis;
-        font-size: 16px;
-        color: $text-primary;
-        margin: 0 0 $spacing-sm 0;
-        font-weight: 500;
-      }
+    @include mobile {
+      grid-column: span 2;
+      grid-row: span 1;
 
-      .product-desc {
-        @include text-ellipsis;
-        font-size: 14px;
-        color: $text-secondary;
-        margin: 0 0 $spacing-md 0;
-      }
-
-      .product-footer {
-        @include flex-between;
-
-        .product-price {
-          font-size: 20px;
-          color: $danger-color;
-          font-weight: bold;
-        }
-      }
-
-      @include mobile {
-        padding: $spacing-sm;
-
-        .product-name {
-          font-size: 14px;
-        }
-
-        .product-desc {
-          display: none;
-        }
-
-        .product-price {
-          font-size: 16px;
-        }
-      }
+      .product-card__image { min-height: 240px; aspect-ratio: 2/1.4; }
     }
+  }
+}
+
+// ─── Value Props ─────────────────────────────────────
+.value-props {
+  padding: $spacing-xxl 0;
+  border-top: 1px solid $border-light;
+  background: $bg-color;
+}
+
+.props-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: $spacing-xl;
+
+  @include tablet { grid-template-columns: repeat(2, 1fr); }
+  @include mobile { grid-template-columns: 1fr 1fr; gap: $spacing-md; }
+}
+
+.prop-item {
+  .prop-icon {
+    display: block;
+    font-size: 18px;
+    margin-bottom: $spacing-md;
+    color: $text-primary;
+  }
+
+  h4 {
+    font-size: $font-size-base;
+    font-weight: $font-weight-bold;
+    color: $text-primary;
+    margin-bottom: $spacing-sm;
+    letter-spacing: -0.01em;
+  }
+
+  p {
+    font-size: $font-size-sm;
+    color: $text-secondary;
+    line-height: $line-height-loose;
   }
 }
 </style>

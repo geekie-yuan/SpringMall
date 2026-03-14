@@ -11,24 +11,25 @@
     <!-- 搜索筛选 -->
     <el-card class="filter-card">
       <el-form :inline="true">
-        <el-form-item label="关键词">
+        <el-form-item label="关键词" class="keyword-filter-item">
           <el-input
             v-model="searchKeyword"
+            class="keyword-input"
             placeholder="搜索商品名称"
             clearable
             @input="debouncedSearch"
             @keyup.enter="handleSearch"
-          >
-            <template #append>
-              <el-button :icon="Search" @click="handleSearch" />
-            </template>
-          </el-input>
+          />
+          <el-button class="keyword-search-btn" @click="handleSearch">
+            <el-icon><Search /></el-icon>
+          </el-button>
         </el-form-item>
         <el-form-item label="分类">
           <el-select
             v-model="selectedCategory"
             placeholder="全部分类"
             clearable
+            style="width: 160px"
             @change="handleSearch"
           >
             <el-option
@@ -44,6 +45,7 @@
             v-model="selectedStatus"
             placeholder="全部状态"
             clearable
+            style="width: 140px"
             @change="handleSearch"
           >
             <el-option label="在售" value="ON_SALE" />
@@ -55,9 +57,14 @@
 
     <!-- 商品列表 -->
     <el-card class="table-card">
-      <Loading v-if="loading" />
-      <el-table v-else :data="products" stripe>
-        <el-table-column prop="id" label="ID" width="80" />
+      <el-table
+        v-loading="loading"
+        :data="products"
+        stripe
+        :default-sort="{ prop: 'id', order: 'descending' }"
+        @sort-change="handleSortChange"
+      >
+        <el-table-column prop="id" label="ID" width="80" sortable="custom" />
         <el-table-column label="商品图片" width="100">
           <template #default="{ row }">
             <img
@@ -68,17 +75,17 @@
           </template>
         </el-table-column>
         <el-table-column prop="name" label="商品名称" min-width="200" />
-        <el-table-column label="分类" width="120">
+        <el-table-column prop="categoryName" label="分类" width="120" sortable="custom">
           <template #default="{ row }">
-            {{ row.category?.name || '-' }}
+            {{ row.categoryName || '-' }}
           </template>
         </el-table-column>
-        <el-table-column label="价格" width="120" align="right">
+        <el-table-column prop="price" label="价格" width="120" align="right" sortable="custom">
           <template #default="{ row }">
             <span class="price-text">¥{{ formatPrice(row.price) }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="stock" label="库存" width="100" align="center">
+        <el-table-column prop="stock" label="库存" width="100" align="center" sortable="custom">
           <template #default="{ row }">
             <el-tag :type="row.stock > 10 ? 'success' : row.stock > 0 ? 'warning' : 'danger'">
               {{ row.stock }}
@@ -95,17 +102,16 @@
             />
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="220" align="center" fixed="right">
+        <el-table-column label="操作" width="140" align="center" fixed="right">
           <template #default="{ row }">
-            <el-button text type="primary" @click="handleEdit(row)">
-              编辑
-            </el-button>
-            <el-button text type="primary" @click="handleStock(row)">
-              修改库存
-            </el-button>
-            <el-button text type="danger" @click="handleDelete(row.id)">
-              删除
-            </el-button>
+            <div style="display: flex; justify-content: center; gap: 4px;">
+              <el-button text type="primary" @click="handleEdit(row)">
+                编辑
+              </el-button>
+              <el-button text type="danger" @click="handleDelete(row.id)">
+                删除
+              </el-button>
+            </div>
           </template>
         </el-table-column>
       </el-table>
@@ -242,7 +248,6 @@ import { getAllCategories } from '@/api/category'
 import { formatPrice } from '@/utils/format'
 import { debounce } from '@/utils/helpers'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import Loading from '@/components/common/Loading.vue'
 
 const loading = ref(false)
 const products = ref([])
@@ -256,6 +261,8 @@ const formRef = ref(null)
 const searchKeyword = ref('')
 const selectedCategory = ref(null)
 const selectedStatus = ref(null)
+const sortBy = ref('id')
+const sortDir = ref('desc')
 
 const currentPage = ref(1)
 const pageSize = ref(10)
@@ -294,6 +301,8 @@ const fetchProducts = async () => {
     if (searchKeyword.value) params.keyword = searchKeyword.value
     if (selectedCategory.value) params.categoryId = selectedCategory.value
     if (selectedStatus.value) params.status = selectedStatus.value
+    params.sortBy = sortBy.value
+    params.sortDir = sortDir.value
     const data = await getAllProducts(params)
     products.value = data.list
     total.value = data.total
@@ -322,6 +331,14 @@ const handleSearch = () => {
 // 防抖搜索
 const debouncedSearch = debounce(handleSearch, 500)
 
+// 排序
+const handleSortChange = ({ prop, order }) => {
+  sortBy.value = prop || 'id'
+  sortDir.value = order === 'ascending' ? 'asc' : 'desc'
+  currentPage.value = 1
+  fetchProducts()
+}
+
 // 添加商品
 const handleAdd = () => {
   isEdit.value = false
@@ -335,7 +352,7 @@ const handleEdit = (product) => {
   productForm.value = {
     id: product.id,
     name: product.name,
-    categoryId: product.category?.id,
+    categoryId: product.categoryId,
     price: product.price,
     stock: product.stock,
     imageUrl: product.mainImage,  // 后端 mainImage -> 前端 imageUrl
@@ -473,6 +490,23 @@ onMounted(() => {
 
   .filter-card {
     margin-bottom: $spacing-lg;
+
+    .keyword-filter-item {
+      :deep(.el-form-item__content) {
+        display: flex;
+        align-items: center;
+        gap: 0;
+      }
+
+      .keyword-input {
+        width: 240px;
+      }
+
+      .keyword-search-btn {
+        padding: 0 14px;
+        margin-left: -1px;
+      }
+    }
   }
 
   .table-card {

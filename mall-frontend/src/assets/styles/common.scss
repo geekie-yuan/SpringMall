@@ -1,20 +1,120 @@
 @import './variables.scss';
 
-/* 全局通用样式 */
-.container {
-  width: 100%;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 $spacing-md;
+// =====================================================
+// Element Plus — Saleor Black Theme Override
+// =====================================================
+:root {
+  --el-color-primary:         #{$primary-color};
+  --el-color-primary-light-3: #4d4d4d;
+  --el-color-primary-light-5: #808080;
+  --el-color-primary-light-7: #b3b3b3;
+  --el-color-primary-light-8: #cccccc;
+  --el-color-primary-light-9: #f0f0f0;
+  --el-color-primary-dark-2:  #333333;
 
-  @include mobile {
-    padding: 0 $spacing-sm;
+  --el-font-family:    #{$font-family};
+  --el-font-size-base: 14px;
+
+  --el-border-radius-base:  4px;
+  --el-border-radius-small: 2px;
+  --el-border-radius-large: 4px;
+
+  --el-border-color:         #{$border-base};
+  --el-border-color-light:   #{$border-light};
+  --el-border-color-lighter: #{$border-lighter};
+
+  --el-fill-color-blank: #ffffff;
+  --el-bg-color:         #ffffff;
+  --el-bg-color-page:    #fafafa;
+
+  --el-button-border-radius:              0px;
+  --el-button-size-large-border-radius:   0px;
+  --el-button-size-small-border-radius:   0px;
+  --el-button-font-weight: 500;
+
+  --el-text-color-primary:   #{$text-primary};
+  --el-text-color-regular:   #{$text-regular};
+  --el-text-color-secondary: #{$text-secondary};
+}
+
+// Primary buttons — solid black
+.el-button--primary {
+  --el-button-bg-color:           #{$primary-color};
+  --el-button-border-color:       #{$primary-color};
+  --el-button-hover-bg-color:     #333333;
+  --el-button-hover-border-color: #333333;
+  --el-button-active-bg-color:    #1a1a1a;
+  --el-button-text-color:         #ffffff;
+  letter-spacing: 0.04em;
+  font-size: $font-size-sm;
+  text-transform: uppercase;
+}
+
+// Default (outline) buttons
+.el-button {
+  letter-spacing: 0.04em;
+  font-weight: $font-weight-medium;
+  font-size: $font-size-sm;
+  border-radius: 0 !important;
+  transition: all $transition-base;
+
+  &.el-button--large {
+    padding: 14px 32px;
+    font-size: $font-size-base;
   }
 }
 
+// Input fields
+.el-input__wrapper {
+  border-radius: 0 !important;
+  box-shadow: 0 0 0 1px $border-base !important;
+
+  &:hover { box-shadow: 0 0 0 1px $text-secondary !important; }
+  &.is-focus { box-shadow: 0 0 0 1px $primary-color !important; }
+}
+
+.el-select .el-input__wrapper {
+  border-radius: 0 !important;
+}
+
+// Dropdown Menu
+.el-dropdown-menu {
+  border-radius: 0 !important;
+  border: 1px solid $border-light;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.08) !important;
+}
+
+// Badge — minimal
+.el-badge__content {
+  background-color: $primary-color;
+  border-color: $primary-color;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+// Message
+.el-message {
+  border-radius: 0 !important;
+  border: 1px solid $border-light;
+}
+
+// =====================================================
+// Global Layout
+// =====================================================
+.container {
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 $spacing-xl;
+
+  @include tablet { padding: 0 $spacing-lg; }
+  @include mobile { padding: 0 $spacing-md; }
+}
+
 .page-container {
-  min-height: calc(100vh - 60px);
-  padding: $spacing-lg 0;
+  min-height: calc(100vh - 68px);
+  padding: $spacing-xl 0;
   background-color: $bg-page;
 }
 

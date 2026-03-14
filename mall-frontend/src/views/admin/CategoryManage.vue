@@ -83,11 +83,21 @@
           </div>
         </el-form-item>
         <el-form-item label="排序" prop="sortOrder">
-          <el-input-number
+          <el-select
             v-model="categoryForm.sortOrder"
-            :min="0"
-            placeholder="数字越小越靠前"
-          />
+            placeholder="请选择排序值"
+            style="width: 100%"
+          >
+            <el-option
+              v-for="order in sortOrders"
+              :key="order"
+              :label="`第 ${order} 位`"
+              :value="order"
+            />
+          </el-select>
+          <div style="color: #909399; font-size: 12px; margin-top: 4px;">
+            数字越小越靠前
+          </div>
         </el-form-item>
       </el-form>
 
@@ -102,7 +112,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { Plus, Menu } from '@element-plus/icons-vue'
 import {
   createCategory,
@@ -121,6 +131,12 @@ const isEdit = ref(false)
 const submitting = ref(false)
 const formRef = ref(null)
 
+// 排序可选项：编辑时 1~N，新增时 1~N+1
+const sortOrders = computed(() => {
+  const count = isEdit.value ? categories.value.length : categories.value.length + 1
+  return Array.from({ length: count }, (_, i) => i + 1)
+})
+
 // 分类表单
 const categoryForm = ref({
   id: null,
@@ -134,7 +150,7 @@ const categoryForm = ref({
 const rules = {
   name: [{ required: true, message: '请输入分类名称', trigger: 'blur' }],
   parentId: [{ required: true, message: '请选择父分类', trigger: 'change' }],
-  sortOrder: [{ required: true, message: '请输入排序', trigger: 'blur' }]
+  sortOrder: [{ required: true, message: '请选择排序', trigger: 'change' }]
 }
 
 // 获取层级文本
@@ -179,6 +195,8 @@ const fetchCategories = async () => {
 const handleAdd = () => {
   isEdit.value = false
   resetForm()
+  // 默认排到最后
+  categoryForm.value.sortOrder = categories.value.length + 1
   dialogVisible.value = true
 }
 
@@ -254,7 +272,7 @@ const resetForm = () => {
     name: '',
     parentId: 0,
     level: 1,
-    sortOrder: 0
+    sortOrder: 1
   }
 
   if (formRef.value) {

@@ -22,6 +22,7 @@
             v-model="selectedRole"
             placeholder="全部角色"
             clearable
+            style="width: 140px"
             @change="handleRoleFilter"
           >
             <el-option label="管理员" value="ADMIN" />
@@ -33,6 +34,7 @@
             v-model="selectedStatus"
             placeholder="全部状态"
             clearable
+            style="width: 140px"
             @change="handleStatusChange"
           >
             <el-option label="启用" :value="1" />
@@ -49,14 +51,14 @@
         <el-table-column prop="id" label="ID" width="80" />
         <el-table-column prop="username" label="用户名" width="150" />
         <el-table-column prop="email" label="邮箱" min-width="200" />
-        <el-table-column label="角色" width="120" align="center">
+        <el-table-column label="角色" width="140" align="center">
           <template #default="{ row }">
             <el-tag :type="row.role === 'ADMIN' ? 'danger' : 'primary'" size="small">
               {{ row.role === 'ADMIN' ? '管理员' : '普通用户' }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="状态" width="100" align="center">
+        <el-table-column label="状态" width="120" align="center">
           <template #default="{ row }">
             <el-switch
               :model-value="row.status === 1"

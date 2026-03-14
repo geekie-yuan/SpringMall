@@ -1,103 +1,111 @@
-<template>
+﻿<template>
   <div class="cart-page">
     <div class="container">
-      <h2 class="page-title">购物车</h2>
+
+      <div class="page-header">
+        <h1 class="page-title">购物车</h1>
+        <span v-if="cartItems.length" class="item-count">{{ cartItems.length }} 件商品</span>
+      </div>
 
       <Loading v-if="loading" />
       <Empty v-else-if="!cartItems.length" type="cart" text="购物车空空如也">
         <template #action>
-          <el-button type="primary" @click="$router.push('/products')">
-            去逛逛
-          </el-button>
+          <button class="btn-shop" @click="$router.push('/products')">去逛逛</button>
         </template>
       </Empty>
 
-      <div v-else class="cart-content">
-        <!-- 购物车列表 -->
-        <div class="cart-list">
-          <div class="cart-header">
-            <el-checkbox
-              :model-value="isAllChecked"
-              @change="handleCheckAll"
-            >
-              全选
-            </el-checkbox>
-            <span>商品信息</span>
-            <span>单价</span>
-            <span>数量</span>
-            <span>小计</span>
-            <span>操作</span>
+      <div v-else class="cart-layout">
+
+        <!-- Items table -->
+        <div class="items-section">
+          <!-- Table header -->
+          <div class="table-head">
+            <div class="col-check">
+              <el-checkbox :model-value="isAllChecked" @change="handleCheckAll" />
+            </div>
+            <div class="col-product">商品</div>
+            <div class="col-price">单价</div>
+            <div class="col-qty">数量</div>
+            <div class="col-subtotal">小计</div>
+            <div class="col-action"></div>
           </div>
 
-          <div
-            v-for="item in cartItems"
-            :key="item.id"
-            class="cart-item"
-          >
-            <el-checkbox
-              :model-value="item.checked"
-              @change="(val) => handleCheck(item.id, val)"
-            />
+          <div v-for="item in cartItems" :key="item.id" class="table-row">
+            <div class="col-check">
+              <el-checkbox
+                :model-value="item.checked"
+                @change="(val) => handleCheck(item.id, val)"
+              />
+            </div>
 
-            <div class="item-info" @click="goToDetail(item.productId)">
-              <img :src="item.productImage || '/placeholder.png'" :alt="item.productName" />
-              <div class="item-detail">
-                <h4>{{ item.productName }}</h4>
-                <p>{{ item.productSubtitle }}</p>
+            <div class="col-product item-info" @click="goToDetail(item.productId)">
+              <div class="item-image">
+                <img :src="item.productImage || '/placeholder.png'" :alt="item.productName" />
+              </div>
+              <div class="item-meta">
+                <h4 class="item-name">{{ item.productName }}</h4>
+                <p v-if="item.productSubtitle" class="item-sub">{{ item.productSubtitle }}</p>
               </div>
             </div>
 
-            <span class="item-price">¥{{ formatPrice(item.productPrice) }}</span>
+            <div class="col-price">¥{{ formatPrice(item.productPrice) }}</div>
 
-            <el-input-number
-              :model-value="item.quantity"
-              :min="1"
-              :max="item.productStock"
-              size="small"
-              @change="(val) => handleQuantityChange(item.id, val)"
-            />
-
-            <span class="item-subtotal">¥{{ formatPrice(item.productPrice * item.quantity) }}</span>
-
-            <el-button
-              type="danger"
-              text
-              @click="handleRemove(item.id)"
-            >
-              删除
-            </el-button>
-          </div>
-        </div>
-
-        <!-- 结算栏 -->
-        <div class="cart-footer">
-          <div class="footer-left">
-            <el-checkbox
-              :model-value="isAllChecked"
-              @change="handleCheckAll"
-            >
-              全选
-            </el-checkbox>
-            <el-button text @click="handleRemoveSelected">删除选中商品</el-button>
-          </div>
-
-          <div class="footer-right">
-            <div class="total-info">
-              <span>已选择 {{ checkedCount }} 件商品</span>
-              <span class="total-label">总计：</span>
-              <span class="total-price">¥{{ formatPrice(checkedTotal) }}</span>
+            <div class="col-qty">
+              <div class="qty-control">
+                <button
+                  class="qty-btn"
+                  @click="handleQuantityChange(item.id, item.quantity - 1)"
+                  :disabled="item.quantity <= 1"
+                >−</button>
+                <span class="qty-val">{{ item.quantity }}</span>
+                <button
+                  class="qty-btn"
+                  @click="handleQuantityChange(item.id, item.quantity + 1)"
+                  :disabled="item.quantity >= item.productStock"
+                >+</button>
+              </div>
             </div>
-            <el-button
-              type="primary"
-              size="large"
-              :disabled="checkedCount === 0"
-              @click="handleCheckout"
-            >
-              结算 ({{ checkedCount }})
-            </el-button>
+
+            <div class="col-subtotal">¥{{ formatPrice(item.productPrice * item.quantity) }}</div>
+
+            <div class="col-action">
+              <button class="remove-btn" @click="handleRemove(item.id)">×</button>
+            </div>
           </div>
         </div>
+
+        <!-- Order summary sidebar -->
+        <aside class="summary-panel">
+          <h2 class="summary-title">订单摘要</h2>
+
+          <div class="summary-row">
+            <span>已选商品</span>
+            <span>{{ checkedCount }} 件</span>
+          </div>
+          <div class="summary-row summary-row--subtotal">
+            <span>小计</span>
+            <span>¥{{ formatPrice(checkedTotal) }}</span>
+          </div>
+          <div class="summary-divider"></div>
+          <div class="summary-row summary-row--total">
+            <span>合计</span>
+            <span class="total-price">¥{{ formatPrice(checkedTotal) }}</span>
+          </div>
+
+          <button
+            class="btn-checkout"
+            :disabled="checkedCount === 0"
+            @click="handleCheckout"
+          >
+            结算 ({{ checkedCount }})
+          </button>
+
+          <button class="btn-remove-sel" @click="handleRemoveSelected">
+            删除选中商品
+          </button>
+        </aside>
       </div>
+
     </div>
   </div>
 </template>
@@ -116,13 +124,11 @@ const cartStore = useCartStore()
 
 const loading = ref(false)
 
-// 计算属性
 const cartItems = computed(() => cartStore.items)
 const isAllChecked = computed(() => cartStore.isAllChecked)
 const checkedCount = computed(() => cartStore.checkedCount)
 const checkedTotal = computed(() => cartStore.checkedTotal)
 
-// 获取购物车
 const fetchCart = async () => {
   loading.value = true
   try {
@@ -132,22 +138,10 @@ const fetchCart = async () => {
   }
 }
 
-// 全选/取消全选
-const handleCheckAll = (checked) => {
-  cartStore.toggleCheckAll(checked)
-}
+const handleCheckAll = (checked) => cartStore.toggleCheckAll(checked)
+const handleCheck = (id, checked) => cartStore.toggleCheck(id, checked)
+const handleQuantityChange = (id, quantity) => cartStore.updateQuantity(id, quantity)
 
-// 选中/取消选中
-const handleCheck = (id, checked) => {
-  cartStore.toggleCheck(id, checked)
-}
-
-// 修改数量
-const handleQuantityChange = (id, quantity) => {
-  cartStore.updateQuantity(id, quantity)
-}
-
-// 删除商品
 const handleRemove = async (id) => {
   try {
     await ElMessageBox.confirm('确定要删除该商品吗？', '提示', {
@@ -156,221 +150,317 @@ const handleRemove = async (id) => {
       type: 'warning'
     })
     await cartStore.removeItem(id)
-  } catch (error) {
-    // 用户取消
-  }
+  } catch {}
 }
 
-// 删除选中商品
 const handleRemoveSelected = async () => {
   const checkedItems = cartStore.checkedItems
-  if (checkedItems.length === 0) {
-    return
-  }
-
+  if (!checkedItems.length) return
   try {
-    await ElMessageBox.confirm(`确定要删除选中的 ${checkedItems.length} 件商品吗？`, '提示', {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning'
-    })
-
+    await ElMessageBox.confirm(
+      `确定要删除选中的 ${checkedItems.length} 件商品吗？`,
+      '提示',
+      { confirmButtonText: '确定', cancelButtonText: '取消', type: 'warning' }
+    )
     for (const item of checkedItems) {
       await cartStore.removeItem(item.id)
     }
-  } catch (error) {
-    // 用户取消
-  }
+  } catch {}
 }
 
-// 跳转详情
-const goToDetail = (productId) => {
-  router.push(`/products/${productId}`)
-}
-
-// 去结算
+const goToDetail = (productId) => router.push(`/products/${productId}`)
 const handleCheckout = () => {
-  if (checkedCount.value === 0) {
-    return
-  }
+  if (checkedCount.value === 0) return
   router.push('/checkout')
 }
 
-onMounted(() => {
-  fetchCart()
-})
+onMounted(fetchCart)
 </script>
 
 <style scoped lang="scss">
 @import '@/assets/styles/variables.scss';
 
 .cart-page {
-  padding: $spacing-xl 0;
-  min-height: calc(100vh - 60px);
+  background: $bg-color;
+  min-height: calc(100vh - 68px);
+  padding: $spacing-lg 0 $spacing-xxl;
+}
+
+.page-header {
+  @include flex-between;
+  margin-bottom: $spacing-xl;
+  padding-bottom: $spacing-md;
+  border-bottom: 1px solid $border-light;
 }
 
 .page-title {
-  font-size: 24px;
-  color: $text-primary;
-  margin-bottom: $spacing-xl;
+  font-size: $font-size-xxl;
+  font-weight: $font-weight-bold;
+  letter-spacing: -0.03em;
 }
 
-.cart-content {
-  .cart-list {
-    background: $bg-color;
-    border-radius: $border-radius-base;
-    overflow: hidden;
-    margin-bottom: $spacing-lg;
+.item-count {
+  font-size: $font-size-sm;
+  color: $text-secondary;
+}
 
-    .cart-header {
-      display: grid;
-      grid-template-columns: 50px 1fr 120px 150px 120px 80px;
-      gap: $spacing-md;
-      padding: $spacing-md $spacing-lg;
-      background: $bg-page;
-      border-bottom: 1px solid $border-light;
-      font-weight: 500;
-      color: $text-regular;
+.btn-shop {
+  padding: 12px 24px;
+  background: $primary-color;
+  color: #fff;
+  border: none;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-bold;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  font-family: $font-family;
+}
 
-      @include mobile {
-        display: none;
-      }
-    }
+// Two-column layout
+.cart-layout {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: $spacing-xl;
+  align-items: start;
 
-    .cart-item {
-      display: grid;
-      grid-template-columns: 50px 1fr 120px 150px 120px 80px;
-      gap: $spacing-md;
-      padding: $spacing-lg;
-      border-bottom: 1px solid $border-lighter;
-      align-items: center;
+  @include mobile {
+    grid-template-columns: 1fr;
+  }
+}
 
-      &:last-child {
-        border-bottom: none;
-      }
+// Table
+.items-section {
+  border: 1px solid $border-light;
+}
 
-      .item-info {
-        display: flex;
-        gap: $spacing-md;
-        cursor: pointer;
+.table-head,
+.table-row {
+  display: grid;
+  grid-template-columns: 40px 1fr 100px 130px 100px 40px;
+  align-items: center;
+  gap: $spacing-md;
+  padding: $spacing-md $spacing-lg;
 
-        img {
-          width: 80px;
-          height: 80px;
-          object-fit: cover;
-          border-radius: $border-radius-base;
-          flex-shrink: 0;
-        }
+  @include mobile {
+    grid-template-columns: 36px 1fr 72px 36px;
+    gap: $spacing-sm;
+    padding: $spacing-md;
+  }
+}
 
-        .item-detail {
-          flex: 1;
-          min-width: 0;
+.table-head {
+  background: $bg-page;
+  border-bottom: 1px solid $border-light;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-bold;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: $text-secondary;
 
-          h4 {
-            @include text-ellipsis;
-            font-size: 16px;
-            color: $text-primary;
-            margin: 0 0 $spacing-sm 0;
-          }
+  @include mobile {
+    .col-price, .col-subtotal { display: none; }
+  }
+}
 
-          p {
-            @include text-ellipsis;
-            font-size: 14px;
-            color: $text-secondary;
-            margin: 0;
-          }
-        }
-      }
+.table-row {
+  border-bottom: 1px solid $border-lighter;
 
-      .item-price,
-      .item-subtotal {
-        color: $danger-color;
-        font-weight: 500;
-      }
+  &:last-child { border-bottom: none; }
 
-      @include mobile {
-        grid-template-columns: 40px 1fr;
-        gap: $spacing-sm;
+  @include mobile {
+    .col-price, .col-subtotal { display: none; }
+  }
+}
 
-        .item-info {
-          grid-column: 1 / -1;
+.col-price,
+.col-subtotal {
+  text-align: center;
+  font-size: $font-size-sm;
+  color: $text-regular;
+}
 
-          img {
-            width: 60px;
-            height: 60px;
-          }
-        }
+.col-action { text-align: right; }
 
-        .item-price {
-          grid-column: 2;
-        }
+// Product info cell
+.item-info {
+  display: flex;
+  gap: $spacing-md;
+  cursor: pointer;
+  min-width: 0;
+}
 
-        .item-subtotal {
-          grid-column: 2;
-          text-align: right;
-        }
-      }
-    }
+.item-image {
+  width: 72px;
+  height: 72px;
+  flex-shrink: 0;
+  background: $bg-gray;
+  overflow: hidden;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform $transition-slow;
   }
 
-  .cart-footer {
-    @include flex-between;
-    background: $bg-color;
-    padding: $spacing-lg;
-    border-radius: $border-radius-base;
-    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+  .item-info:hover & img { transform: scale(1.05); }
+}
 
-    .footer-left {
-      display: flex;
-      align-items: center;
-      gap: $spacing-lg;
-    }
+.item-meta {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
 
-    .footer-right {
-      display: flex;
-      align-items: center;
-      gap: $spacing-xl;
+.item-name {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $text-primary;
+  margin-bottom: 3px;
+  @include text-ellipsis;
+}
 
-      .total-info {
-        display: flex;
-        align-items: center;
-        gap: $spacing-md;
+.item-sub {
+  font-size: $font-size-xs;
+  color: $text-secondary;
+  @include text-ellipsis;
+}
 
-        .total-label {
-          color: $text-regular;
-        }
+// Quantity control
+.qty-control {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid $border-base;
+  width: fit-content;
+  margin: 0 auto;
+}
 
-        .total-price {
-          font-size: 24px;
-          color: $danger-color;
-          font-weight: bold;
-        }
-      }
-    }
+.qty-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  cursor: pointer;
+  background: none;
+  border: none;
+  color: $text-regular;
+  font-family: $font-family;
+  transition: background $transition-base;
 
-    @include mobile {
-      flex-direction: column;
-      gap: $spacing-md;
+  &:hover:not(:disabled) { background: $bg-gray; }
+  &:disabled { opacity: 0.35; cursor: not-allowed; }
+}
 
-      .footer-left,
-      .footer-right {
-        width: 100%;
-      }
+.qty-val {
+  width: 36px;
+  text-align: center;
+  font-size: $font-size-sm;
+  border-left: 1px solid $border-base;
+  border-right: 1px solid $border-base;
+  line-height: 32px;
+}
 
-      .footer-right {
-        flex-direction: column;
-        gap: $spacing-sm;
+.remove-btn {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  color: $text-placeholder;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color $transition-base;
+  margin-left: auto;
 
-        .total-info {
-          width: 100%;
-          justify-content: space-between;
-        }
+  &:hover { color: $danger-color; }
+}
 
-        .el-button {
-          width: 100%;
-        }
-      }
-    }
+// Summary panel
+.summary-panel {
+  border: 1px solid $border-light;
+  padding: $spacing-lg;
+  position: sticky;
+  top: 80px;
+}
+
+.summary-title {
+  font-size: $font-size-md;
+  font-weight: $font-weight-bold;
+  letter-spacing: -0.02em;
+  margin-bottom: $spacing-lg;
+  padding-bottom: $spacing-md;
+  border-bottom: 1px solid $border-lighter;
+}
+
+.summary-row {
+  @include flex-between;
+  font-size: $font-size-sm;
+  color: $text-regular;
+  margin-bottom: $spacing-sm;
+
+  &--subtotal { color: $text-secondary; }
+  &--total {
+    font-weight: $font-weight-medium;
+    color: $text-primary;
+    margin-top: $spacing-sm;
   }
+}
+
+.total-price {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-bold;
+}
+
+.summary-divider {
+  height: 1px;
+  background: $border-lighter;
+  margin: $spacing-md 0;
+}
+
+.btn-checkout {
+  width: 100%;
+  padding: 14px;
+  background: $primary-color;
+  color: #fff;
+  border: none;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-bold;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  font-family: $font-family;
+  margin-top: $spacing-lg;
+  transition: background $transition-base;
+
+  &:hover:not(:disabled) { background: #333; }
+  &:disabled { opacity: 0.4; cursor: not-allowed; }
+}
+
+.btn-remove-sel {
+  width: 100%;
+  padding: 10px;
+  background: transparent;
+  color: $text-secondary;
+  border: 1px solid $border-light;
+  font-size: $font-size-xs;
+  cursor: pointer;
+  font-family: $font-family;
+  margin-top: $spacing-sm;
+  transition: border-color $transition-base, color $transition-base;
+
+  &:hover { border-color: $danger-color; color: $danger-color; }
+}
+
+:deep(.el-checkbox__inner) {
+  border-radius: 0;
 }
 </style>
+
