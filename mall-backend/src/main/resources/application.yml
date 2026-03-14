@@ -5,14 +5,12 @@ server:
 spring:
   application:
     name: shoppingMall
-  profiles:
-    active: dev
   datasource:
     type: com.zaxxer.hikari.HikariDataSource
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/mall?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
-    username: root
-    password: 123456
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:mall}?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:123456}
   jackson:
     time-zone: Asia/Shanghai
     date-format: yyyy-MM-dd HH:mm:ss
@@ -49,7 +47,7 @@ mybatis:
     log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
 
 jwt:
-  secret: dGhpc2lzYXJhbmRvbWtleWZvcmhtYWMyNTZhbGdvcml0aG0xMjM0NTY3ODkw
+  secret: ${JWT_SECRET:dGhpc2lzYXJhbmRvbWtleWZvcmhtYWMyNTZhbGdvcml0aG0xMjM0NTY3ODkw}
   expiration: 86400000  # 24 hours
 
 springdoc:
@@ -100,5 +98,5 @@ stripe:
 logging:
   level:
     root: info
-    site.geekie.shop.shoppingmall: debug
-    org.springframework.security: debug
+    site.geekie.shop.shoppingmall: info
+    org.springframework.security: warn

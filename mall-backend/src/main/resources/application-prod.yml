@@ -1,0 +1,25 @@
+# ===========================================
+# 生产环境配置 (Production)
+# ===========================================
+
+spring:
+  datasource:
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+
+logging:
+  level:
+    root: warn
+    site.geekie.shop.shoppingmall: info
+    org.springframework.security: warn
+
+# 生产环境关闭 SQL 日志
+mybatis:
+  configuration:
+    log-impl: org.apache.ibatis.logging.nologging.NoLoggingImpl
+
+# 生产环境关闭 Swagger
+springdoc:
+  api-docs:
+    enabled: false

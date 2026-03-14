@@ -1,42 +1,23 @@
-# ===========================================
-# Spring Mall Frontend Dockerfile
-# Multi-stage build: Node build + Nginx serve
-# ===========================================
-
+# ============================================
 # Stage 1: Build
-FROM node:20-alpine AS builder
-
+# ============================================
+FROM node:20-alpine AS build
 WORKDIR /app
 
-# Copy package files for dependency caching
-COPY package*.json ./
+RUN corepack enable && corepack prepare pnpm@latest --activate
 
-# Install dependencies
-RUN npm ci --registry=https://registry.npmmirror.com
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile
 
-# Copy source code
 COPY . .
+RUN pnpm run build
 
-# Build for production
-RUN npm run build
-
-# Stage 2: Nginx
+# ============================================
+# Stage 2: Serve
+# ============================================
 FROM nginx:alpine
-
-# Remove default nginx config
-RUN rm /etc/nginx/conf.d/default.conf
-
-# Copy custom nginx config
+COPY --from=build /app/dist /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Copy built files from builder stage
-COPY --from=builder /app/dist /usr/share/nginx/html
-
-# Expose port
 EXPOSE 80
-
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost/ || exit 1
-
 CMD ["nginx", "-g", "daemon off;"]

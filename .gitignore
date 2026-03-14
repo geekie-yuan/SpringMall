@@ -24,6 +24,8 @@ mall-backend/.git/
 .env
 .env.local
 .env.*.local
+.env.test
+.env.prod
 
 .claude - 副本/
 .claude/worktrees/

@@ -1,0 +1,19 @@
+# ===========================================
+# 开发环境配置 (Development)
+# ===========================================
+
+logging:
+  level:
+    root: info
+    site.geekie.shop.shoppingmall: debug
+    org.springframework.security: debug
+
+# 开发环境开启 SQL 日志
+mybatis:
+  configuration:
+    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
+
+# 开发环境开启 Swagger
+springdoc:
+  api-docs:
+    enabled: true

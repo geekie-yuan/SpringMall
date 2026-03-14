@@ -1101,38 +1101,7 @@ server {
 }
 ```
 
-### 3. Docker 部署
-
-#### Dockerfile
-
-```dockerfile
-# 构建阶段
-FROM node:18-alpine as build-stage
-WORKDIR /app
-COPY package*.json ./
-RUN npm install
-COPY . .
-RUN npm run build
-
-# 生产阶段
-FROM nginx:stable-alpine as production-stage
-COPY --from=build-stage /app/dist /usr/share/nginx/html
-COPY nginx.conf /etc/nginx/conf.d/default.conf
-EXPOSE 80
-CMD ["nginx", "-g", "daemon off;"]
-```
-
-#### 构建和运行
-
-```bash
-# 构建镜像
-docker build -t mall-frontend .
-
-# 运行容器
-docker run -d -p 80:80 --name mall-frontend mall-frontend
-```
-
-### 4. Vercel 部署（推荐用于演示）
+### 3. Vercel 部署（推荐用于演示）
 
 ```bash
 # 安装 Vercel CLI

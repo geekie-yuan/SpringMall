@@ -1,0 +1,24 @@
+# ===========================================
+# 测试环境配置 (Test)
+# ===========================================
+
+spring:
+  datasource:
+    hikari:
+      maximum-pool-size: 10
+
+logging:
+  level:
+    root: info
+    site.geekie.shop.shoppingmall: info
+    org.springframework.security: warn
+
+# 测试环境关闭 SQL 日志
+mybatis:
+  configuration:
+    log-impl: org.apache.ibatis.logging.nologging.NoLoggingImpl
+
+# 测试环境开启 Swagger（方便测试人员查看接口）
+springdoc:
+  api-docs:
+    enabled: true
