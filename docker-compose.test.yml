@@ -1,6 +1,27 @@
 # 测试环境 override
 # 用法: docker compose -f docker-compose.yml -f docker-compose.test.yml --env-file .env.test up -d --build
 services:
+  mysql:
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 1024M
+
+  redis:
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
+
+  rabbitmq:
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+
   backend:
     environment:
       - SPRING_PROFILES_ACTIVE=test

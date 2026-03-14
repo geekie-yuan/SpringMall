@@ -1,6 +1,30 @@
 # 生产环境 override
 # 用法: docker compose -f docker-compose.yml -f docker-compose.prod.yml --env-file .env.prod up -d --build
 services:
+  mysql:
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 2048M
+
+  redis:
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M
+
+  rabbitmq:
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 1024M
+
   backend:
     restart: always
     environment:
@@ -24,6 +48,3 @@ services:
         limits:
           cpus: "1"
           memory: 1024M
-
-  rabbitmq:
-    restart: always

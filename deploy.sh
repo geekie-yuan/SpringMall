@@ -36,17 +36,16 @@ git pull
 echo "[2/3] 构建 Docker 镜像..."
 docker compose -f docker-compose.yml -f "$COMPOSE_OVERRIDE" --env-file "$ENV_FILE" build
 
-# 启动服务
-echo "[3/3] 启动服务..."
-docker compose -f docker-compose.yml -f "$COMPOSE_OVERRIDE" --env-file "$ENV_FILE" up -d
+# 启动服务（--wait 等待所有 healthcheck 通过）
+echo "[3/3] 启动服务（等待所有健康检查通过）..."
+docker compose -f docker-compose.yml -f "$COMPOSE_OVERRIDE" --env-file "$ENV_FILE" up -d --wait
 
 echo ""
 echo "=========================================="
-echo "  部署完成!"
-echo "  前端: http://localhost:${FRONTEND_PORT:-26115}"
-echo "  后端: http://localhost:${BACKEND_PORT:-25116}"
+echo "  部署完成! 所有服务健康检查已通过"
 echo "=========================================="
 echo ""
+echo "服务状态:  docker compose -f docker-compose.yml -f $COMPOSE_OVERRIDE --env-file $ENV_FILE ps"
 echo "查看日志:  docker compose -f docker-compose.yml -f $COMPOSE_OVERRIDE --env-file $ENV_FILE logs -f"
 echo "停止服务:  docker compose -f docker-compose.yml -f $COMPOSE_OVERRIDE --env-file $ENV_FILE down"
 echo "回滚操作:  git checkout HEAD~1 && ./deploy.sh $ENV"
