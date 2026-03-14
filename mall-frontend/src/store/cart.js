@@ -84,7 +84,6 @@ export const useCartStore = defineStore('cart', {
     async addItem(productId, quantity = 1) {
       try {
         await addToCartApi({ productId, quantity })
-        ElMessage.success('已添加到购物车')
         // 重新获取购物车数据
         await this.fetchCart()
       } catch (error) {

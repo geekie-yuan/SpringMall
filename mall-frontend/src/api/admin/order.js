@@ -5,7 +5,7 @@ import request from '../request'
 
 /**
  * 获取所有订单
- * @param {Object} params - 查询参数 { page, size, status, keyword }
+ * @param {Object} params - 查询参数 { page, size, sortBy, sortDir }
  */
 export const getAllOrders = (params) => {
   return request({
@@ -18,7 +18,7 @@ export const getAllOrders = (params) => {
 /**
  * 按状态获取订单（支持分页）
  * @param {string} status - 订单状态
- * @param {Object} params - 查询参数 { page, size }
+ * @param {Object} params - 查询参数 { page, size, sortBy, sortDir }
  */
 export const getOrdersByStatus = (status, params) => {
   return request({

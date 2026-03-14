@@ -29,19 +29,6 @@ export const getProductsByCategory = (categoryId, params) => {
 }
 
 /**
- * 根据状态获取商品
- * @param {string} status - 商品状态
- * @param {Object} params - 查询参数 { page, size }
- */
-export const getProductsByStatus = (status, params) => {
-  return request({
-    url: `/products/status/${status}`,
-    method: 'GET',
-    params
-  })
-}
-
-/**
  * 搜索商品
  * @param {string} keyword - 搜索关键词
  * @param {Object} params - 查询参数 { page, size }
