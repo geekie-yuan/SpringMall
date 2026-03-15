@@ -1,5 +1,6 @@
 # 测试环境 override
 # 用法: docker compose -f docker-compose.yml -f docker-compose.test.yml --env-file .env.test up -d --build
+# docker compose -f docker-compose.yml -f docker-compose.test.yml --env-file .env.test up -d --no-build backend 更新配置
 services:
   mysql:
     deploy:

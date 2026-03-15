@@ -86,7 +86,9 @@ export const useCartStore = defineStore('cart', {
         await addToCartApi({ productId, quantity })
         // 重新获取购物车数据
         await this.fetchCart()
+        ElMessage.success('已加入购物车')
       } catch (error) {
+        ElMessage.error('加入购物车失败，请重试')
         console.error('添加购物车失败:', error)
         throw error
       }

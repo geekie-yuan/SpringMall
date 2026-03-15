@@ -626,7 +626,11 @@ public class AlipayPaymentServiceImpl implements AlipayPaymentService {
                 String tradeStatus = response.getTradeStatus();
                 log.info("掉单补偿查询支付宝支付状态 - 支付流水号: {}, 状态: {}",
                         payment.getPaymentNo(), tradeStatus);
-                return "TRADE_SUCCESS".equals(tradeStatus) || "TRADE_FINISHED".equals(tradeStatus);
+                if ("TRADE_SUCCESS".equals(tradeStatus) || "TRADE_FINISHED".equals(tradeStatus)) {
+                    payment.setTradeNo(response.getTradeNo());
+                    return true;
+                }
+                return false;
             } else {
                 String subCode = response.getSubCode();
                 if ("ACQ.TRADE_NOT_EXIST".equals(subCode)) {

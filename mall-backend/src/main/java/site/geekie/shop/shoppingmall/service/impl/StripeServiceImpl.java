@@ -742,6 +742,12 @@ public class StripeServiceImpl implements StripeService {
                 boolean paid = "paid".equals(session.getPaymentStatus());
                 log.info("掉单补偿查询 Stripe Session 支付状态 - 支付流水号: {}, Session: {}, payment_status: {}",
                         payment.getPaymentNo(), tradeNo, session.getPaymentStatus());
+                if (paid) {
+                    String paymentIntentId = session.getPaymentIntent();
+                    if (paymentIntentId != null) {
+                        payment.setTradeNo(paymentIntentId);
+                    }
+                }
                 return paid;
             }
         } catch (StripeException e) {
